@@ -28,7 +28,7 @@ pip install -e ".[dev,sim]"
 make check
 ```
 
-Simulator (Linux host with Docker; the first image build compiles PX4 and takes a while):
+Simulator (Docker; the first image build compiles PX4, needs about 8 GiB for the Docker VM and 20 GB of disk):
 
 ```
 make sim-build
