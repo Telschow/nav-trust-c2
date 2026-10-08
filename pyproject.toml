@@ -1,0 +1,38 @@
+[project]
+name = "nav-trust-c2"
+version = "0.0.0"
+description = "Human-on-the-loop mission control for simulated drones with GNSS-degradation awareness"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+dependencies = []
+
+[project.optional-dependencies]
+# MAVSDK-Python moved its gRPC wrapper to `mavsdk-grpc` (import `mavsdk_grpc`);
+# the `mavsdk` name from v4 is a different, native binding.
+sim = ["mavsdk-grpc==4.0.5"]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10", "pyyaml>=6", "types-PyYAML"]
+
+[tool.setuptools]
+packages = ["navtrust", "c2", "sim"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+files = ["navtrust", "c2", "sim", "tests"]
+
+[[tool.mypy.overrides]]
+# mavsdk_grpc ships no py.typed marker
+module = ["mavsdk_grpc", "mavsdk_grpc.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
