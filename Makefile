@@ -6,9 +6,9 @@ VEHICLES ?= 1
 help:
 	@echo "check       ruff + mypy + pytest (no simulator needed)"
 	@echo "sim-build   build the PX4 SITL + Gazebo image (long, first time only)"
-	@echo "sim-up      start headless SITL, VEHICLES=n (Linux host, host networking)"
+	@echo "sim-up      start headless SITL, VEHICLES=n"
 	@echo "sim-down    stop it"
-	@echo "fly         fly the 1 x 1 km survey against vehicle 1 (needs sim-up)"
+	@echo "fly         fly the 1 x 1 km survey against vehicle 1 inside the container (needs sim-up)"
 
 check: lint typecheck test
 
@@ -25,12 +25,15 @@ test:
 sim-build:
 	docker build -f sim/docker/Dockerfile -t $(IMAGE) .
 
-# Host networking: PX4 sends MAVLink to 127.0.0.1:14540+i, so MAVSDK must share the namespace.
+# PX4 sends MAVLink to 127.0.0.1:14540+i inside the container, so MAVSDK runs there too
+# (works on macOS Docker Desktop, where --network host does not reach the Mac).
 sim-up:
-	docker run -d --rm --name $(IMAGE) --network host -e NUM_VEHICLES=$(VEHICLES) $(IMAGE)
+	docker run -d --rm --name $(IMAGE) -v "$(CURDIR)":/workspaces/nav-trust-c2 \
+		-e NUM_VEHICLES=$(VEHICLES) $(IMAGE)
 
 sim-down:
 	docker stop $(IMAGE)
 
+# Extra flags go through ARGS, e.g. make fly ARGS="--width 100 --height 100"
 fly:
-	python -m sim.fly_survey
+	docker exec -w /workspaces/nav-trust-c2 $(IMAGE) python -m sim.fly_survey $(ARGS)

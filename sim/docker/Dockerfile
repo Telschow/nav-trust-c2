@@ -6,6 +6,8 @@
 FROM ubuntu:24.04
 
 ARG PX4_VERSION=v1.17.0
+# Compile jobs. Low default: Docker Desktop VMs often have ~4 GB and gcc gets OOM-killed.
+ARG BUILD_JOBS=2
 
 ENV DEBIAN_FRONTEND=noninteractive \
     RUNS_IN_DOCKER=true \
@@ -22,7 +24,7 @@ WORKDIR ${PX4_DIR}
 # --no-nuttx: skip the ARM toolchain, we only need the simulation target.
 RUN bash Tools/setup/ubuntu.sh --no-nuttx \
     && rm -rf /var/lib/apt/lists/*
-RUN make px4_sitl_default
+RUN make -j"${BUILD_JOBS}" px4_sitl_default
 
 # Project tooling lives in its own venv so it never touches PX4's system Python packages.
 RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir "mavsdk-grpc==4.0.5"
