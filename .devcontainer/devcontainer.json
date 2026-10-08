@@ -1,0 +1,16 @@
+{
+  "name": "nav-trust-c2 (PX4 SITL + Gazebo headless)",
+  "build": {
+    "dockerfile": "../sim/docker/Dockerfile",
+    "context": ".."
+  },
+  "workspaceFolder": "/workspaces/nav-trust-c2",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/nav-trust-c2,type=bind",
+  "overrideCommand": true,
+  "postCreateCommand": "pip install --no-cache-dir -e '.[dev]'",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-python.python", "charliermarsh.ruff"]
+    }
+  }
+}
