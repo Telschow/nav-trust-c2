@@ -33,7 +33,7 @@ RUN bash Tools/setup/ubuntu.sh --no-nuttx \
 RUN make -j"${BUILD_JOBS}" px4_sitl_default
 
 # Project tooling lives in its own venv so it never touches PX4's system Python packages.
-RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir "mavsdk-grpc==4.0.5"
+RUN python3 -m venv /opt/venv && /opt/venv/bin/pip install --no-cache-dir "mavsdk-grpc==4.0.5" "fastapi>=0.115" "uvicorn[standard]>=0.30" "httpx>=0.27"
 ENV PATH=/opt/venv/bin:${PATH}
 
 COPY sim/docker/run_sitl.sh /usr/local/bin/run_sitl.sh

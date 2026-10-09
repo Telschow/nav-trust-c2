@@ -11,7 +11,9 @@ dependencies = []
 # MAVSDK-Python moved its gRPC wrapper to `mavsdk-grpc` (import `mavsdk_grpc`);
 # the `mavsdk` name from v4 is a different, native binding.
 sim = ["mavsdk-grpc==4.0.5"]
-dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10", "pyyaml>=6", "types-PyYAML"]
+# C2 backend (issue 10). Optional so the trust engine and its tests stay dependency-free.
+c2 = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
+dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10", "pyyaml>=6", "types-PyYAML", "httpx>=0.27"]
 
 [tool.setuptools]
 packages = ["navtrust", "c2", "sim"]

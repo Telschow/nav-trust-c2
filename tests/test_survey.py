@@ -61,3 +61,15 @@ def test_local_to_geo_matches_haversine() -> None:
 def test_local_to_geo_origin_is_identity() -> None:
     origin = GeoPoint(48.0, 11.0)
     assert local_to_geo(origin, LocalPoint(0, 0)) == origin
+
+
+def test_lawnmower_rect_is_the_origin_lawnmower_shifted() -> None:
+    from sim.survey import lawnmower_rect
+
+    base = lawnmower(1000, 300, 100)
+    shifted = lawnmower_rect(0, 600, 1000, 900, 100)
+    assert len(shifted) == len(base)
+    assert all(
+        (s.east_m, s.north_m) == (b.east_m, b.north_m + 600)
+        for s, b in zip(shifted, base, strict=True)
+    )
