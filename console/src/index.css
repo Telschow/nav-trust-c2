@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+@theme {
+  --color-ink: #070b16;
+  --color-panel: #0e1424;
+  --color-panel-2: #121a2e;
+  --color-line: #1f2a44;
+  --color-line-soft: #18213a;
+  --color-text: #e6ebf5;
+  --color-muted: #8b97b3;
+  --color-faint: #5d6a88;
+  --color-ok: #34d399;
+  --color-warn: #fbbf24;
+  --color-bad: #f87171;
+  --color-accent: #6ea8ff;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  font-feature-settings: "tnum", "cv11";
+}
+
+::selection {
+  background: rgb(110 168 255 / 0.35);
+}
+
+/* thin dark scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #26324f transparent;
+}
+
+.panel {
+  background: linear-gradient(180deg, var(--color-panel-2), var(--color-panel));
+  border: 1px solid var(--color-line);
+  border-radius: 14px;
+}
+
+.label {
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--color-faint);
+  font-weight: 600;
+}
+
+/* vehicle markers on the map */
+.vehicle-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+.vehicle-marker .dot {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: #0b1020;
+  border: 3px solid var(--tone);
+  box-shadow: 0 0 0 4px rgb(0 0 0 / 0.35), 0 0 18px var(--tone);
+}
+.vehicle-marker .dot::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  border-radius: 999px;
+  background: var(--tone);
+}
+.vehicle-marker .tag {
+  font: 600 11px/1 var(--font-sans);
+  letter-spacing: 0.04em;
+  color: #fff;
+  background: rgb(8 12 24 / 0.88);
+  border: 1px solid var(--tone);
+  padding: 3px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.vehicle-marker.untrusted .dot::before {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  border-radius: 999px;
+  border: 2px dashed var(--tone);
+  animation: spin 6s linear infinite;
+}
+.vehicle-marker.untrusted .dot {
+  animation: pulse 1.6s ease-in-out infinite;
+}
+.sector-tag {
+  font: 700 12px/1 var(--font-sans);
+  letter-spacing: 0.06em;
+  color: var(--tone);
+  background: rgb(8 12 24 / 0.7);
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--tone) 55%, transparent);
+  pointer-events: none;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 7px rgb(0 0 0 / 0.2), 0 0 30px var(--tone);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .vehicle-marker.untrusted .dot,
+  .vehicle-marker.untrusted .dot::before {
+    animation: none;
+  }
+}
+
+.maplibregl-ctrl-attrib {
+  background: rgb(8 12 24 / 0.75) !important;
+  color: var(--color-muted) !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: var(--color-muted) !important;
+}

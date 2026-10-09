@@ -1,7 +1,7 @@
 IMAGE ?= nav-trust-c2-sim
 VEHICLES ?= 1
 
-.PHONY: help check lint typecheck test sim-build sim-up sim-down fly fleet backend
+.PHONY: help check lint typecheck test sim-build sim-up sim-down fly fleet backend console console-dev demo
 
 help:
 	@echo "check       ruff + mypy + pytest (no simulator needed)"
@@ -9,6 +9,9 @@ help:
 	@echo "sim-up      start headless SITL, VEHICLES=n"
 	@echo "sim-down    stop it"
 	@echo "fleet       fly the survey with VEHICLES vehicles (needs sim-up VEHICLES=n)"
+	@echo "console     build the operator console (needs Node 22+)"
+	@echo "console-dev run the console with hot reload on :5173 (backend on :8000)"
+	@echo "demo        backend + console + replayed demo data, no simulator (open :8000)"
 	@echo "backend     run the C2 backend on localhost:8000 (needs the c2 extra)"
 	@echo "fly         fly the 1 x 1 km survey against vehicle 1 inside the container (needs sim-up)"
 
@@ -46,3 +49,14 @@ fleet:
 
 backend:
 	python -m c2.server
+
+console:
+	cd console && npm ci && npm run build
+
+console-dev:
+	cd console && npm run dev
+
+# The demo feed replays recorded trust data with synthetic positions; the console labels it so.
+demo: console
+	python -m c2.server --db logs/audit-demo.sqlite & SERVER=$$!; trap "kill $$SERVER" EXIT INT TERM; \
+	sleep 3; python -m sim.demo_feed --speed 5

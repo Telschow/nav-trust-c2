@@ -11,9 +11,11 @@ from __future__ import annotations
 import argparse
 import asyncio
 import time
+from pathlib import Path
 from typing import Any
 
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi.staticfiles import StaticFiles
 
 from c2.audit import AuditLog
 from c2.fleet import FleetState
@@ -51,6 +53,7 @@ def create_app(
     fleet: FleetState | None = None,
     recommender: Recommender | None = None,
     gate: CommandGate | None = None,
+    console_dir: str | Path | None = None,
 ) -> FastAPI:
     """recommender needs fleet; gate (command execution) needs an approved decision."""
     app = FastAPI(title="nav-trust-c2 backend")
@@ -68,6 +71,32 @@ def create_app(
         if recommender is not None and fleet is not None:
             for rec in recommender.observe(msg, fleet):
                 hub.add_recommendation(rec)
+
+    @app.post("/positions", status_code=204)
+    async def post_position(body: dict[str, Any] = Body(...)) -> None:  # noqa: B008
+        try:
+            hub.ingest_position(
+                str(body["vehicle_id"]),
+                float(body["lat_deg"]),
+                float(body["lon_deg"]),
+                float(body["alt_m"]),
+            )
+        except (KeyError, ValueError, TypeError) as err:
+            raise bad_request(err) from err
+
+    @app.post("/origin", status_code=204)
+    async def post_origin(body: dict[str, Any] = Body(...)) -> None:  # noqa: B008
+        try:
+            hub.set_origin(float(body["lat_deg"]), float(body["lon_deg"]))
+        except (KeyError, ValueError, TypeError) as err:
+            raise bad_request(err) from err
+
+    @app.post("/source", status_code=204)
+    async def post_source(body: dict[str, Any] = Body(...)) -> None:  # noqa: B008
+        try:
+            hub.set_source(str(body["label"]))
+        except (KeyError, ValueError, TypeError) as err:
+            raise bad_request(err) from err
 
     @app.post("/recommendations", status_code=201)
     async def post_recommendation(body: dict[str, Any] = Body(...)) -> dict[str, Any]:  # noqa: B008
@@ -104,15 +133,16 @@ def create_app(
     @app.get("/fleet")
     async def get_fleet() -> dict[str, Any]:
         if fleet is None:
-            return {"assignment": {}}
+            return {"origin": hub.origin, "assignment": {}}
         return {
+            "origin": hub.origin,
             "assignment": {
                 v: [
                     {"id": s.id, "west": s.west, "south": s.south, "east": s.east, "north": s.north}
                     for s in secs
                 ]
                 for v, secs in sorted(fleet.assignment.items())
-            }
+            },
         }
 
     @app.get("/state")
@@ -148,6 +178,10 @@ def create_app(
         finally:
             unsubscribe()
 
+    if console_dir is not None and Path(console_dir).is_dir():
+        # mounted last so it never shadows the API routes above
+        app.mount("/", StaticFiles(directory=console_dir, html=True), name="console")
+
     return app
 
 
@@ -162,6 +196,7 @@ def main() -> None:
     p.add_argument("--db", default="logs/audit.sqlite")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--console", default="console/dist", help="built console to serve at /")
     p.add_argument("--vehicles", type=int, default=3)
     p.add_argument("--width", type=float, default=1000.0)
     p.add_argument("--height", type=float, default=1000.0)
@@ -189,7 +224,11 @@ def main() -> None:
     else:
         executor = DryRunExecutor()
     app = create_app(
-        hub, fleet=fleet, recommender=Recommender(clock), gate=CommandGate(hub, fleet, executor)
+        hub,
+        fleet=fleet,
+        recommender=Recommender(clock),
+        gate=CommandGate(hub, fleet, executor),
+        console_dir=args.console,
     )
     uvicorn.run(app, host=args.host, port=args.port)
 

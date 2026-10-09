@@ -58,6 +58,9 @@ class Hub:
         self._recs: dict[str, Recommendation] = {}
         self._decisions: dict[str, Decision] = {}
         self._subscribers: list[Callable[[Event], None]] = []
+        self._positions: dict[str, dict[str, float]] = {}
+        self._origin: dict[str, float] | None = None
+        self._source = "live"
 
     # --- subscriptions -------------------------------------------------------------------
 
@@ -66,6 +69,7 @@ class Hub:
         return lambda: self._subscribers.remove(callback)
 
     def _publish(self, event: Event) -> None:
+        event = {**event, "server_s": self._clock()}  # lets a client run expiry countdowns
         for callback in list(self._subscribers):
             callback(event)
 
@@ -85,6 +89,35 @@ class Hub:
                 },
             )
         self._publish({"type": "navtrust", "data": navtrust_to_dict(msg)})
+
+    def ingest_position(
+        self, vehicle_id: str, lat_deg: float, lon_deg: float, alt_m: float
+    ) -> None:
+        """Latest position for the map. High rate, so it is published but not audited."""
+        if not (-90 <= lat_deg <= 90 and -180 <= lon_deg <= 180):
+            raise ValueError("latitude or longitude out of range")
+        pos = {"lat_deg": lat_deg, "lon_deg": lon_deg, "alt_m": alt_m, "stamp_s": self._clock()}
+        self._positions[vehicle_id] = pos
+        self._publish({"type": "position", "data": {"vehicle_id": vehicle_id, **pos}})
+
+    def set_origin(self, lat_deg: float, lon_deg: float) -> None:
+        """Geographic position of the area origin (south-west corner of the sector grid)."""
+        if not (-90 <= lat_deg <= 90 and -180 <= lon_deg <= 180):
+            raise ValueError("latitude or longitude out of range")
+        self._origin = {"lat_deg": lat_deg, "lon_deg": lon_deg}
+        self._publish({"type": "origin", "data": self._origin})
+
+    def set_source(self, label: str) -> None:
+        """Say where the data comes from ('live', or e.g. 'REPLAY DEMO'), so the console can
+        never present replayed data as a live flight."""
+        if not label.strip():
+            raise ValueError("label must not be empty")
+        self._source = label.strip()
+        self._publish({"type": "source", "data": {"label": self._source}})
+
+    @property
+    def origin(self) -> dict[str, float] | None:
+        return self._origin
 
     def add_recommendation(self, rec: Recommendation) -> None:
         if rec.id in self._recs:
@@ -147,6 +180,10 @@ class Hub:
     def state(self) -> dict[str, Any]:
         self.sweep()
         return {
+            "server_s": self._clock(),
+            "source": self._source,
+            "origin": self._origin,
+            "positions": {v: {"vehicle_id": v, **p} for v, p in sorted(self._positions.items())},
             "vehicles": {v: navtrust_to_dict(m) for v, m in sorted(self._trust.items())},
             "open_recommendations": [
                 recommendation_to_dict(r)
