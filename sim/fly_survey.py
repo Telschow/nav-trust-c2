@@ -19,7 +19,7 @@ from typing import Any
 from mavsdk_grpc import System
 from mavsdk_grpc.mission import MissionItem, MissionPlan
 
-from sim.survey import GeoPoint, lawnmower, local_to_geo, path_length_m
+from sim.survey import GeoPoint, LocalPoint, lawnmower, local_to_geo, path_length_m
 
 DEFAULT_ADDRESS = "udpin://0.0.0.0:14541"  # PX4 SITL instance 1: remote port 14540 + instance
 
@@ -32,9 +32,15 @@ def build_mission_plan(
     altitude_m: float,
     speed_m_s: float,
 ) -> MissionPlan:
-    local = lawnmower(width_m, height_m, spacing_m)
+    return plan_from_route(origin, lawnmower(width_m, height_m, spacing_m), altitude_m, speed_m_s)
+
+
+def plan_from_route(
+    origin: GeoPoint, route: list[LocalPoint], altitude_m: float, speed_m_s: float
+) -> MissionPlan:
+    """Mission over local east/north waypoints, relative to origin."""
     items = []
-    for p in local:
+    for p in route:
         geo = local_to_geo(origin, p)
         items.append(
             MissionItem(
@@ -138,11 +144,17 @@ async def fly(
     speed: float,
     position_interval_s: float = 0.0,
     on_ready: OnReady | None = None,
+    route: list[LocalPoint] | None = None,
+    route_origin: GeoPoint | None = None,
 ) -> None:
     """Fly one survey on an already connected drone.
 
     on_ready receives the home position once the vehicle is ready and returns extra
     background tasks (recording, failure injection) to run until the flight ends.
+
+    route/route_origin: fly these waypoints (east/north metres from route_origin) instead of
+    the width x height lawnmower. Several vehicles share one route_origin so that their
+    routes are in one frame, whatever their own home positions are.
     """
     background: list[asyncio.Task[None]] = []
     try:
@@ -152,11 +164,18 @@ async def fly(
         origin = GeoPoint(home.latitude_deg, home.longitude_deg)
         log.write("home", lat_deg=origin.lat_deg, lon_deg=origin.lon_deg)
 
-        plan = build_mission_plan(origin, width, height, spacing, altitude, speed)
+        if route is not None:
+            if route_origin is None:
+                raise ValueError("route needs route_origin")
+            plan = plan_from_route(route_origin, route, altitude, speed)
+            planned = route
+        else:
+            plan = build_mission_plan(origin, width, height, spacing, altitude, speed)
+            planned = lawnmower(width, height, spacing)
         log.write(
             "plan",
             waypoints=len(plan.mission_items),
-            path_length_m=path_length_m(lawnmower(width, height, spacing)),
+            path_length_m=path_length_m(planned),
             width_m=width,
             height_m=height,
             spacing_m=spacing,
