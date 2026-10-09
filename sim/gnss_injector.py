@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import time
 from collections.abc import Awaitable, Callable
 from pathlib import Path
@@ -58,7 +57,7 @@ async def ensure_enabled(drone: System) -> None:
         raise RuntimeError("SYS_FAILURE_EN is not 1; failure injection is disabled")
 
 
-async def _log_gps_info(drone: System, log: JsonlLog) -> None:
+async def log_gps_info(drone: System, log: JsonlLog) -> None:
     """Log the receiver's reported fix type and satellite count whenever either changes."""
     last: tuple[str, int] | None = None
     async for info in drone.telemetry.gps_info():
@@ -66,6 +65,38 @@ async def _log_gps_info(drone: System, log: JsonlLog) -> None:
         if current != last:
             last = current
             log.write("gps_info", fix_type=current[0], num_satellites=current[1])
+
+
+async def inject_loop(
+    drone: System,
+    origin: GeoPoint,
+    polygon: list[LocalPoint],
+    mode: FailureType,
+    log: JsonlLog,
+) -> None:
+    """Watch the vehicle position and inject/clear the GPS failure at the zone boundary."""
+
+    async def inject(failure_type: FailureType) -> None:
+        await drone.failure.inject(FailureUnit.SENSOR_GPS, failure_type, 0)
+
+    injector = ZoneInjector(polygon, mode, inject)
+    last_error_log = float("-inf")
+    async for pos in drone.telemetry.position():
+        local = geo_to_local(origin, GeoPoint(pos.latitude_deg, pos.longitude_deg))
+        try:
+            action = await injector.update(local)
+        except FailureError as err:
+            # No ack from PX4. Log at most once per second and retry on the next position.
+            if time.monotonic() - last_error_log > 1.0:
+                last_error_log = time.monotonic()
+                log.write("inject_failed", error=str(err))
+            continue
+        if action:
+            log.write(
+                f"gnss_{action}",
+                east_m=round(local.east_m, 1),
+                north_m=round(local.north_m, 1),
+            )
 
 
 async def run(args: argparse.Namespace) -> Path:
@@ -86,30 +117,8 @@ async def run(args: argparse.Namespace) -> Path:
         origin = GeoPoint(home.latitude_deg, home.longitude_deg)
         polygon = rectangle(args.west, args.south, args.east, args.north)
         log.write("zone", polygon=[[p.east_m, p.north_m] for p in polygon], mode=args.mode)
-
-        async def inject(failure_type: FailureType) -> None:
-            await drone.failure.inject(FailureUnit.SENSOR_GPS, failure_type, 0)
-
-        injector = ZoneInjector(polygon, MODES[args.mode], inject)
-        gps_task = asyncio.create_task(_log_gps_info(drone, log))
-        last_error_log = float("-inf")
-        async for pos in drone.telemetry.position():
-            local = geo_to_local(origin, GeoPoint(pos.latitude_deg, pos.longitude_deg))
-            try:
-                action = await injector.update(local)
-            except FailureError as err:
-                # No ack from PX4. Log at most once per second and retry on the next position.
-                if time.monotonic() - last_error_log > 1.0:
-                    last_error_log = time.monotonic()
-                    log.write("inject_failed", error=str(err))
-                continue
-            if action:
-                log.write(
-                    f"gnss_{action}",
-                    east_m=round(local.east_m, 1),
-                    north_m=round(local.north_m, 1),
-                )
-                print(json.dumps({"event": f"gnss_{action}", "mode": args.mode}))
+        gps_task = asyncio.create_task(log_gps_info(drone, log))
+        await inject_loop(drone, origin, polygon, MODES[args.mode], log)
     finally:
         if gps_task is not None:
             gps_task.cancel()
