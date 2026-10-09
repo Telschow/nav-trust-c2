@@ -22,6 +22,8 @@ def recording(request: pytest.FixtureRequest) -> Recording:
 
 
 def test_run_completed(recording: Recording) -> None:
+    if recording.first("recording_stopped"):
+        pytest.skip("deliberately stopped early")
     finished, landed = recording.first("mission_finished"), recording.first("landed")
     assert finished is not None and landed is not None
     assert landed["t_s"] > finished["t_s"]
@@ -42,14 +44,26 @@ def test_nominal_keeps_its_fix(recording: Recording) -> None:
     assert {g["fix_type"] for g in recording.of("gps_info")} <= {"FIX_3D"}
 
 
-def test_jamming_loses_and_regains_the_fix(recording: Recording) -> None:
-    if recording.header["zone"] is None:
-        pytest.skip("not a jamming run")
-    enters, exits = recording.of("gnss_enter"), recording.of("gnss_exit")
-    assert enters and len(enters) == len(exits)
+# What the receiver reports a moment after a zone entry, per failure mode (PX4 gz, measured).
+EXPECTED_FIX_IN_ZONE = {"off": "NO_GPS", "wrong": "FIX_2D", "stuck": None}
+
+
+def test_zone_runs_change_the_fix_as_the_failure_mode_implies(recording: Recording) -> None:
+    mode = recording.header["failure_mode"]
+    if mode is None:
+        pytest.skip("not a zone run")
+    enters = recording.of("gnss_enter")
+    assert enters
     gps = recording.of("gps_info")
+    expected = EXPECTED_FIX_IN_ZONE[mode]
+    if expected is None:
+        # stuck: the receiver keeps reporting a fix; only the position is frozen
+        assert {g["fix_type"] for g in gps} == {"FIX_3D"}
+        return
+    exits = recording.of("gnss_exit")
+    assert len(enters) == len(exits)
     for enter, leave in zip(enters, exits, strict=True):
         lost = [g for g in gps if enter["t_s"] <= g["t_s"] <= enter["t_s"] + 3]
         back = [g for g in gps if leave["t_s"] <= g["t_s"] <= leave["t_s"] + 1]
-        assert lost and lost[0]["fix_type"] == "NO_GPS"
+        assert lost and lost[0]["fix_type"] == expected
         assert back and back[0]["fix_type"] == "FIX_3D"
