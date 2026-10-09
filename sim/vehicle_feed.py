@@ -48,6 +48,32 @@ async def feed_vehicle(
                 now(), f.get("pos_horiz_accuracy"), f.get("pos_horiz_ratio"), f.get("vel_ratio")
             )
 
+    async def positions() -> None:
+        last = float("-inf")
+        async for pos in drone.telemetry.position():
+            if time.monotonic() - last < 0.5:  # the map does not need 50 Hz
+                continue
+            last = time.monotonic()
+            body = {
+                "vehicle_id": vehicle_id,
+                "lat_deg": pos.latitude_deg,
+                "lon_deg": pos.longitude_deg,
+                "alt_m": pos.relative_altitude_m,
+            }
+            try:
+                await client.post(f"{backend}/positions", json=body)
+            except httpx.HTTPError as err:
+                print(json.dumps({"vehicle": vehicle_id, "post_failed": str(err)}))
+
+    async def origin() -> None:
+        # the sector grid is anchored at vehicle 1's home (see sim/fly_fleet.py)
+        if index != 1:
+            return
+        home = await anext(aiter(drone.telemetry.home()))
+        await client.post(
+            f"{backend}/origin", json={"lat_deg": home.latitude_deg, "lon_deg": home.longitude_deg}
+        )
+
     async def publish() -> None:
         while True:
             body = navtrust_to_dict(engine.report(now()))
@@ -57,7 +83,7 @@ async def feed_vehicle(
                 print(json.dumps({"vehicle": vehicle_id, "post_failed": str(err)}))
             await asyncio.sleep(interval_s)
 
-    await asyncio.gather(fixes(), estimator(), publish())
+    await asyncio.gather(fixes(), estimator(), publish(), positions(), origin())
 
 
 async def run(args: argparse.Namespace) -> None:
