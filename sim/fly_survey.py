@@ -103,9 +103,8 @@ async def _wait_for_health(drone: System) -> None:
 
 
 async def _wait_for_finish(drone: System) -> None:
-    async for finished in drone.mission.is_mission_finished():
-        if finished:
-            return
+    while not await drone.mission.is_mission_finished():
+        await asyncio.sleep(1.0)
 
 
 async def _wait_for_landing(drone: System) -> None:
