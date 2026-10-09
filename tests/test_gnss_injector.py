@@ -40,3 +40,26 @@ def test_reentry_injects_again() -> None:
     actions, sent = run_path([(500, 10), (900, 10), (500, 20)])
     assert actions == ["enter", "exit", "enter"]
     assert sent == [FailureType.OFF, FailureType.OK, FailureType.OFF]
+
+
+def test_failed_injection_is_retried_on_next_position() -> None:
+    calls: list[FailureType] = []
+
+    async def flaky(t: FailureType) -> None:
+        calls.append(t)
+        if len(calls) == 1:
+            raise RuntimeError("no ack")
+
+    inj = ZoneInjector(rectangle(400, 0, 700, 1000), FailureType.OFF, flaky)
+
+    async def go() -> list[str | None]:
+        out: list[str | None] = []
+        with pytest.raises(RuntimeError):
+            await inj.update(LocalPoint(500, 10))
+        out.append(await inj.update(LocalPoint(510, 10)))
+        out.append(await inj.update(LocalPoint(520, 10)))
+        return out
+
+    assert asyncio.run(go()) == ["enter", None]
+    assert calls == [FailureType.OFF, FailureType.OFF]
+    assert inj.inside
