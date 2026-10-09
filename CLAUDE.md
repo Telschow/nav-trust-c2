@@ -29,6 +29,10 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
 - Metrics are measured, never typed. Targets in docs are labelled "proposal".
 - MAVSDK-Python is imported as `mavsdk_grpc` (package `mavsdk-grpc`); the `mavsdk` name from v4
   is a different, native binding.
+- PX4 is pinned to a `main` commit (sim/docker/Dockerfile), not a release: gz GPS failure
+  injection (`failure gps off|stuck|wrong`) does not exist in v1.17.0 or v1.18.0-rc1.
+- A GNSS outage longer than a few seconds makes PX4 land the vehicle ("blind land"
+  failsafe). Zones in tests must be short, or the scenario must expect the landing.
 - No em dashes. Lean docs. Weekly status file written by the maintainer.
 - Maintainer writes docs/product/*, requirements and ADR decisions. Agents may review them.
 - Ask before adding heavy dependencies or changing the ICD.
