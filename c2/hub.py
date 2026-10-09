@@ -157,3 +157,9 @@ class Hub:
 
     def decision_for(self, recommendation_id: str) -> Decision | None:
         return self._decisions.get(recommendation_id)
+
+    def recommendation(self, recommendation_id: str) -> Recommendation | None:
+        return self._recs.get(recommendation_id)
+
+    def now(self) -> float:
+        return self._clock()

@@ -16,6 +16,8 @@ from typing import Any
 from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 
 from c2.audit import AuditLog
+from c2.fleet import FleetState
+from c2.gate import CommandGate
 from c2.hub import (
     AlreadyDecided,
     DuplicateRecommendation,
@@ -32,6 +34,7 @@ from c2.messages import (
     recommendation_from_dict,
     recommendation_to_dict,
 )
+from c2.recommender import Recommender
 
 _STATUS = {
     UnknownRecommendation: 404,
@@ -42,7 +45,14 @@ _STATUS = {
 }
 
 
-def create_app(hub: Hub) -> FastAPI:
+def create_app(
+    hub: Hub,
+    *,
+    fleet: FleetState | None = None,
+    recommender: Recommender | None = None,
+    gate: CommandGate | None = None,
+) -> FastAPI:
+    """recommender needs fleet; gate (command execution) needs an approved decision."""
     app = FastAPI(title="nav-trust-c2 backend")
 
     def bad_request(err: Exception) -> HTTPException:
@@ -55,6 +65,9 @@ def create_app(hub: Hub) -> FastAPI:
         except (KeyError, ValueError, TypeError) as err:
             raise bad_request(err) from err
         hub.ingest_navtrust(msg)
+        if recommender is not None and fleet is not None:
+            for rec in recommender.observe(msg, fleet):
+                hub.add_recommendation(rec)
 
     @app.post("/recommendations", status_code=201)
     async def post_recommendation(body: dict[str, Any] = Body(...)) -> dict[str, Any]:  # noqa: B008
@@ -78,7 +91,29 @@ def create_app(hub: Hub) -> FastAPI:
             raise HTTPException(_STATUS[type(err)], err.code) from err
         except (KeyError, ValueError, TypeError) as err:
             raise bad_request(err) from err
-        return decision_to_dict(decision)
+        response = decision_to_dict(decision)
+        if gate is not None and decision.outcome is Outcome.APPROVED:
+            result = await gate.execute(decision.recommendation_id)
+            response["execution"] = {
+                "executed": result.executed,
+                "reason": result.reason,
+                "actions": result.actions,
+            }
+        return response
+
+    @app.get("/fleet")
+    async def get_fleet() -> dict[str, Any]:
+        if fleet is None:
+            return {"assignment": {}}
+        return {
+            "assignment": {
+                v: [
+                    {"id": s.id, "west": s.west, "south": s.south, "east": s.east, "north": s.north}
+                    for s in secs
+                ]
+                for v, secs in sorted(fleet.assignment.items())
+            }
+        }
 
     @app.get("/state")
     async def get_state() -> dict[str, Any]:
@@ -119,14 +154,44 @@ def create_app(hub: Hub) -> FastAPI:
 def main() -> None:
     import uvicorn
 
+    from c2.allocator import assign, split_area
+    from c2.dryrun import DryRunExecutor
+    from c2.recommender import Recommender
+
     p = argparse.ArgumentParser(description="nav-trust-c2 backend")
     p.add_argument("--db", default="logs/audit.sqlite")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--vehicles", type=int, default=3)
+    p.add_argument("--width", type=float, default=1000.0)
+    p.add_argument("--height", type=float, default=1000.0)
+    p.add_argument(
+        "--executor",
+        choices=["dryrun", "mavsdk"],
+        default="dryrun",
+        help="mavsdk sends approved commands to fly_fleet's vehicles; dryrun only logs them",
+    )
     args = p.parse_args()
     start = time.monotonic()
-    hub = Hub(AuditLog(args.db), lambda: time.monotonic() - start)
-    uvicorn.run(create_app(hub), host=args.host, port=args.port)
+    clock = lambda: time.monotonic() - start  # noqa: E731
+    hub = Hub(AuditLog(args.db), clock)
+    ids = [f"uav{i}" for i in range(1, args.vehicles + 1)]
+    fleet = FleetState(
+        assign(split_area(args.width, args.height, args.vehicles), ids),
+        positions={v: (0.0, 5.0 * i) for i, v in enumerate(ids)},  # spawn spacing of run_sitl.sh
+    )
+    if args.executor == "mavsdk":
+        from sim.executor import MavsdkExecutor
+        from sim.fly_fleet import home_of
+
+        origin = asyncio.run(home_of(1))
+        executor: Any = MavsdkExecutor(origin, spacing_m=100.0, altitude_m=30.0, speed_m_s=10.0)
+    else:
+        executor = DryRunExecutor()
+    app = create_app(
+        hub, fleet=fleet, recommender=Recommender(clock), gate=CommandGate(hub, fleet, executor)
+    )
+    uvicorn.run(app, host=args.host, port=args.port)
 
 
 if __name__ == "__main__":
