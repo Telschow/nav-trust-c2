@@ -12,6 +12,7 @@ import argparse
 import asyncio
 import json
 import time
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
@@ -74,8 +75,14 @@ class JsonlLog:
         self._fh.close()
 
 
-async def _log_position(drone: System, log: JsonlLog) -> None:
+async def _log_position(drone: System, log: JsonlLog, min_interval_s: float = 0.0) -> None:
+    """Log positions, at most one per min_interval_s (0 logs every sample, about 50 Hz)."""
+    last = float("-inf")
     async for pos in drone.telemetry.position():
+        now = time.monotonic()
+        if now - last < min_interval_s:
+            continue
+        last = now
         log.write(
             "position",
             lat_deg=pos.latitude_deg,
@@ -117,41 +124,54 @@ async def _wait_for_landing(drone: System) -> None:
             return
 
 
-async def run(args: argparse.Namespace) -> Path:
-    log_path = Path(args.log_dir) / f"survey-{time.strftime('%Y%m%dT%H%M%S')}.jsonl"
-    log = JsonlLog(log_path)
-    drone = System(port=args.grpc_port)
+OnReady = Callable[[GeoPoint], list["asyncio.Task[None]"]]
+
+
+async def fly(
+    drone: System,
+    log: JsonlLog,
+    *,
+    width: float,
+    height: float,
+    spacing: float,
+    altitude: float,
+    speed: float,
+    position_interval_s: float = 0.0,
+    on_ready: OnReady | None = None,
+) -> None:
+    """Fly one survey on an already connected drone.
+
+    on_ready receives the home position once the vehicle is ready and returns extra
+    background tasks (recording, failure injection) to run until the flight ends.
+    """
     background: list[asyncio.Task[None]] = []
     try:
-        await drone.connect(system_address=args.system_address)
         await _wait_until_ready(drone)
-        log.write("connected", address=args.system_address)
-
         await _wait_for_health(drone)
         home = await anext(aiter(drone.telemetry.home()))
         origin = GeoPoint(home.latitude_deg, home.longitude_deg)
         log.write("home", lat_deg=origin.lat_deg, lon_deg=origin.lon_deg)
 
-        plan = build_mission_plan(
-            origin, args.width, args.height, args.spacing, args.altitude, args.speed
-        )
+        plan = build_mission_plan(origin, width, height, spacing, altitude, speed)
         log.write(
             "plan",
             waypoints=len(plan.mission_items),
-            path_length_m=path_length_m(lawnmower(args.width, args.height, args.spacing)),
-            width_m=args.width,
-            height_m=args.height,
-            spacing_m=args.spacing,
-            altitude_m=args.altitude,
-            speed_m_s=args.speed,
+            path_length_m=path_length_m(lawnmower(width, height, spacing)),
+            width_m=width,
+            height_m=height,
+            spacing_m=spacing,
+            altitude_m=altitude,
+            speed_m_s=speed,
         )
         await drone.mission.set_return_to_launch_after_mission(True)
         await drone.mission.upload_mission(plan)
 
         background = [
-            asyncio.create_task(_log_position(drone, log)),
+            asyncio.create_task(_log_position(drone, log, position_interval_s)),
             asyncio.create_task(_log_progress(drone, log)),
         ]
+        if on_ready is not None:
+            background.extend(on_ready(origin))
         await drone.action.arm()
         log.write("armed")
         await drone.mission.start_mission()
@@ -163,6 +183,25 @@ async def run(args: argparse.Namespace) -> Path:
     finally:
         for task in background:
             task.cancel()
+
+
+async def run(args: argparse.Namespace) -> Path:
+    log_path = Path(args.log_dir) / f"survey-{time.strftime('%Y%m%dT%H%M%S')}.jsonl"
+    log = JsonlLog(log_path)
+    drone = System(port=args.grpc_port)
+    try:
+        await drone.connect(system_address=args.system_address)
+        log.write("connected", address=args.system_address)
+        await fly(
+            drone,
+            log,
+            width=args.width,
+            height=args.height,
+            spacing=args.spacing,
+            altitude=args.altitude,
+            speed=args.speed,
+        )
+    finally:
         log.close()
     return log_path
 
