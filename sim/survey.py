@@ -51,6 +51,17 @@ def local_to_geo(origin: GeoPoint, point: LocalPoint) -> GeoPoint:
     return GeoPoint(lat, lon)
 
 
+def geo_to_local(origin: GeoPoint, point: GeoPoint) -> LocalPoint:
+    """Inverse of local_to_geo: latitude/longitude to east/north metres from the origin."""
+    north = math.radians(point.lat_deg - origin.lat_deg) * EARTH_RADIUS_M
+    east = (
+        math.radians(point.lon_deg - origin.lon_deg)
+        * EARTH_RADIUS_M
+        * math.cos(math.radians(origin.lat_deg))
+    )
+    return LocalPoint(east, north)
+
+
 def path_length_m(points: list[LocalPoint]) -> float:
     return sum(
         math.hypot(b.east_m - a.east_m, b.north_m - a.north_m)
