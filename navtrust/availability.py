@@ -44,6 +44,9 @@ class AvailabilityReport:
     status: Availability
     since_s: float  # how long the reported status has held
     horizontal_bound_m: float | None  # last estimator accuracy; None until one was received
+    # True while the fix already looks good and the previous non-OK status is only being held
+    # until recover_after_s has passed. Callers must not count this time as outage time.
+    recovering: bool = False
 
 
 def classify_fix(fix_type: str) -> Availability:
@@ -97,6 +100,7 @@ class AvailabilityDetector:
             status=self._reported,
             since_s=t_s - self._reported_since_s,
             horizontal_bound_m=self._bound,
+            recovering=raw is Availability.OK and self._reported is not Availability.OK,
         )
 
     def _raw(self, t_s: float) -> Availability:
