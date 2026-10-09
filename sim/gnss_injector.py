@@ -19,7 +19,7 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from mavsdk_grpc import System
-from mavsdk_grpc.failure import FailureType, FailureUnit
+from mavsdk_grpc.failure import FailureError, FailureType, FailureUnit
 
 from sim.fly_survey import DEFAULT_ADDRESS, JsonlLog
 from sim.interference import point_in_polygon, rectangle
@@ -40,12 +40,16 @@ class ZoneInjector:
         self.inside = False
 
     async def update(self, position: LocalPoint) -> str | None:
-        """Feed one position. Returns 'enter' or 'exit' when it acted, else None."""
+        """Feed one position. Returns 'enter' or 'exit' when it acted, else None.
+
+        The zone state only changes after the injection succeeded, so a failed (e.g. timed
+        out) command is retried on the next position. A failure propagates to the caller.
+        """
         now_inside = point_in_polygon(position, self._polygon)
         if now_inside == self.inside:
             return None
-        self.inside = now_inside
         await self._inject(self._mode if now_inside else FailureType.OK)
+        self.inside = now_inside
         return "enter" if now_inside else "exit"
 
 
@@ -88,9 +92,17 @@ async def run(args: argparse.Namespace) -> Path:
 
         injector = ZoneInjector(polygon, MODES[args.mode], inject)
         gps_task = asyncio.create_task(_log_gps_info(drone, log))
+        last_error_log = float("-inf")
         async for pos in drone.telemetry.position():
             local = geo_to_local(origin, GeoPoint(pos.latitude_deg, pos.longitude_deg))
-            action = await injector.update(local)
+            try:
+                action = await injector.update(local)
+            except FailureError as err:
+                # No ack from PX4. Log at most once per second and retry on the next position.
+                if time.monotonic() - last_error_log > 1.0:
+                    last_error_log = time.monotonic()
+                    log.write("inject_failed", error=str(err))
+                continue
             if action:
                 log.write(
                     f"gnss_{action}",
