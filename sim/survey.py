@@ -42,6 +42,16 @@ def lawnmower(width_m: float, height_m: float, spacing_m: float) -> list[LocalPo
     return points
 
 
+def lawnmower_rect(
+    west_m: float, south_m: float, east_m: float, north_m: float, spacing_m: float
+) -> list[LocalPoint]:
+    """Lawnmower over an arbitrary rectangle, in the same frame as the area origin."""
+    return [
+        LocalPoint(west_m + p.east_m, south_m + p.north_m)
+        for p in lawnmower(east_m - west_m, north_m - south_m, spacing_m)
+    ]
+
+
 def local_to_geo(origin: GeoPoint, point: LocalPoint) -> GeoPoint:
     """Convert a local east/north offset to latitude/longitude (small-area approximation)."""
     lat = origin.lat_deg + math.degrees(point.north_m / EARTH_RADIUS_M)
