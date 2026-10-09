@@ -81,6 +81,7 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
         "zone": zone,
         "failure_mode": args.mode if zone else None,
         "position_interval_s": args.position_interval,
+        "max_duration_s": args.max_duration,
     }
 
 
@@ -106,17 +107,25 @@ async def run(args: argparse.Namespace) -> Path:
                 )
             return tasks
 
-        await fly(
-            drone,
-            log,
-            width=args.width,
-            height=args.height,
-            spacing=args.spacing,
-            altitude=args.altitude,
-            speed=args.speed,
-            position_interval_s=args.position_interval,
-            on_ready=on_ready,
-        )
+        try:
+            await asyncio.wait_for(
+                fly(
+                    drone,
+                    log,
+                    width=args.width,
+                    height=args.height,
+                    spacing=args.spacing,
+                    altitude=args.altitude,
+                    speed=args.speed,
+                    position_interval_s=args.position_interval,
+                    on_ready=on_ready,
+                ),
+                timeout=args.max_duration,
+            )
+        except TimeoutError:
+            # Fault runs can stall for good (e.g. a frozen position never reaches the next
+            # waypoint). Say so in the file instead of leaving a silent truncation.
+            log.write("recording_stopped", reason="max_duration", max_duration_s=args.max_duration)
     finally:
         log.close()
     return log.path
@@ -141,6 +150,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--spacing", type=float, default=100.0)
     p.add_argument("--altitude", type=float, default=30.0)
     p.add_argument("--speed", type=float, default=10.0)
+    p.add_argument(
+        "--max-duration",
+        type=float,
+        help="stop recording after this many seconds and write a recording_stopped event",
+    )
     p.add_argument("--position-interval", type=float, default=0.5, help="seconds between samples")
     args = p.parse_args(argv)
     args.out = args.out or f"tests/replay/data/{args.scenario}.jsonl"
