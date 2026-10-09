@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from navtrust.availability import AvailabilityDetector, AvailabilityReport
 from navtrust.consistency import ConsistencyDetector, ConsistencyReport
+from navtrust.engine import TrustEngine
 from navtrust.recording import Recording
+from navtrust.types import NavTrust
 
 
 def replay_availability(
@@ -46,3 +48,28 @@ def replay_consistency(
         reports.append(detector.report(next_report_s))
         next_report_s += step_s
     return reports
+
+
+def replay_engine(recording: Recording, engine: TrustEngine, step_s: float = 0.5) -> list[NavTrust]:
+    """Run the engine over the recording, producing a NavTrust every step_s seconds."""
+    out: list[NavTrust] = []
+    records = [r for r in recording.records if r["event"] in ("gps_info", "estimator_status")]
+    end_s = recording.records[-1]["t_s"]
+    next_report_s = 0.0
+    i = 0
+    while next_report_s <= end_s:
+        while i < len(records) and records[i]["t_s"] <= next_report_s:
+            rec = records[i]
+            if rec["event"] == "gps_info":
+                engine.update_fix(rec["t_s"], rec["fix_type"])
+            else:
+                engine.update_estimator(
+                    rec["t_s"],
+                    rec.get("pos_horiz_accuracy"),
+                    rec.get("pos_horiz_ratio"),
+                    rec.get("vel_ratio"),
+                )
+            i += 1
+        out.append(engine.report(next_report_s))
+        next_report_s += step_s
+    return out

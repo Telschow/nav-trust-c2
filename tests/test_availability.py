@@ -118,3 +118,16 @@ def test_inputs_must_be_in_time_order() -> None:
 def test_config_is_validated() -> None:
     with pytest.raises(ValueError):
         AvailabilityConfig(stale_after_s=0)
+
+
+def test_recovering_flag_marks_the_hold_after_the_fix_returns() -> None:
+    d = make()
+    d.update_fix(0.0, "NO_GPS")
+    d.update_estimator(0.0, 0.5)
+    assert not d.report(0.0).recovering
+    d.update_fix(10.0, "FIX_3D")
+    d.update_estimator(10.0, 0.2)
+    assert d.report(10.0).recovering and d.report(10.0).status is Availability.LOST
+    d.update_estimator(12.0, 0.2)
+    out = d.report(12.0)
+    assert out.status is Availability.OK and not out.recovering
