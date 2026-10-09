@@ -38,3 +38,9 @@ def test_header_with_zone_and_default_output_path() -> None:
     header = build_header(args)
     assert header["zone"] == {"west": 400.0, "south": -50.0, "east": 440.0, "north": 300.0}
     assert header["failure_mode"] == "off"
+
+
+def test_max_duration_defaults_to_unbounded_and_is_in_header() -> None:
+    assert build_header(parse_args(["--scenario", "n"]))["max_duration_s"] is None
+    args = parse_args(["--scenario", "s", "--max-duration", "240"])
+    assert build_header(args)["max_duration_s"] == 240.0
