@@ -27,7 +27,7 @@ PX4's own GPS failure model). Nothing in it says anything about real receivers o
 | M-01 | Time to detect | median under 3 s | partial | Median 1.25 s over all 23 fault runs, but it hides a split: GNSS off 1.2 s (12 runs), wrong fix 0.4 s (4 runs), **frozen position 3.5 s (7 runs, range 3.0 to 4.5 s), above the target** |
 | M-02 | False alert rate | 0 in N nominal runs | met | 0 in 9 nominal runs. Across all 32 runs there was one false episode in 1.73 flight hours, caused by a stall of the whole simulation (held-out report) |
 | M-03 | Misleading-trust epochs | under 1% | met | 0.00% (development) and 0.28% (held-out) with the calibrated bound. With the old bound most GREEN reports were misleading |
-| M-04 | Mission completion | at least 90% in a single-vehicle-loss scenario | gap | Not measured. It needs a fleet scenario with an approved re-task and sector-completion tracking, which does not exist yet |
+| M-04 | Mission completion | at least 90% in a single-vehicle-loss scenario | partial | Area covered is measured per run from ground truth (`eval/coverage.py`): 100% in nominal and short-outage runs, 26% after a long outage, 40 to 64% after a frozen position. The fleet figure, after an approved re-task by the other vehicles, still needs a three-vehicle recording with an operator decision |
 | M-05 | Operator workload proxy | alerts plus approvals per 10 minutes | partial | Interruptions per run are measured (1 for a long outage or a frozen position, 0 otherwise). Per 10 minutes is not computed, and no approvals are simulated |
 | M-06 | Time to decision | report | gap | Pending the usability sessions (issue 16). The extractor `eval/usability.py` exists |
 
