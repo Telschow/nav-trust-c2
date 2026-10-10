@@ -14,7 +14,7 @@ const rec: Recommendation = {
   command: "HOLD", sector_moves: [{ sector_id: "S2", to_vehicle: "uav3" }], rationale: "x",
 };
 
-describe("RecommendationCard", () => {
+describe("RecommendationCard (C2-03: every alert shows a reason an operator can act on)", () => {
   it("states what approving will do, the reason and the time left", () => {
     render(<RecommendationCard rec={rec} now={130} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
     expect(screen.getByText("Hold uav2 in place")).toBeTruthy();

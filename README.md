@@ -50,9 +50,10 @@ coloured by the vehicle that owns them, and a decision queue where each recommen
 exactly what approving will do and counts down to its expiry.
 
 The screenshot is a **live run** of three simulated PX4 vehicles: a frozen-GPS-position fault was
-injected on uav2, its trust turned RED, and the console recommends holding it and moving its
-sector. Approving in the console sent the commands to the vehicles (uav2 went to HOLD, uav3 got
-the extra sector).
+injected on uav2, its trust turned RED, and the console recommends landing it and moving its sector
+to uav3. Nothing has been sent yet: the decision waits for the operator. The healthy vehicles show
+"within 3 m" (a bound that held in 99% of reports, measured against simulator ground truth) and
+how much margin they have before an alert.
 
 Try it without the simulator: `make demo`, then open http://127.0.0.1:8000. That replays
 **recorded** trust data with **synthetic** positions, and the console says `REPLAY DEMO` in the
@@ -69,7 +70,10 @@ re-records them (simulator needed, about 1.5 hours) and `make eval` regenerates 
 
 ## How this was built
 
-_To be written by the maintainer: which parts were written by hand and which with AI assistance._
+An AI coding agent (Claude Code, model Claude Sonnet 5.5) wrote the code, tests and first drafts of
+the documents; the maintainer made every decision and merged every pull request. The full account,
+including the decisions and a public list of the mistakes found along the way, is in
+[docs/how-this-was-built.md](docs/how-this-was-built.md). `[maintainer: put this in your own words]`
 
 ## Layout
 
