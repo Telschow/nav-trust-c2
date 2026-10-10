@@ -1,0 +1,10 @@
+name: nominal_fast
+class: nominal
+description: >
+  The survey flown with no fault at 12 m/s and 40 m, faster and higher than the development
+  scenarios (10 m/s, 30 m).
+expected_px4: >
+  The mission completes, the vehicle returns and lands.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 40, speed_m_s: 12}
+runs: 3
+max_duration_s: 400

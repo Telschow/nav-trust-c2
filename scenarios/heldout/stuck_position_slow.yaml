@@ -1,0 +1,14 @@
+name: stuck_position_slow
+class: stuck_position
+description: >
+  The same frozen-position fault at 5 m/s and 20 m. The position error grows more slowly than at
+  survey speed, so this is the case most likely to be detected late.
+expected_px4: >
+  No failsafe fires; the vehicle drifts and accelerates away from its route.
+survey: {width_m: 300, height_m: 100, spacing_m: 100, altitude_m: 20, speed_m_s: 5}
+fault:
+  mode: stuck
+  zone: {west: 80, south: -50, east: 140, north: 150}
+  latch: true
+runs: 2
+max_duration_s: 250
