@@ -116,6 +116,7 @@ def test_websocket_sends_state_then_live_events(client: tuple[TestClient, Clock]
     with c.websocket_connect("/ws") as ws:
         first: dict[str, Any] = ws.receive_json()
         assert first["type"] == "state" and "uav1" in first["data"]["vehicles"]
+        assert first["server_s"] == 100.0  # the console needs it to start its clock
         c.post("/navtrust", json=NAVTRUST)
         event = ws.receive_json()
         assert (event["type"], event["data"]) == ("navtrust", NAVTRUST)

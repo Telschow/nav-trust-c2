@@ -20,7 +20,7 @@ from typing import Any
 from mavsdk_grpc import System
 
 from navtrust.recording import SCHEMA
-from sim.fly_survey import DEFAULT_ADDRESS, JsonlLog, fly
+from sim.fly_survey import DEFAULT_ADDRESS, JsonlLog, VehicleDisarmed, fly
 from sim.gnss_injector import MODES, ensure_enabled, inject_loop, log_gps_info
 from sim.ground_truth import gz_available, log_ground_truth
 from sim.interference import rectangle
@@ -171,6 +171,9 @@ async def run(args: argparse.Namespace) -> Path:
                 ),
                 timeout=args.max_duration,
             )
+        except VehicleDisarmed:
+            # e.g. a long GNSS outage makes PX4 land the vehicle itself: an expected ending
+            log.write("recording_stopped", reason="disarmed")
         except TimeoutError:
             # Fault runs can stall for good (e.g. a frozen position never reaches the next
             # waypoint). Say so in the file instead of leaving a silent truncation.

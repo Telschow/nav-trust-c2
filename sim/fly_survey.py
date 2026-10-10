@@ -115,12 +115,16 @@ async def _wait_for_health(drone: System) -> None:
             return
 
 
+class VehicleDisarmed(RuntimeError):
+    """The vehicle disarmed before its mission finished, e.g. a PX4 failsafe landing."""
+
+
 async def _wait_for_finish(drone: System) -> None:
     """Return when the mission finished; raise if the vehicle disarms first (e.g. a PX4
     failsafe landing), which would otherwise leave this waiting forever."""
     while not await drone.mission.is_mission_finished():
         if not await anext(aiter(drone.telemetry.armed())):
-            raise RuntimeError("vehicle disarmed before the mission finished")
+            raise VehicleDisarmed("vehicle disarmed before the mission finished")
         await asyncio.sleep(1.0)
 
 
