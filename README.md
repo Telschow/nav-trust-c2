@@ -40,6 +40,25 @@ make sim-down
 Caveat: the Docker image and the survey flight were written against the PX4 v1.17.0 sources but
 have not yet been run end to end. M0 is not done until they have.
 
+## Operator console
+
+![Operator console at 1080p, live run: uav2 lost trust, decision waiting](docs/screenshots/console-1080p.jpg)
+
+A dark operations-room console: a card per vehicle (trust state, plain-language reason, position
+bound, time in state, assigned sectors, a two-minute trust strip), a map with the survey sectors
+coloured by the vehicle that owns them, and a decision queue where each recommendation lists
+exactly what approving will do and counts down to its expiry.
+
+The screenshot is a **live run** of three simulated PX4 vehicles: a frozen-GPS-position fault was
+injected on uav2, its trust turned RED, and the console recommends holding it and moving its
+sector. Approving in the console sent the commands to the vehicles (uav2 went to HOLD, uav3 got
+the extra sector).
+
+Try it without the simulator: `make demo`, then open http://127.0.0.1:8000. That replays
+**recorded** trust data with **synthetic** positions, and the console says `REPLAY DEMO` in the
+header whenever the data is not live. Map tiles are OpenStreetMap (internet needed; attribution
+is shown on the map).
+
 ## How this was built
 
 _To be written by the maintainer: which parts were written by hand and which with AI assistance._
