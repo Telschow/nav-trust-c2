@@ -18,6 +18,7 @@ NAVTRUST = {
     "reason": "GNSS_LOSS",
     "horizontal_bound_m": None,
     "confidence": 0.0,
+    "headroom": 0.0,
 }
 REC = {
     "id": "r1",
@@ -142,6 +143,13 @@ def test_positions_and_origin_reach_state_and_websocket(client: tuple[TestClient
     assert state["positions"]["uav1"]["alt_m"] == 30.0
     assert state["origin"] == {"lat_deg": 47.39, "lon_deg": 8.54} and state["server_s"] == 100.0
     assert c.get("/fleet").json()["origin"]["lon_deg"] == 8.54
+
+
+def test_calibration_is_served_with_its_provenance(client: tuple[TestClient, Clock]) -> None:
+    c, _ = client
+    body = c.get("/calibration").json()
+    assert body["bound_m"] == 3.0 and body["coverage"] == 0.99
+    assert body["development_reports"] > 0 and "Gazebo" in body["source"]
 
 
 def test_bad_positions_are_422(client: tuple[TestClient, Clock]) -> None:

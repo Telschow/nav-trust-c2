@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { RecommendationCard } from "./RecommendationCard";
 import { StateChip } from "./StateChip";
+import { VehicleCard } from "./VehicleCard";
 import type { Recommendation } from "../types";
 
 afterEach(cleanup);
@@ -74,5 +75,35 @@ describe("StateChip", () => {
     );
     const text = container.textContent ?? "";
     for (const w of ["Trusted", "Degraded", "Not trusted", "GREEN", "AMBER", "RED"]) expect(text).toContain(w);
+  });
+});
+
+describe("VehicleCard", () => {
+  const green = {
+    vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
+    horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
+  };
+  const props = { vehicleId: "uav1", since: 0, now: 10, sectors: [], history: [], calibration: null, onFocus: vi.fn() };
+
+  it("shows the calibrated bound with its coverage, and the margin to alert", () => {
+    render(<VehicleCard {...props} trust={green} />);
+    expect(screen.getByText("within 3 m")).toBeTruthy();
+    expect(screen.getByText("99% of reports")).toBeTruthy();
+    expect(screen.getByText(/Comfortable \(90%\)/)).toBeTruthy();
+    expect((screen.getByRole("meter") as HTMLElement).getAttribute("aria-valuenow")).toBe("90");
+  });
+
+  it("warns in words when the margin is nearly gone", () => {
+    render(<VehicleCard {...props} trust={{ ...green, headroom: 0.1 }} />);
+    expect(screen.getByText(/Close to an alert \(10%\)/)).toBeTruthy();
+  });
+
+  it("claims no bound and no margin outside GREEN", () => {
+    const red = { ...green, state: "RED" as const, reason: "STALE" as const, horizontal_bound_m: null, confidence: 0, headroom: 0 };
+    render(<VehicleCard {...props} trust={red} />);
+    expect(screen.getByText("unknown")).toBeTruthy();
+    expect(screen.getByText(/none, already flagged/)).toBeTruthy();
+    expect(screen.queryByRole("meter")).toBeNull();
+    expect(screen.queryByText(/of reports/)).toBeNull();
   });
 });
