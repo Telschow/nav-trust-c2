@@ -60,8 +60,13 @@ console-dev:
 	cd console && npm run dev
 
 # The demo feed replays recorded trust data with synthetic positions; the console labels it so.
-demo: console
-	python -m c2.server --db logs/audit-demo.sqlite & SERVER=$$!; trap "kill $$SERVER" EXIT INT TERM; \
+demo: console demo-run
+
+# Same without rebuilding the console. One database per session: make demo-run DEMO_DB=logs/usability/P1.sqlite
+DEMO_DB ?= logs/audit-demo.sqlite
+demo-run:
+	mkdir -p $(dir $(DEMO_DB))
+	python -m c2.server --db $(DEMO_DB) --source "REPLAY DEMO" & SERVER=$$!; trap "kill $$SERVER" EXIT INT TERM; \
 	sleep 3; python -m sim.demo_feed --speed 5
 
 scenario:
