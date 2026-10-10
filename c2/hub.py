@@ -104,6 +104,9 @@ class Hub:
         self._positions[vehicle_id] = pos
         self._publish({"type": "position", "data": {"vehicle_id": vehicle_id, **pos}})
 
+    def latest_trust(self, vehicle_id: str) -> NavTrust | None:
+        return self._trust.get(vehicle_id)
+
     def set_origin(self, lat_deg: float, lon_deg: float) -> None:
         """Geographic position of the area origin (south-west corner of the sector grid)."""
         if not (-90 <= lat_deg <= 90 and -180 <= lon_deg <= 180):
