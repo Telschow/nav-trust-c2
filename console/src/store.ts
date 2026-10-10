@@ -1,4 +1,4 @@
-import { actionsOf, reasonText, titleOf } from "./language";
+import { actionsOf, reasonText, titleOf, urgencyRank } from "./language";
 import type {
   Decision,
   Fleet,
@@ -178,11 +178,11 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
   }
 }
 
-/** Recommendations still waiting for an answer, oldest first. */
+/** Recommendations still waiting for an answer: most urgent first, then oldest first. */
 export function openRecommendations(s: ConsoleState): Recommendation[] {
   return Object.values(s.recommendations)
     .filter((r) => !s.decisions[r.id])
-    .sort((a, b) => a.created_s - b.created_s);
+    .sort((a, b) => urgencyRank(a) - urgencyRank(b) || a.created_s - b.created_s);
 }
 
 /** Decided recommendations, newest decision first. */

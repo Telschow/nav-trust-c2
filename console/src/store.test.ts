@@ -112,3 +112,23 @@ describe("urgency", () => {
     expect(urgencyNote({ ...rec, command: "LAND", reason: "GNSS_LOSS" })).toBeNull();
   });
 });
+
+describe("queue order", () => {
+  const routine: Recommendation = { ...rec, id: "routine", vehicle_id: "uav3", reason: "GNSS_LOSS", command: null, created_s: 100 };
+  const urgent: Recommendation = { ...rec, id: "urgent", command: "LAND", created_s: 110 };
+  const commanded: Recommendation = { ...rec, id: "rtl", command: "RTL", reason: "GNSS_LOSS", created_s: 105 };
+
+  it("puts the urgent card first even though it arrived last", () => {
+    let s = apply(initialState, ev({ type: "recommendation", data: routine }));
+    s = apply(s, ev({ type: "recommendation", data: urgent }));
+    expect(openRecommendations(s).map((r) => r.id)).toEqual(["urgent", "routine"]);
+  });
+
+  it("orders urgent, then commanded, then re-task only, each oldest first", () => {
+    let s = initialState;
+    for (const r of [routine, commanded, urgent, { ...routine, id: "routine2", created_s: 120 }]) {
+      s = apply(s, ev({ type: "recommendation", data: r }));
+    }
+    expect(openRecommendations(s).map((r) => r.id)).toEqual(["urgent", "rtl", "routine", "routine2"]);
+  });
+});
