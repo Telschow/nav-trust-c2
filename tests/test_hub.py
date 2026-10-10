@@ -153,3 +153,13 @@ def test_a_recommendation_needs_something_to_do_and_a_valid_window() -> None:
         Recommendation("r", "u", 1.0, 2.0, ReasonCode.STALE, None, (), "x")
     with pytest.raises(ValueError):
         Recommendation("r", "u", 5.0, 5.0, ReasonCode.STALE, Command.HOLD, (), "x")
+
+
+def test_trust_messages_close_recommendations_that_expired_unanswered() -> None:
+    hub, audit, clock, events = make()
+    hub.add_recommendation(rec(expires=130.0))
+    clock.t = 131.0
+    hub.ingest_navtrust(trust())  # no decide(), no state(): only trust arriving
+    [decision] = audit.events("decision")
+    assert (decision.payload["outcome"], decision.payload["operator"]) == ("EXPIRED", "system")
+    assert [e["type"] for e in events][-2:] == ["decision", "navtrust"]
