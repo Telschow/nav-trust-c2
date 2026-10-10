@@ -22,6 +22,7 @@ from mavsdk_grpc import System
 from navtrust.recording import SCHEMA
 from sim.fly_survey import DEFAULT_ADDRESS, JsonlLog, fly
 from sim.gnss_injector import MODES, ensure_enabled, inject_loop, log_gps_info
+from sim.ground_truth import gz_available, log_ground_truth
 from sim.interference import rectangle
 from sim.survey import GeoPoint
 
@@ -45,6 +46,26 @@ def parse_estimator_status(fields_json: str) -> dict[str, Any]:
 async def log_estimator_status(drone: System, log: JsonlLog) -> None:
     async for msg in drone.mavlink_direct.message("ESTIMATOR_STATUS"):
         log.write("estimator_status", **parse_estimator_status(msg.fields_json))
+
+
+async def operator_action_after_fault(
+    drone: System, log: JsonlLog, entered: asyncio.Event, action: str, delay_s: float
+) -> None:
+    """Simulate the operator: send `action` delay_s after the GNSS fault begins.
+
+    Used to measure what an action really does to a faulted vehicle; it bypasses the console
+    and the gate on purpose, so it is only for recorded experiments."""
+    await entered.wait()
+    await asyncio.sleep(delay_s)
+    log.write("operator_action", action=action)
+    if action == "hold":
+        await drone.action.hold()
+    elif action == "rtl":
+        await drone.action.return_to_launch()
+    elif action == "land":
+        await drone.action.land()
+    else:  # pragma: no cover - argparse restricts the choices
+        raise ValueError(action)
 
 
 def px4_commit() -> str | None:
@@ -82,6 +103,13 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
         "failure_mode": args.mode if zone else None,
         "position_interval_s": args.position_interval,
         "max_duration_s": args.max_duration,
+        "ground_truth": args.ground_truth,
+        "latch_fault": args.latch_fault,
+        "operator_action": (
+            {"action": args.operator_action, "delay_s": args.operator_delay}
+            if args.operator_action
+            else None
+        ),
     }
 
 
@@ -99,11 +127,32 @@ async def run(args: argparse.Namespace) -> Path:
                 asyncio.create_task(log_gps_info(drone, log)),
                 asyncio.create_task(log_estimator_status(drone, log)),
             ]
+            if args.ground_truth:
+                tasks.append(asyncio.create_task(log_ground_truth(log, ["uav1"])))
+            entered = asyncio.Event()
+            if args.operator_action:
+                tasks.append(
+                    asyncio.create_task(
+                        operator_action_after_fault(
+                            drone, log, entered, args.operator_action, args.operator_delay
+                        )
+                    )
+                )
             if args.zone:
                 polygon = rectangle(*args.zone)
                 log.write("zone", polygon=[[p.east_m, p.north_m] for p in polygon])
                 tasks.append(
-                    asyncio.create_task(inject_loop(drone, origin, polygon, MODES[args.mode], log))
+                    asyncio.create_task(
+                        inject_loop(
+                            drone,
+                            origin,
+                            polygon,
+                            MODES[args.mode],
+                            log,
+                            lambda a: entered.set() if a == "enter" else None,
+                            args.latch_fault,
+                        )
+                    )
                 )
             return tasks
 
@@ -156,7 +205,24 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="stop recording after this many seconds and write a recording_stopped event",
     )
     p.add_argument("--position-interval", type=float, default=0.5, help="seconds between samples")
+    p.add_argument(
+        "--operator-action",
+        choices=["hold", "rtl", "land"],
+        help="experiment: send this command --operator-delay seconds after the fault begins",
+    )
+    p.add_argument("--operator-delay", type=float, default=15.0)
+    p.add_argument(
+        "--latch-fault",
+        action="store_true",
+        help="once the fault starts it never clears, even if the vehicle leaves the zone",
+    )
+    p.add_argument(
+        "--no-ground-truth",
+        action="store_true",
+        help="do not record Gazebo's true position (it is recorded when `gz` is available)",
+    )
     args = p.parse_args(argv)
+    args.ground_truth = gz_available() and not args.no_ground_truth
     args.out = args.out or f"tests/replay/data/{args.scenario}.jsonl"
     return args
 

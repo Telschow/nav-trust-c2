@@ -1,19 +1,21 @@
-"""Rule-based recommender (C2-02). Rules follow ADR 0002:
+"""Rule-based recommender (C2-02). Rules follow ADR 0002, amended by ADR 0003:
 
     AMBER                                  nothing (the operator is informed by the trust state)
     RED, GNSS_LOSS or STALE                re-task the vehicle's unfinished sectors; no vehicle
                                            command (PX4's failsafe is acting or the data is gone)
-    RED, INCONSISTENT_INNOVATION           HOLD, plus re-task its unfinished sectors
+    RED, INCONSISTENT_INNOVATION           LAND, plus re-task its unfinished sectors
 
-For INCONSISTENT_INNOVATION the rule picks HOLD, not RTL. That is an assumption, not a
-measurement: return-to-launch navigates by the position estimate, which is the thing that is
-suspect, and in the recorded stuck-position run the vehicle stalled in place. The ADR left
-"HOLD or RTL" open.
+LAND, not HOLD or RTL, for INCONSISTENT_INNOVATION. In simulation with ground truth a vehicle
+whose GPS position is frozen does not stall: it keeps flying away, accelerating (about 5.3 to
+5.9 km off in 150 s in two runs) and no PX4 failsafe fires. In single clean runs only LAND ended
+the flight in a controlled stop; HOLD and RTL ended in fast, uncontrolled descents hundreds of
+metres from where the vehicle believed it was (tests/replay/test_stuck_action_evidence.py).
 
 Only GREEN vehicles may take over work. If there is none, there is nothing to recommend for a
 GNSS_LOSS/STALE vehicle (a recommendation needs a command or a move); the alert itself still
-shows. One recommendation per vehicle and reason per RED episode; it can be issued again after
-the vehicle has been GREEN.
+shows. One recommendation per vehicle and reason per RED episode, but it is issued again if it
+expires unanswered while the vehicle is still RED (`on_decision`), because a runaway vehicle
+must not be left without an open recommendation. A denied one is not repeated.
 
 Pure Python. All thresholds are proposals.
 """
@@ -25,7 +27,7 @@ from dataclasses import dataclass
 
 from c2.allocator import reassign
 from c2.fleet import FleetState
-from c2.messages import Command, Recommendation, SectorMove
+from c2.messages import Command, Decision, Outcome, Recommendation, SectorMove
 from navtrust.types import NavTrust, ReasonCode, TrustState
 
 
@@ -62,10 +64,16 @@ class Recommender:
             self._issued[msg.vehicle_id] = msg.reason
         return [rec] if rec is not None else []
 
+    def on_decision(self, decision: Decision, vehicle_id: str) -> None:
+        """Tell the recommender how a recommendation ended. An expired one is allowed to be
+        issued again if the vehicle is still RED; an answered one is not repeated."""
+        if decision.outcome is Outcome.EXPIRED:
+            self._issued.pop(vehicle_id, None)
+
     def _build(self, msg: NavTrust, fleet: FleetState) -> Recommendation | None:
         vehicle = msg.vehicle_id
         assert msg.reason is not None
-        command = Command.HOLD if msg.reason is ReasonCode.INCONSISTENT_INNOVATION else None
+        command = Command.LAND if msg.reason is ReasonCode.INCONSISTENT_INNOVATION else None
         moves = self._moves(vehicle, fleet)
         if command is None and not moves:
             return None

@@ -28,6 +28,7 @@ from c2.hub import (
     UnknownRecommendation,
 )
 from c2.messages import (
+    Decision,
     Outcome,
     decision_to_dict,
     navtrust_from_dict,
@@ -54,6 +55,26 @@ def create_app(
 ) -> FastAPI:
     """recommender needs fleet; gate (command execution) needs an approved decision."""
     app = FastAPI(title="nav-trust-c2 backend")
+
+    if recommender is not None:
+
+        def tell_recommender(event: dict[str, Any]) -> None:
+            if event["type"] != "decision":
+                return
+            data = event["data"]
+            rec = hub.recommendation(data["recommendation_id"])
+            if rec is not None:
+                recommender.on_decision(
+                    Decision(
+                        data["recommendation_id"],
+                        Outcome(data["outcome"]),
+                        data["decided_s"],
+                        data["operator"],
+                    ),
+                    rec.vehicle_id,
+                )
+
+        hub.subscribe(tell_recommender)
 
     def bad_request(err: Exception) -> HTTPException:
         return HTTPException(status_code=422, detail=f"{type(err).__name__}: {err}")

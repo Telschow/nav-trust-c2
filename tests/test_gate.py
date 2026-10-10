@@ -31,6 +31,9 @@ class FakeExecutor:
     async def return_to_launch(self, vehicle_id: str) -> None:
         self._do(f"rtl {vehicle_id}")
 
+    async def land(self, vehicle_id: str) -> None:
+        self._do(f"land {vehicle_id}")
+
     async def retask(self, assignment: Assignment, vehicles: list[str]) -> None:
         self._do(
             f"retask {vehicles} " + str({v: [s.id for s in sec] for v, sec in assignment.items()})
@@ -151,7 +154,7 @@ def test_invalid_sector_moves_change_nothing() -> None:
 
 def test_only_the_gate_issues_vehicle_commands_in_c2() -> None:
     """Architecture check for C2-01: no module in c2/ except gate.py calls an executor method."""
-    forbidden = {"hold", "return_to_launch", "retask"}
+    forbidden = {"hold", "return_to_launch", "land", "retask"}
     offenders = []
     for path in sorted(Path(__file__).parent.parent.joinpath("c2").glob("*.py")):
         if path.name == "gate.py":
@@ -164,3 +167,11 @@ def test_only_the_gate_issues_vehicle_commands_in_c2() -> None:
             ):
                 offenders.append(f"{path.name}:{node.lineno} .{node.func.attr}()")
     assert offenders == []
+
+
+def test_land_is_executed_as_land() -> None:
+    hub, _, gate, ex, _ = setup()
+    hub.add_recommendation(rec(command=Command.LAND, moves=False))
+    hub.decide("r1", Outcome.APPROVED, "daniel")
+    result = run(gate)
+    assert result.executed and result.actions == ["LAND uav2"] and ex.calls == ["land uav2"]

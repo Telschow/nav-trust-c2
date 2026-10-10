@@ -41,6 +41,9 @@ class MavsdkExecutor:
     async def return_to_launch(self, vehicle_id: str) -> None:
         await (await self._drone(vehicle_id)).action.return_to_launch()
 
+    async def land(self, vehicle_id: str) -> None:
+        await (await self._drone(vehicle_id)).action.land()
+
     async def retask(self, assignment: Assignment, vehicles: list[str]) -> None:
         for vehicle_id in vehicles:
             sectors = assignment.get(vehicle_id, [])
