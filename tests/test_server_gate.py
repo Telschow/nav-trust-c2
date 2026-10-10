@@ -121,7 +121,7 @@ def test_an_expired_recommendation_is_replaced_by_a_new_one_while_still_red(syst
     c.post("/navtrust", json=trust("uav2", "RED", "INCONSISTENT_INNOVATION"))
     [first] = open_ids(c)
     clock.t += 120.0
-    c.get("/state")  # the sweep marks it EXPIRED
+    # no GET /state here: in a real session nobody asks, trust messages are what arrive
     c.post("/navtrust", json=trust("uav2", "RED", "INCONSISTENT_INNOVATION"))
     [second] = open_ids(c)
     assert second != first and executor.log == []
