@@ -1,0 +1,14 @@
+name: stuck_position_fast
+class: stuck_position
+description: >
+  The receiver keeps a good fix but its position freezes (latched) from entering a 100 m zone,
+  at 12 m/s and 40 m. No operator action.
+expected_px4: >
+  No failsafe fires; the vehicle accelerates away from its route (ADR 0003).
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 40, speed_m_s: 12}
+fault:
+  mode: stuck
+  zone: {west: 250, south: -50, east: 350, north: 150}
+  latch: true
+runs: 2
+max_duration_s: 200

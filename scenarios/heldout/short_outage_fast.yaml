@@ -1,0 +1,13 @@
+name: short_outage_fast
+class: short_outage
+description: >
+  GNSS off inside a 50 m zone at 12 m/s (about 4 s per crossing), at a different place along the
+  route than in development, on both lanes.
+expected_px4: >
+  PX4 flies through on dead-reckoning; no failsafe; the mission completes.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 40, speed_m_s: 12}
+fault:
+  mode: "off"
+  zone: {west: 380, south: -50, east: 430, north: 150}
+runs: 3
+max_duration_s: 400

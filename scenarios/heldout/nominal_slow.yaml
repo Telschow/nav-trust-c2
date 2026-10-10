@@ -1,0 +1,10 @@
+name: nominal_slow
+class: nominal
+description: >
+  A shorter survey flown with no fault at 5 m/s and 20 m, slower and lower than the development
+  scenarios.
+expected_px4: >
+  The mission completes, the vehicle returns and lands.
+survey: {width_m: 300, height_m: 100, spacing_m: 100, altitude_m: 20, speed_m_s: 5}
+runs: 2
+max_duration_s: 500

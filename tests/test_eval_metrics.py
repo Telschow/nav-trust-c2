@@ -184,3 +184,17 @@ def test_a_gap_in_the_truth_is_not_bridged() -> None:
         {"t_s": 5.0, "event": "position", "lat_deg": LAT0, "lon_deg": LON0, "rel_alt_m": 30}
     )
     assert position_errors(Recording({"schema": 1}, sorted(records, key=lambda r: r["t_s"]))) == []
+
+
+def test_worst_state_and_time_to_red() -> None:
+    clean = run_metrics("r", build(), CFG)
+    assert clean.worst_state == "GREEN" and clean.red_after_fault_s is None
+    # fix lost for 12 s from 21 s: AMBER first, RED after the 5 s escalation
+    rec = build(fix_changes=[(21.0, "NO_GPS"), (33.0, "FIX_3D")], fault=(20.0, 33.0))
+    m = run_metrics("r", rec, CFG)
+    assert m.worst_state == "RED"
+    assert m.red_after_fault_s == pytest.approx(1.0 + 5.0, abs=1.0)
+    brief = run_metrics(
+        "r", build(fix_changes=[(21.0, "NO_GPS"), (24.0, "FIX_3D")], fault=(20.0, 24.0)), CFG
+    )
+    assert brief.worst_state == "AMBER" and brief.red_after_fault_s is None

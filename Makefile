@@ -77,3 +77,9 @@ record-all:
 
 eval:
 	python -m eval.evaluate
+
+record-heldout:
+	SCENARIO_DIR=scenarios/heldout OUT_DIR=eval/heldout/recordings sim/record_all.sh
+
+eval-heldout:
+	python -m eval.evaluate --heldout
