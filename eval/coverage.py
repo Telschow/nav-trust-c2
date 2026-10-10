@@ -12,6 +12,7 @@ covers the area exactly when every lane is flown. It is not a sensor model.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 from navtrust.recording import Recording
 
@@ -25,27 +26,47 @@ def _distance_to_segment(px: float, py: float, ax: float, ay: float, bx: float, 
     return math.hypot(px - (ax + f * dx), py - (ay + f * dy))
 
 
+def covered_fraction(
+    truth: list[dict[str, Any]],
+    rect: tuple[float, float, float, float],
+    half_width_m: float,
+    cell_m: float = 10.0,
+) -> float:
+    """Share of the rectangle (west, south, east, north) within half_width_m of the track.
+
+    truth: ground-truth events of one or several vehicles; each vehicle's track is joined only
+    between its own consecutive samples. Samples below AIRBORNE_ALT_M are ignored."""
+    west, south, east, north = rect
+    segments: list[tuple[float, float, float, float]] = []
+    by_vehicle: dict[str, list[dict[str, Any]]] = {}
+    for t in truth:
+        if t["alt_m"] >= AIRBORNE_ALT_M:
+            by_vehicle.setdefault(str(t.get("vehicle", "")), []).append(t)
+    for pts in by_vehicle.values():
+        segments += [
+            (a["east_m"], a["north_m"], b["east_m"], b["north_m"])
+            for a, b in zip(pts, pts[1:], strict=False)
+            if b["t_s"] - a["t_s"] < 5.0  # a gap this long is a gap in the data
+        ]
+    cols, rows = max(1, round((east - west) / cell_m)), max(1, round((north - south) / cell_m))
+    covered = 0
+    for i in range(cols):
+        for j in range(rows):
+            cx = west + (i + 0.5) * (east - west) / cols
+            cy = south + (j + 0.5) * (north - south) / rows
+            if any(_distance_to_segment(cx, cy, *s) <= half_width_m for s in segments):
+                covered += 1
+    return covered / (cols * rows)
+
+
 def area_coverage(
     rec: Recording, swath_half_width_m: float | None = None, cell_m: float = 10.0
 ) -> float | None:
     """Fraction of the survey rectangle covered, in [0, 1]; None without truth or a survey."""
-    header = rec.header
-    survey = header.get("survey")
+    survey = rec.header.get("survey")
     truth = [t for t in rec.of("truth") if t["alt_m"] >= AIRBORNE_ALT_M]
     if not survey or len(truth) < 2:
         return None
-    width, height = float(survey["width_m"]), float(survey["height_m"])
     half = swath_half_width_m if swath_half_width_m is not None else survey["spacing_m"] / 2
-    cols, rows = max(1, round(width / cell_m)), max(1, round(height / cell_m))
-    segments = [
-        (a["east_m"], a["north_m"], b["east_m"], b["north_m"])
-        for a, b in zip(truth, truth[1:], strict=False)
-        if b["t_s"] - a["t_s"] < 5.0  # a gap this long is a gap in the data, not a straight flight
-    ]
-    covered = 0
-    for i in range(cols):
-        for j in range(rows):
-            cx, cy = (i + 0.5) * width / cols, (j + 0.5) * height / rows
-            if any(_distance_to_segment(cx, cy, *s) <= half for s in segments):
-                covered += 1
-    return covered / (cols * rows)
+    rect = (0.0, 0.0, float(survey["width_m"]), float(survey["height_m"]))
+    return covered_fraction(truth, rect, half, cell_m)

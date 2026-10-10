@@ -1,9 +1,8 @@
 # Requirements and success metrics
 
-DRAFT written by Claude on 2026-10-10 at the maintainer's request, from the project spec
-(section 3 requirements, section 1.5 metrics) and the evidence in this repository. The maintainer
-owns it: edit the wording, the targets and the judgements. Targets are proposals from the spec, not
-results. Status is read from `trace.csv`, which a test checks against the files it cites.
+Written by Claude on 2026-10-10 at the maintainer's request, from the project spec
+(section 3 requirements, section 1.5 metrics) and the evidence in this repository. Targets are
+proposals from the spec, not results. Status is read from `trace.csv`, which a test checks against the files it cites.
 
 Everything here was measured in simulation (PX4 SITL in Gazebo, one vehicle model, 5 to 12 m/s,
 PX4's own GPS failure model). Nothing in it says anything about real receivers or real interference.
@@ -27,7 +26,7 @@ PX4's own GPS failure model). Nothing in it says anything about real receivers o
 | M-01 | Time to detect | median under 3 s | partial | Median 1.25 s over all 23 fault runs, but it hides a split: GNSS off 1.2 s (12 runs), wrong fix 0.4 s (4 runs), **frozen position 3.5 s (7 runs, range 3.0 to 4.5 s), above the target** |
 | M-02 | False alert rate | 0 in N nominal runs | met | 0 in 9 nominal runs. Across all 32 runs there was one false episode in 1.73 flight hours, caused by a stall of the whole simulation (held-out report) |
 | M-03 | Misleading-trust epochs | under 1% | met | 0.00% (development) and 0.28% (held-out) with the calibrated bound. With the old bound most GREEN reports were misleading |
-| M-04 | Mission completion | at least 90% in a single-vehicle-loss scenario | partial | Area covered is measured per run from ground truth (`eval/coverage.py`): 100% in nominal and short-outage runs, 26% after a long outage, 40 to 64% after a frozen position. The fleet figure, after an approved re-task by the other vehicles, still needs a three-vehicle recording with an operator decision |
+| M-04 | Mission completion | at least 90% in a single-vehicle-loss scenario | met | Simulation, three vehicles, one lost (a long GNSS outage that makes PX4 land it), scripted operator approving after 15 s: 100% of the area covered in 3 of 3 runs. With the operator denying: 87% in 3 of 3 runs (the lost vehicle's sector 62%), so the re-task is what meets the target. One loss pattern, few runs, scripted operator (`eval/fleet/results.md`) |
 | M-05 | Operator workload proxy | alerts plus approvals per 10 minutes | partial | Interruptions per run are measured (1 for a long outage or a frozen position, 0 otherwise). Per 10 minutes is not computed, and no approvals are simulated |
 | M-06 | Time to decision | report | gap | Pending the usability sessions (issue 16). The extractor `eval/usability.py` exists |
 

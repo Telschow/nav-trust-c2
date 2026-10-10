@@ -1,0 +1,153 @@
+{
+  "target_proposal": 0.9,
+  "scenarios": {
+    "loss_approved": {
+      "operator": "approve",
+      "operator_delay_s": 15.0,
+      "runs": 3,
+      "area_covered_median": 0.9994,
+      "area_covered_min": 0.9989,
+      "lost_sector_covered_median": 1.0,
+      "meets_target": 3,
+      "runs_detail": [
+        {
+          "recording": "loss_approved-1",
+          "scenario": "loss_approved",
+          "swath_half_width_m": 25.0,
+          "operator": "approve",
+          "operator_delay_s": 15.0,
+          "lost_vehicle": "uav2",
+          "lost_sector": "S2",
+          "area_covered": 0.9994,
+          "sector_covered": {
+            "S1": 1.0,
+            "S2": 1.0,
+            "S3": 0.9983
+          },
+          "lost_sector_covered": 1.0,
+          "recommendations": 1,
+          "retask_executed": true,
+          "decision_to_retask_s": 2.3,
+          "alert_to_decision_s": 15.3,
+          "stopped": "all_landed"
+        },
+        {
+          "recording": "loss_approved-2",
+          "scenario": "loss_approved",
+          "swath_half_width_m": 25.0,
+          "operator": "approve",
+          "operator_delay_s": 15.0,
+          "lost_vehicle": "uav2",
+          "lost_sector": "S2",
+          "area_covered": 0.9989,
+          "sector_covered": {
+            "S1": 1.0,
+            "S2": 1.0,
+            "S3": 0.9967
+          },
+          "lost_sector_covered": 1.0,
+          "recommendations": 1,
+          "retask_executed": true,
+          "decision_to_retask_s": 4.7,
+          "alert_to_decision_s": 15.5,
+          "stopped": "all_landed"
+        },
+        {
+          "recording": "loss_approved-3",
+          "scenario": "loss_approved",
+          "swath_half_width_m": 25.0,
+          "operator": "approve",
+          "operator_delay_s": 15.0,
+          "lost_vehicle": "uav2",
+          "lost_sector": "S2",
+          "area_covered": 0.9994,
+          "sector_covered": {
+            "S1": 1.0,
+            "S2": 1.0,
+            "S3": 0.9983
+          },
+          "lost_sector_covered": 1.0,
+          "recommendations": 1,
+          "retask_executed": true,
+          "decision_to_retask_s": 2.7,
+          "alert_to_decision_s": 15.6,
+          "stopped": "all_landed"
+        }
+      ]
+    },
+    "loss_denied": {
+      "operator": "deny",
+      "operator_delay_s": 15.0,
+      "runs": 3,
+      "area_covered_median": 0.8739,
+      "area_covered_min": 0.8733,
+      "lost_sector_covered_median": 0.6233,
+      "meets_target": 0,
+      "runs_detail": [
+        {
+          "recording": "loss_denied-1",
+          "scenario": "loss_denied",
+          "swath_half_width_m": 25.0,
+          "operator": "deny",
+          "operator_delay_s": 15.0,
+          "lost_vehicle": "uav2",
+          "lost_sector": "S2",
+          "area_covered": 0.8739,
+          "sector_covered": {
+            "S1": 1.0,
+            "S2": 0.6233,
+            "S3": 0.9983
+          },
+          "lost_sector_covered": 0.6233,
+          "recommendations": 1,
+          "retask_executed": false,
+          "decision_to_retask_s": null,
+          "alert_to_decision_s": 15.2,
+          "stopped": "all_landed"
+        },
+        {
+          "recording": "loss_denied-2",
+          "scenario": "loss_denied",
+          "swath_half_width_m": 25.0,
+          "operator": "deny",
+          "operator_delay_s": 15.0,
+          "lost_vehicle": "uav2",
+          "lost_sector": "S2",
+          "area_covered": 0.8739,
+          "sector_covered": {
+            "S1": 1.0,
+            "S2": 0.6217,
+            "S3": 1.0
+          },
+          "lost_sector_covered": 0.6217,
+          "recommendations": 1,
+          "retask_executed": false,
+          "decision_to_retask_s": null,
+          "alert_to_decision_s": 15.4,
+          "stopped": "all_landed"
+        },
+        {
+          "recording": "loss_denied-3",
+          "scenario": "loss_denied",
+          "swath_half_width_m": 25.0,
+          "operator": "deny",
+          "operator_delay_s": 15.0,
+          "lost_vehicle": "uav2",
+          "lost_sector": "S2",
+          "area_covered": 0.8733,
+          "sector_covered": {
+            "S1": 1.0,
+            "S2": 0.625,
+            "S3": 0.995
+          },
+          "lost_sector_covered": 0.625,
+          "recommendations": 1,
+          "retask_executed": false,
+          "decision_to_retask_s": null,
+          "alert_to_decision_s": 15.2,
+          "stopped": "all_landed"
+        }
+      ]
+    }
+  }
+}

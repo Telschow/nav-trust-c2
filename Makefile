@@ -84,3 +84,10 @@ record-heldout:
 
 eval-heldout:
 	python -m eval.evaluate --heldout
+
+# Fleet mission completion (M-04): three vehicles, one lost, scripted operator. About 80 minutes.
+record-fleet:
+	sim/record_fleet_all.sh
+
+eval-fleet:
+	python -m eval.fleet
