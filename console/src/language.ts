@@ -61,6 +61,12 @@ export const ERROR_TEXT: Record<number, string> = {
   422: "The backend rejected the decision.",
 };
 
+/** Lower comes first: a warning-level recommendation, then any with a vehicle command, then re-tasks. */
+export function urgencyRank(rec: Recommendation): number {
+  if (urgencyNote(rec) !== null) return 0;
+  return rec.command !== null ? 1 : 2;
+}
+
 /** Extra warning when waiting is itself dangerous. */
 export function urgencyNote(rec: Recommendation): string | null {
   if (rec.command === "LAND" && rec.reason === "INCONSISTENT_INNOVATION") {
