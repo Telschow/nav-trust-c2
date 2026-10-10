@@ -70,10 +70,8 @@ re-records them (simulator needed, about 1.5 hours) and `make eval` regenerates 
 
 ## How this was built
 
-An AI coding agent (Claude Code, model Claude Sonnet 5.5) wrote the code, tests and first drafts of
-the documents; the maintainer made every decision and merged every pull request. The full account,
-including the decisions and a public list of the mistakes found along the way, is in
-[docs/how-this-was-built.md](docs/how-this-was-built.md). `[maintainer: put this in your own words]`
+This project (including its code, tests and documentation) was supported by different local and cloud-hosted LLMs. Every design & architecture decision, the scope and goals of the project and its requirements and limitations was defined by me (aka the mantainer). You can find further information in 
+[docs/how-this-was-built.md](docs/how-this-was-built.md).
 
 ## Layout
 

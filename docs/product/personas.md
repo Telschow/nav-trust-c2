@@ -1,9 +1,6 @@
 # Personas
 
-DRAFT written by Claude on 2026-10-10 from the project spec (section 1.2), at the maintainer's
-request. These are **hypotheses**, not research: no operator has been interviewed. The usability
-sessions (issue 16) are the first contact with real people, and they will test the operator
-persona only. Rewrite anything that does not match what you believe about these people.
+These are **hypotheses**, not research: no operator has been interviewed. The usability sessions (issue 16) are the first contact with real people, and they will test the operator persona only. Rewrite anything that does not match what you believe about these people.
 
 ## 1. Operator (controls 3 to 5 vehicles)
 
@@ -26,7 +23,6 @@ persona only. Rewrite anything that does not match what you believe about these 
   degraded or not trusted) and a map with the survey sectors coloured by the vehicle that owns them.
 - **What it does not give them.** A coverage figure, or a mission-level risk view. Mission
   completion is not measured (`docs/product/requirements.md`, M-04). **Partly supported.**
-- `[you decide]` whether this persona stays in v1 or becomes a stated non-goal.
 
 ## 3. Maintainer and test engineer
 
