@@ -48,6 +48,18 @@ The `T+` clock in the header is the backend clock. When you write down a time du
 write what `T+` shows. Everything the system logs uses the same clock, so your notes line up with
 it exactly.
 
+Which scenario: the default (`stuck`) has one alert. Two others exist, added to the feed command:
+`--scenario outage` (drone `uav3` loses GNSS and is landed by PX4; the card offers only to move its
+sector, with no command) and `--scenario both` (the two together, so two cards are open at once).
+Use `stuck` for every participant unless you have a reason to compare; do not mix scenarios between
+participants and then compare their times. Note that the demo compresses time five-fold: in
+`outage` the drone is AMBER for only about a second before it turns RED, so a participant may never
+see AMBER.
+
+In `both`, the urgent card ("Land and re-task uav2", with the red warning) appears second, below
+the routine re-task, because the list is ordered oldest first. Watch which one the participant
+takes first and write it down; that ordering is a known open question, not something to hide.
+
 What will happen, so you are not surprised: once the feed starts, the three drones appear. About 15
 to 20 seconds later drone `uav2` turns "Not trusted" and a card appears on the right: "Land and
 re-task uav2", with a 60 second countdown. If nobody answers, it expires and the same
