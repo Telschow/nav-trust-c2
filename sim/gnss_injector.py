@@ -32,7 +32,12 @@ Inject = Callable[[FailureType], Awaitable[None]]
 class ZoneInjector:
     """Edge-triggered: injects once on entering the zone, clears once on leaving."""
 
-    def __init__(self, polygon: list[LocalPoint], mode: FailureType, inject: Inject) -> None:
+    def __init__(
+        self, polygon: list[LocalPoint], mode: FailureType, inject: Inject, latch: bool = False
+    ) -> None:
+        """latch: once the fault has started it never clears. Needed when the fault itself moves
+        the believed position (e.g. a frozen fix), which would otherwise clear it again."""
+        self._latch = latch
         self._polygon = polygon
         self._mode = mode
         self._inject = inject
@@ -45,6 +50,8 @@ class ZoneInjector:
         out) command is retried on the next position. A failure propagates to the caller.
         """
         now_inside = point_in_polygon(position, self._polygon)
+        if self._latch and self.inside:
+            return None
         if now_inside == self.inside:
             return None
         await self._inject(self._mode if now_inside else FailureType.OK)
@@ -73,13 +80,17 @@ async def inject_loop(
     polygon: list[LocalPoint],
     mode: FailureType,
     log: JsonlLog,
+    on_action: Callable[[str], None] | None = None,
+    latch: bool = False,
 ) -> None:
-    """Watch the vehicle position and inject/clear the GPS failure at the zone boundary."""
+    """Watch the vehicle position and inject/clear the GPS failure at the zone boundary.
+
+    on_action is called with "enter" or "exit" after each successful injection."""
 
     async def inject(failure_type: FailureType) -> None:
         await drone.failure.inject(FailureUnit.SENSOR_GPS, failure_type, 0)
 
-    injector = ZoneInjector(polygon, mode, inject)
+    injector = ZoneInjector(polygon, mode, inject, latch)
     last_error_log = float("-inf")
     async for pos in drone.telemetry.position():
         local = geo_to_local(origin, GeoPoint(pos.latitude_deg, pos.longitude_deg))
@@ -92,6 +103,8 @@ async def inject_loop(
                 log.write("inject_failed", error=str(err))
             continue
         if action:
+            if on_action is not None:
+                on_action(action)
             log.write(
                 f"gnss_{action}",
                 east_m=round(local.east_m, 1),

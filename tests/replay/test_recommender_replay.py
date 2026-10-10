@@ -36,11 +36,11 @@ def recommendations_for(name: str) -> tuple[list[tuple[float, Recommendation]], 
     return out, reports
 
 
-def test_stuck_position_gives_one_hold_and_retask_right_after_it_turns_red() -> None:
+def test_stuck_position_gives_one_land_and_retask_right_after_it_turns_red() -> None:
     recs, reports = recommendations_for("stuck_zone-1")
     assert len(recs) == 1
     t, rec = recs[0]
-    assert rec.command is Command.HOLD and rec.reason is ReasonCode.INCONSISTENT_INNOVATION
+    assert rec.command is Command.LAND and rec.reason is ReasonCode.INCONSISTENT_INNOVATION
     assert [m.sector_id for m in rec.sector_moves] == ["S1"]
     first_red = next(r.stamp_s for r in reports if r.state is TrustState.RED)
     assert t == first_red == rec.created_s
