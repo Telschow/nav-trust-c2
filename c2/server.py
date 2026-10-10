@@ -191,7 +191,12 @@ def create_app(
         queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         unsubscribe = hub.subscribe(queue.put_nowait)  # endpoints run on the event loop
         try:
-            await websocket.send_json({"type": "state", "data": hub.state()})
+            state = hub.state()
+            # server_s at the top level like every other message: the console derives its clock
+            # offset from it, and without it the header showed T+NaN:NaN until the first event
+            await websocket.send_json(
+                {"type": "state", "server_s": state["server_s"], "data": state}
+            )
             while True:
                 await websocket.send_json(await queue.get())
         except WebSocketDisconnect:
@@ -218,6 +223,10 @@ def main() -> None:
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--console", default="console/dist", help="built console to serve at /")
+    p.add_argument(
+        "--source",
+        help="label for where the data comes from, e.g. 'REPLAY DEMO' (default: live)",
+    )
     p.add_argument("--vehicles", type=int, default=3)
     p.add_argument("--width", type=float, default=1000.0)
     p.add_argument("--height", type=float, default=1000.0)
@@ -231,6 +240,8 @@ def main() -> None:
     start = time.monotonic()
     clock = lambda: time.monotonic() - start  # noqa: E731
     hub = Hub(AuditLog(args.db), clock)
+    if args.source:
+        hub.set_source(args.source)
     ids = [f"uav{i}" for i in range(1, args.vehicles + 1)]
     fleet = FleetState(
         assign(split_area(args.width, args.height, args.vehicles), ids),
