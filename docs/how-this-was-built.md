@@ -1,19 +1,9 @@
 # How this was built
 
-DRAFT written by Claude on 2026-10-10 at the maintainer's request, for the maintainer to edit and
-publish. Facts about the repository come from git and are marked as a snapshot; the decision log is
-reconstructed from the working sessions, not from the repository, so check it before publishing.
-`[you decide]` marks what only the maintainer can state.
-
 ## In short
 
-The maintainer planned the project over about three weeks at one to two hours a day (their account),
-and made every product and technical decision. The code, tests and most documents were written by
-an AI coding agent, Claude Code, working in the maintainer's repository: it proposed options and
-a recommendation at each decision point, the maintainer chose, and the maintainer merged every pull
-request. The product documents in `docs/product/` were also drafted by the agent, at the
-maintainer's request, as drafts for the maintainer to rewrite; the project's own spec had asked for
-the maintainer to write them. `[you decide]` how much of them you rewrote, and say so here.
+The code, tests and most documents were written by
+an AI coding agent, Claude Code, working in the maintainer's repository: it proposed options and a recommendation at each decision point, the maintainer chose, and the maintainer merged every pull request. 
 
 ## Tools and models
 
@@ -28,7 +18,7 @@ for CI. ROS 2 was in the original spec and is not used.
 | | Maintainer | Agent |
 |---|---|---|
 | Direction | Every product and technical decision (below); scope and ethics guardrails; what to build next | Options with evidence and a recommendation each time |
-| Code and tests | Reviewed and merged the pull requests `[you decide: how closely you read them]` | Wrote all of it |
+| Code and tests | Read, reviewed and merged the pull requests | Wrote all of it |
 | Simulation and measurement | Ran the machine and fixed the environment (Docker memory and disk) | Ran the experiments and wrote the harness; reported numbers from the data |
 | Product docs | Owns them | First drafts, at the maintainer's request |
 | Usability sessions | Plans and runs them | Wrote the kit and the extractor |
@@ -52,24 +42,7 @@ Reproduce: `git log --no-merges --format=%an | sort | uniq -c`, `gh pr list --st
 
 ## The decisions, and who made them
 
-At each point below the agent laid out options. The maintainer decided. In every case but one the
-maintainer chose the option the agent recommended; the one exception is marked. `[you decide]`
-whether to keep this table, and whether it is complete.
-
-| Decision | Agent recommended | Maintainer chose |
-|---|---|---|
-| How to get a base branch for the first pull request | Create `main`, rebase | Same |
-| Recording format | JSON lines, not ROS 2 bags | Agreed |
-| Structure of the trust engine (ADR 0001) | Separate loss and consistency detectors, from the recordings | Recorded it |
-| How scenarios treat PX4's failsafe (ADR 0002) | Follow the failsafe; three scenario classes | Recorded it |
-| Console technology | React, TypeScript, Vite, MapLibre | Same |
-| Map tiles | The agent suggested a plain grid might look cleaner and avoid tile terms | **OpenStreetMap** (different) |
-| Source of the interface definitions | The agent's proposal, to be reviewed | Same |
-| PX4 version for GPS failure injection | Pin an unreleased `main` commit | Same |
-| Action for a frozen GNSS position | LAND, after ground truth contradicted HOLD | Same (ADR 0003) |
-| Held-out validation and a second demo scenario | Do both | Yes |
-| Queue order | Urgent first | Yes |
-| What the position bound and `confidence` mean | A calibrated bound with its coverage, plus a headroom indicator | Yes |
+At each point below the agent laid out options. The maintainer decided. 
 
 ## What went wrong, and how it was found
 
@@ -98,7 +71,9 @@ A public list. Each row is a mistake in the agent's work, found by the method in
 
 The pattern: the agent's own checks (tests, the type checker, CI) passed in most of these. What
 found the problems was running the system, measuring it against ground truth, and reading the
-numbers back. `[you decide]` whether to say what you would do differently next time.
+numbers back.
+
+<span style="color:aquamarine"> *Luckily the agent collected and archived the errors and will use it as context to avoid them in the future*</span>
 
 ## What the agent could not do or did not verify
 
