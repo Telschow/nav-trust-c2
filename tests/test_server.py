@@ -117,9 +117,56 @@ def test_websocket_sends_state_then_live_events(client: tuple[TestClient, Clock]
         first: dict[str, Any] = ws.receive_json()
         assert first["type"] == "state" and "uav1" in first["data"]["vehicles"]
         c.post("/navtrust", json=NAVTRUST)
-        assert ws.receive_json() == {"type": "navtrust", "data": NAVTRUST}
+        event = ws.receive_json()
+        assert (event["type"], event["data"]) == ("navtrust", NAVTRUST)
+        assert event["server_s"] == 100.0  # the hub clock, for client-side countdowns
         c.post("/recommendations", json=REC)
         assert ws.receive_json()["type"] == "recommendation"
         c.post("/decisions", json={"recommendation_id": "r1", "outcome": "DENIED", "operator": "d"})
         ev = ws.receive_json()
         assert ev["type"] == "decision" and ev["data"]["outcome"] == "DENIED"
+
+
+def test_positions_and_origin_reach_state_and_websocket(client: tuple[TestClient, Clock]) -> None:
+    c, _ = client
+    with c.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        pos = {"vehicle_id": "uav1", "lat_deg": 47.4, "lon_deg": 8.55, "alt_m": 30.0}
+        assert c.post("/positions", json=pos).status_code == 204
+        event = ws.receive_json()
+        assert event["type"] == "position" and event["data"]["lat_deg"] == 47.4
+        assert c.post("/origin", json={"lat_deg": 47.39, "lon_deg": 8.54}).status_code == 204
+        assert ws.receive_json()["type"] == "origin"
+    state = c.get("/state").json()
+    assert state["positions"]["uav1"]["alt_m"] == 30.0
+    assert state["origin"] == {"lat_deg": 47.39, "lon_deg": 8.54} and state["server_s"] == 100.0
+    assert c.get("/fleet").json()["origin"]["lon_deg"] == 8.54
+
+
+def test_bad_positions_are_422(client: tuple[TestClient, Clock]) -> None:
+    c, _ = client
+    assert (
+        c.post(
+            "/positions", json={"vehicle_id": "u", "lat_deg": 95, "lon_deg": 0, "alt_m": 1}
+        ).status_code
+        == 422
+    )
+    assert c.post("/positions", json={"vehicle_id": "u"}).status_code == 422
+    assert c.post("/origin", json={"lat_deg": 0, "lon_deg": 200}).status_code == 422
+
+
+def test_console_is_served_without_shadowing_the_api(tmp_path) -> None:  # type: ignore[no-untyped-def]
+    (tmp_path / "index.html").write_text("<title>console</title>", encoding="utf-8")
+    c = TestClient(create_app(Hub(AuditLog(), Clock()), console_dir=tmp_path))
+    assert "console" in c.get("/").text
+    assert c.get("/state").json()["vehicles"] == {}
+
+
+def test_source_label_defaults_to_live_and_can_be_marked_as_a_replay(
+    client: tuple[TestClient, Clock],
+) -> None:
+    c, _ = client
+    assert c.get("/state").json()["source"] == "live"
+    assert c.post("/source", json={"label": "REPLAY DEMO"}).status_code == 204
+    assert c.get("/state").json()["source"] == "REPLAY DEMO"
+    assert c.post("/source", json={"label": "  "}).status_code == 422
