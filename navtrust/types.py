@@ -30,9 +30,12 @@ class NavTrust:
     reason: ReasonCode | None
     horizontal_bound_m: float
     confidence: float
+    headroom: float = 0.0  # 0 at an alert condition, 1 far from any; 0 outside GREEN
 
     def __post_init__(self) -> None:
         if self.horizontal_bound_m < 0:
             raise ValueError("horizontal_bound_m must be >= 0")
         if not 0.0 <= self.confidence <= 1.0:
             raise ValueError("confidence must be in [0, 1]")
+        if not 0.0 <= self.headroom <= 1.0:
+            raise ValueError("headroom must be in [0, 1]")

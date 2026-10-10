@@ -66,3 +66,19 @@ It has 18 runs and two to three per scenario, so it gives no rates. The false-al
 These recordings are no longer held out for this version of the engine: I have looked at them. Any
 later change to the engine changes its fingerprint, the CI check will fail until the results are
 regenerated, and a fair test of the changed engine needs a new set of runs under new conditions.
+
+## Addendum: engine files changed after this report (2026-10-10)
+
+After the report was written, the trust engine files changed: the position bound is now a bound
+calibrated against ground truth (3.0 m, claimed coverage 99%) instead of the estimator's own accuracy
+figure, `confidence` now means that coverage, and a `headroom` value was added. Detection logic was
+not touched. The engine fingerprint therefore differs from the one frozen in the protocol.
+
+Checked by comparing the regenerated `eval/results.json` and `eval/heldout/results.json` with the
+committed ones from before the change: of 335 development values and 457 held-out values, the only
+one that changed is the fingerprint; the additions are `green_reports`, `green_within_bound` and
+`bound_coverage`. So every state, time to detect, false alert and interruption above is unchanged.
+
+The held-out set was also used to *check* the new bound (not to choose it): see
+`navtrust/calibration.py` and `tests/test_calibration.py`. The bound was chosen on the development
+set; on the held-out set it held in 99.72% of 5,308 GREEN reports.

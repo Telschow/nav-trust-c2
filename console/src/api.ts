@@ -1,5 +1,5 @@
 import { ERROR_TEXT } from "./language";
-import type { Decision, Fleet, Outcome, ServerEvent } from "./types";
+import type { Calibration, Decision, Fleet, Outcome, ServerEvent } from "./types";
 
 export function wsUrl(): string {
   const proto = location.protocol === "https:" ? "wss" : "ws";
@@ -74,4 +74,10 @@ export async function postDecision(
   });
   if (!r.ok) throw new DecisionError(r.status, ERROR_TEXT[r.status] ?? `Request failed (${r.status}).`);
   return (await r.json()) as Decision;
+}
+
+export async function fetchCalibration(): Promise<Calibration> {
+  const r = await fetch("/calibration");
+  if (!r.ok) throw new Error(`calibration ${r.status}`);
+  return (await r.json()) as Calibration;
 }

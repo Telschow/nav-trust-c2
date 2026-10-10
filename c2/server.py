@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import time
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +39,7 @@ from c2.messages import (
     recommendation_to_dict,
 )
 from c2.recommender import Recommender
+from navtrust.calibration import GREEN_BOUND
 
 _STATUS = {
     UnknownRecommendation: 404,
@@ -165,6 +167,10 @@ def create_app(
                 for v, secs in sorted(fleet.assignment.items())
             },
         }
+
+    @app.get("/calibration")
+    async def get_calibration() -> dict[str, Any]:
+        return asdict(GREEN_BOUND)
 
     @app.get("/state")
     async def get_state() -> dict[str, Any]:

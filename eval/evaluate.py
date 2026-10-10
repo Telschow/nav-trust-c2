@@ -19,6 +19,7 @@ from typing import Any
 from eval.expectations import check
 from eval.freeze import engine_fingerprint
 from eval.metrics import EvalConfig, RunMetrics, as_dict, run_metrics
+from navtrust.calibration import GREEN_BOUND
 from navtrust.recording import load_recording
 from sim.scenario import Scenario, load_all
 
@@ -33,6 +34,10 @@ HELDOUT_OUT = "eval/heldout"
 
 def _r(x: float | None) -> float | None:
     return None if x is None else round(x, 3)
+
+
+def _r4(x: float) -> float:
+    return round(x, 4)
 
 
 def aggregate(scenario: Scenario, runs: list[RunMetrics]) -> dict[str, Any]:
@@ -55,6 +60,12 @@ def aggregate(scenario: Scenario, runs: list[RunMetrics]) -> dict[str, Any]:
         "false_alert_episodes": false_eps,
         "flight_hours": _r(hours),
         "false_alerts_per_hour": _r(false_eps / hours) if hours > 0 else None,
+        "green_reports": sum(m.green_reports for m in runs),
+        "bound_coverage": _r4(
+            sum(m.green_within_bound for m in runs) / sum(m.green_reports for m in runs)
+        )
+        if sum(m.green_reports for m in runs)
+        else None,
         "misleading_s_mean": _r(statistics.mean(mis)) if mis else None,
         "misleading_s_max": _r(max(mis)) if mis else None,
         "max_error_while_green_m": _r(max(greens)) if greens else None,
@@ -89,7 +100,13 @@ def evaluate(recordings: Path, scenarios: Path, cfg: EvalConfig) -> dict[str, An
     episodes_total = sum(
         d["aggregate"]["false_alert_episodes"] for d in result["scenarios"].values()
     )
+    reports_total = sum(d["aggregate"]["green_reports"] for d in result["scenarios"].values())
+    within_total = sum(
+        m["green_within_bound"] for d in result["scenarios"].values() for m in d["runs"]
+    )
     result["overall"] = {
+        "green_reports": reports_total,
+        "bound_coverage": _r4(within_total / reports_total) if reports_total else None,
         "flight_hours": _r(hours),
         "false_alert_episodes": episodes_total,
         # with no events at all, the 95% upper bound on a Poisson rate is about 3 / exposure
@@ -121,8 +138,9 @@ def render_markdown(
         "",
         "| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour |"
         f" GREEN while more than {cfg['misleading_error_m']:g} m off, s (mean, max) |"
-        " Error at alert, m (median, max) | Missions finished | Interruptions per run |",
-        "|---|---|---|---|---|---|---|---|---|",
+        " Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished |"
+        " Interruptions per run |",
+        "|---|---|---|---|---|---|---|---|---|---|",
     ]
     for name, data in result["scenarios"].items():
         a = data["aggregate"]
@@ -150,6 +168,7 @@ def render_markdown(
         lines.append(
             f"| {name} | {runs} | {det} | {ttd} | {_cell(a['false_alerts_per_hour'], '{:.2f}')}"
             f" ({a['false_alert_episodes']} in {_cell(a['flight_hours'], '{:.2f}')} h) | {mis} | {err}"
+            f" | {_cell(a['bound_coverage'], '{:.1%}')} ({a['green_reports']})"
             f" | {a['missions_finished']} of {a['runs']} | {_cell(a['interruptions_mean'], '{:.1f}')} |"
         )
     lines += [
@@ -186,6 +205,14 @@ def render_markdown(
             for o in check(result)
         ]
     overall = result["overall"]
+    if overall["bound_coverage"] is not None:
+        lines += [
+            "",
+            f"The displayed bound held in {overall['bound_coverage']:.2%} of {overall['green_reports']} GREEN reports "
+            f"over all runs (NT-03 asks for at least 95%; the claim is {GREEN_BOUND.coverage:.0%}, bound "
+            f"{GREEN_BOUND.bound_m:g} m). So {1 - overall['bound_coverage']:.2%} of GREEN reports were "
+            "misleading in the spec's sense (true error above the displayed bound).",
+        ]
     if overall["false_alert_rate_upper_95_per_hour"] is not None:
         lines += [
             "",
@@ -207,9 +234,10 @@ def render_markdown(
         "- **Error at alert**: true horizontal error at the first non-GREEN report after the fault began.",
         "  A small value is not a mistake: for a frozen position the estimate keeps dead-reckoning for a",
         "  few seconds and only then follows the frozen fix, so the alert comes before the error grows.",
-        "- **A floor of about 3 m**: even nominal runs show 2.8 to 2.9 m between the vehicle's estimate",
-        "  and the true position at survey speed (10 m/s). That is roughly 0.3 s of lag in the estimate;",
-        "  the cause was not investigated. Thresholds on position error must stay well above it.",
+        "- **Displayed bound held**: the share of GREEN reports in which the true error was within the",
+        "  bound the console displays (navtrust/calibration.py). The estimator's own accuracy figure",
+        "  (about 0.15 m) was not a valid bound; even nominal flights are a few metres off at survey",
+        "  speed, and a time shift does not explain it.",
         "- **Interruptions per run**: recommendations the recommender raises, assuming two other healthy",
         "  vehicles; recommendations are not repeated.",
         "",

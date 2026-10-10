@@ -1,4 +1,4 @@
-import type { Reason, Recommendation, TrustState } from "./types";
+import type { Calibration, Reason, Recommendation, TrustState } from "./types";
 
 export const STATE_LABEL: Record<TrustState, string> = {
   GREEN: "Trusted",
@@ -19,7 +19,29 @@ export function reasonText(reason: Reason | null): string {
 
 export function formatBound(bound: number | null): string {
   if (bound === null) return "unknown";
-  return bound < 10 ? `±${bound.toFixed(2)} m` : `±${Math.round(bound)} m`;
+  return `within ${Number(bound.toFixed(1))} m`;
+}
+
+export function formatPercent(fraction: number, digits = 0): string {
+  return `${(fraction * 100).toFixed(digits)}%`;
+}
+
+/** Plain explanation of where the bound comes from, for a tooltip. */
+export function calibrationText(c: Calibration): string {
+  return (
+    `The true position error stayed within ${Number(c.bound_m.toFixed(1))} m in ` +
+    `${formatPercent(c.development_coverage, 1)} of ${c.development_reports.toLocaleString("en")} ` +
+    `GREEN reports it was calibrated on, and in ${formatPercent(c.heldout_coverage, 1)} of ` +
+    `${c.heldout_reports.toLocaleString("en")} on a separate set. ${c.source}. Simulation only.`
+  );
+}
+
+export type HeadroomLevel = "ample" | "shrinking" | "low";
+
+/** Headroom is 0..1; the cut-offs only choose the colour and the word. */
+export function headroomLevel(headroom: number): HeadroomLevel {
+  if (headroom >= 0.5) return "ample";
+  return headroom >= 0.25 ? "shrinking" : "low";
 }
 
 /** 75 -> "1:15", 3725 -> "1:02:05" */

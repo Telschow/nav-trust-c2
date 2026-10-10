@@ -14,10 +14,10 @@ GNSS_LOSS, then STALE, then INCONSISTENT_INNOVATION: a missing receiver explains
 frozen estimate. Hysteresis lives in the detectors (recovery hold, Schmitt trigger); the
 engine adds none of its own.
 
-Bound: the estimator's position accuracy is reported only in GREEN. In every other state it
-is unknown (infinity). In the recorded stuck-position run the estimator kept reporting about
-0.3 m while its position was frozen, and during an outage it was observed for only a few
-seconds, so a number there would claim more than the data supports.
+Bound and confidence: in GREEN the engine reports the calibrated bound and the coverage it was
+measured to have (calibration.py); the estimator's own accuracy figure is not a bound and is not
+used. In every other state the bound is unknown (infinity) and confidence is 0. Headroom is how far
+a GREEN vehicle is from an alert; it is 0 outside GREEN.
 
 Pure Python, no simulator dependency.
 """
@@ -33,6 +33,7 @@ from navtrust.availability import (
     AvailabilityDetector,
     AvailabilityReport,
 )
+from navtrust.calibration import GREEN_BOUND, BoundCalibration
 from navtrust.consistency import (
     Consistency,
     ConsistencyConfig,
@@ -49,15 +50,11 @@ class EngineConfig:
     """All values are proposals."""
 
     red_after_s: float = 5.0  # LOST or STALE for this long escalates AMBER to RED
-    # `confidence` has no defined meaning in the ICD yet. These are ordinal placeholders
-    # (higher is better), not probabilities.
-    confidence: dict[TrustState, float] = field(
-        default_factory=lambda: {
-            TrustState.GREEN: 1.0,
-            TrustState.AMBER: 0.5,
-            TrustState.RED: 0.0,
-        }
-    )
+    # Position bound and its coverage while GREEN, measured against ground truth
+    # (see calibration.py)
+    calibration: BoundCalibration = GREEN_BOUND
+    # Normal inputs arrive about once a second; freshness headroom only starts to shrink after this
+    freshness_grace_s: float = 1.5
     availability: AvailabilityConfig = field(default_factory=AvailabilityConfig)
     consistency: ConsistencyConfig = field(default_factory=ConsistencyConfig)
 
@@ -94,19 +91,30 @@ class TrustEngine:
         self.last_availability, self.last_consistency = avail, cons
 
         state, reason = self._decide(avail, cons)
-        bound = (
-            avail.horizontal_bound_m
-            if state is TrustState.GREEN and avail.horizontal_bound_m is not None
-            else math.inf
-        )
+        green = state is TrustState.GREEN
         return NavTrust(
             vehicle_id=self._id,
             stamp_s=t_s,
             state=state,
             reason=reason,
-            horizontal_bound_m=bound,
-            confidence=self._cfg.confidence[state],
+            horizontal_bound_m=self._cfg.calibration.bound_m if green else math.inf,
+            confidence=self._cfg.calibration.coverage if green else 0.0,
+            headroom=self._headroom(avail, cons) if green else 0.0,
         )
+
+    def _headroom(self, avail: AvailabilityReport, cons: ConsistencyReport) -> float:
+        """How far a GREEN vehicle is from an alert, 0 to 1. Not a probability.
+
+        The smaller of two margins: the worst recent innovation test ratio against the estimator's
+        own rejection gate, and how long the inputs have been silent against the stale limit."""
+        margins = [1.0]
+        if cons.max_ratio is not None:
+            margins.append(1.0 - min(1.0, cons.max_ratio / self._cfg.consistency.ratio_threshold))
+        if avail.input_age_s is not None:
+            grace = self._cfg.freshness_grace_s
+            span = max(self._cfg.availability.stale_after_s - grace, 1e-9)
+            margins.append(1.0 - min(1.0, max(0.0, avail.input_age_s - grace) / span))
+        return max(0.0, min(margins))
 
     def _decide(
         self, avail: AvailabilityReport, cons: ConsistencyReport
