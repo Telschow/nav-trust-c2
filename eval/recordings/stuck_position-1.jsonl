@@ -1,0 +1,976 @@
+{"t_s": 0.025, "event": "header", "schema": 1, "scenario": "stuck_position", "created_utc": "2026-10-10T07:19:32+00:00", "px4_commit": "a427a2e3feee2d5bbcf286feabaea0adc92554d5", "survey": {"width_m": 600.0, "height_m": 100.0, "spacing_m": 100.0, "altitude_m": 30.0, "speed_m_s": 10.0}, "zone": {"west": 200.0, "south": -50.0, "east": 280.0, "north": 150.0}, "failure_mode": "stuck", "position_interval_s": 0.5, "max_duration_s": 200.0, "ground_truth": true, "latch_fault": true, "operator_action": null}
+{"t_s": 0.95, "event": "connected", "address": "udpin://0.0.0.0:14541"}
+{"t_s": 3.301, "event": "home", "lat_deg": 47.3979704, "lon_deg": 8.5461637}
+{"t_s": 3.307, "event": "plan", "waypoints": 4, "path_length_m": 1300.0, "width_m": 600.0, "height_m": 100.0, "spacing_m": 100.0, "altitude_m": 30.0, "speed_m_s": 10.0}
+{"t_s": 3.33, "event": "zone", "polygon": [[200.0, -50.0], [280.0, -50.0], [280.0, 150.0], [200.0, 150.0]]}
+{"t_s": 3.395, "event": "gps_info", "fix_type": "FIX_3D", "num_satellites": 10}
+{"t_s": 3.402, "event": "armed"}
+{"t_s": 3.405, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461638, "rel_alt_m": 0.0}
+{"t_s": 3.419, "event": "mission_started"}
+{"t_s": 3.759, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.013, "sim_s": 87.356}
+{"t_s": 3.925, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461638, "rel_alt_m": -0.01100000087171793}
+{"t_s": 3.946, "event": "mission_progress", "current": 0, "total": 4}
+{"t_s": 4.275, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.013, "sim_s": 87.872}
+{"t_s": 4.296, "event": "estimator_status", "vel_ratio": 0.027898667380213737, "pos_horiz_ratio": 0.002598321996629238, "pos_vert_ratio": 0.015195989981293678, "mag_ratio": 0.0028316653333604336, "pos_horiz_accuracy": 0.15155602991580963, "pos_vert_accuracy": 0.16549400985240936, "flags": 959}
+{"t_s": 4.426, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461637, "rel_alt_m": -0.024000000208616257}
+{"t_s": 4.775, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.013, "sim_s": 88.372}
+{"t_s": 4.946, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461637, "rel_alt_m": -0.039000000804662704}
+{"t_s": 5.274, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.013, "sim_s": 88.872}
+{"t_s": 5.294, "event": "estimator_status", "vel_ratio": 0.019321119412779808, "pos_horiz_ratio": 0.003224122803658247, "pos_vert_ratio": 0.010872401297092438, "mag_ratio": 0.007554072421044111, "pos_horiz_accuracy": 0.15042120218276978, "pos_vert_accuracy": 0.16488228738307953, "flags": 959}
+{"t_s": 5.446, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461638, "rel_alt_m": -0.04800000041723251}
+{"t_s": 5.774, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.013, "sim_s": 89.372}
+{"t_s": 5.956, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461638, "rel_alt_m": -0.04400000348687172}
+{"t_s": 6.305, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.013, "sim_s": 89.872}
+{"t_s": 6.325, "event": "estimator_status", "vel_ratio": 0.015734080225229263, "pos_horiz_ratio": 0.003010254353284836, "pos_vert_ratio": 0.0129239521920681, "mag_ratio": 0.0040750340558588505, "pos_horiz_accuracy": 0.15094485878944397, "pos_vert_accuracy": 0.16519784927368164, "flags": 831}
+{"t_s": 6.457, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461638, "rel_alt_m": -0.05300000309944153}
+{"t_s": 6.822, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.013, "sim_s": 90.388}
+{"t_s": 6.976, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461638, "rel_alt_m": -0.06599999964237213}
+{"t_s": 7.326, "event": "estimator_status", "vel_ratio": 0.013019788078963757, "pos_horiz_ratio": 0.002066186862066388, "pos_vert_ratio": 0.009186326526105404, "mag_ratio": 0.0078035639598965645, "pos_horiz_accuracy": 0.15146766602993011, "pos_vert_accuracy": 0.16549701988697052, "flags": 831}
+{"t_s": 7.337, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.013, "sim_s": 90.904}
+{"t_s": 7.476, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461637, "rel_alt_m": -0.07500000298023224}
+{"t_s": 7.888, "event": "truth", "vehicle": "uav1", "east_m": -0.0, "north_m": 0.0, "alt_m": -0.008, "sim_s": 91.404}
+{"t_s": 7.989, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5461636, "rel_alt_m": -0.07500000298023224}
+{"t_s": 8.378, "event": "estimator_status", "vel_ratio": 0.024045409634709358, "pos_horiz_ratio": 0.004051306284964085, "pos_vert_ratio": 0.00840444304049015, "mag_ratio": 0.008034090511500835, "pos_horiz_accuracy": 0.15201106667518616, "pos_vert_accuracy": 0.16578806936740875, "flags": 831}
+{"t_s": 8.389, "event": "truth", "vehicle": "uav1", "east_m": 0.002, "north_m": -0.002, "alt_m": 0.137, "sim_s": 91.904}
+{"t_s": 8.489, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461635, "rel_alt_m": 0.10900000482797623}
+{"t_s": 8.9, "event": "truth", "vehicle": "uav1", "east_m": 0.014, "north_m": -0.006, "alt_m": 0.509, "sim_s": 92.412}
+{"t_s": 9.009, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461636, "rel_alt_m": 0.5560000538825989}
+{"t_s": 9.379, "event": "estimator_status", "vel_ratio": 0.022077100351452827, "pos_horiz_ratio": 0.005428643431514502, "pos_vert_ratio": 0.004233658779412508, "mag_ratio": 0.008253094740211964, "pos_horiz_accuracy": 0.15091341733932495, "pos_vert_accuracy": 0.165110781788826, "flags": 831}
+{"t_s": 9.414, "event": "truth", "vehicle": "uav1", "east_m": 0.022, "north_m": -0.007, "alt_m": 1.033, "sim_s": 92.928}
+{"t_s": 9.529, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461637, "rel_alt_m": 1.127000093460083}
+{"t_s": 9.933, "event": "truth", "vehicle": "uav1", "east_m": 0.029, "north_m": -0.005, "alt_m": 1.607, "sim_s": 93.444}
+{"t_s": 10.034, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5461637, "rel_alt_m": 1.7120001316070557}
+{"t_s": 10.383, "event": "estimator_status", "vel_ratio": 0.0061235930770635605, "pos_horiz_ratio": 0.006436390336602926, "pos_vert_ratio": 0.0033107385970652103, "mag_ratio": 0.004806938581168652, "pos_horiz_accuracy": 0.15209078788757324, "pos_vert_accuracy": 0.16578873991966248, "flags": 831}
+{"t_s": 10.45, "event": "truth", "vehicle": "uav1", "east_m": 0.041, "north_m": 0.007, "alt_m": 2.23, "sim_s": 93.96}
+{"t_s": 10.534, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5461639, "rel_alt_m": 2.3310000896453857}
+{"t_s": 10.962, "event": "truth", "vehicle": "uav1", "east_m": 0.05, "north_m": 0.027, "alt_m": 2.887, "sim_s": 94.472}
+{"t_s": 11.053, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461639, "rel_alt_m": 3.004000186920166}
+{"t_s": 11.383, "event": "estimator_status", "vel_ratio": 0.010043456219136715, "pos_horiz_ratio": 0.005304184276610613, "pos_vert_ratio": 0.006675662472844124, "mag_ratio": 0.007417862303555012, "pos_horiz_accuracy": 0.15086668729782104, "pos_vert_accuracy": 0.16511234641075134, "flags": 831}
+{"t_s": 11.461, "event": "truth", "vehicle": "uav1", "east_m": 0.055, "north_m": 0.046, "alt_m": 3.557, "sim_s": 94.972}
+{"t_s": 11.554, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5461641, "rel_alt_m": 3.67900013923645}
+{"t_s": 11.962, "event": "truth", "vehicle": "uav1", "east_m": 0.054, "north_m": 0.06, "alt_m": 4.248, "sim_s": 95.472}
+{"t_s": 12.074, "event": "position", "lat_deg": 47.397971399999996, "lon_deg": 8.5461642, "rel_alt_m": 4.4160003662109375}
+{"t_s": 12.382, "event": "estimator_status", "vel_ratio": 0.007896159775555134, "pos_horiz_ratio": 0.00822655949741602, "pos_vert_ratio": 0.004985450766980648, "mag_ratio": 0.0030289466958492994, "pos_horiz_accuracy": 0.15133801102638245, "pos_vert_accuracy": 0.16539855301380157, "flags": 831}
+{"t_s": 12.461, "event": "truth", "vehicle": "uav1", "east_m": 0.046, "north_m": 0.068, "alt_m": 4.954, "sim_s": 95.972}
+{"t_s": 12.593, "event": "position", "lat_deg": 47.397971399999996, "lon_deg": 8.5461641, "rel_alt_m": 5.1570000648498535}
+{"t_s": 12.962, "event": "truth", "vehicle": "uav1", "east_m": 0.034, "north_m": 0.07, "alt_m": 5.672, "sim_s": 96.472}
+{"t_s": 13.094, "event": "position", "lat_deg": 47.3979715, "lon_deg": 8.546164, "rel_alt_m": 5.88800048828125}
+{"t_s": 13.382, "event": "estimator_status", "vel_ratio": 0.005315031390637159, "pos_horiz_ratio": 0.006480800453573465, "pos_vert_ratio": 0.006371260620653629, "mag_ratio": 0.007311100140213966, "pos_horiz_accuracy": 0.1518072932958603, "pos_vert_accuracy": 0.16568005084991455, "flags": 831}
+{"t_s": 13.461, "event": "truth", "vehicle": "uav1", "east_m": 0.022, "north_m": 0.066, "alt_m": 6.401, "sim_s": 96.972}
+{"t_s": 13.594, "event": "position", "lat_deg": 47.3979715, "lon_deg": 8.5461638, "rel_alt_m": 6.619000434875488}
+{"t_s": 13.977, "event": "truth", "vehicle": "uav1", "east_m": 0.014, "north_m": 0.057, "alt_m": 7.161, "sim_s": 97.488}
+{"t_s": 14.094, "event": "position", "lat_deg": 47.397971399999996, "lon_deg": 8.5461638, "rel_alt_m": 7.366000175476074}
+{"t_s": 14.382, "event": "estimator_status", "vel_ratio": 0.007779367733746767, "pos_horiz_ratio": 0.001339899841696024, "pos_vert_ratio": 0.01058613508939743, "mag_ratio": 0.005707946605980396, "pos_horiz_accuracy": 0.15059393644332886, "pos_vert_accuracy": 0.16499967873096466, "flags": 831}
+{"t_s": 14.478, "event": "truth", "vehicle": "uav1", "east_m": 0.009, "north_m": 0.046, "alt_m": 7.902, "sim_s": 97.988}
+{"t_s": 14.613, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5461637, "rel_alt_m": 8.13700008392334}
+{"t_s": 14.977, "event": "truth", "vehicle": "uav1", "east_m": 0.008, "north_m": 0.039, "alt_m": 8.648, "sim_s": 98.488}
+{"t_s": 15.113, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461638, "rel_alt_m": 8.87600040435791}
+{"t_s": 15.382, "event": "estimator_status", "vel_ratio": 0.006983444094657898, "pos_horiz_ratio": 0.0038550591561943293, "pos_vert_ratio": 0.010887239128351212, "mag_ratio": 0.007622211240231991, "pos_horiz_accuracy": 0.15108764171600342, "pos_vert_accuracy": 0.16528022289276123, "flags": 831}
+{"t_s": 15.478, "event": "truth", "vehicle": "uav1", "east_m": 0.007, "north_m": 0.038, "alt_m": 9.398, "sim_s": 98.988}
+{"t_s": 15.633, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461639, "rel_alt_m": 9.657000541687012}
+{"t_s": 15.978, "event": "truth", "vehicle": "uav1", "east_m": -0.001, "north_m": 0.04, "alt_m": 10.152, "sim_s": 99.488}
+{"t_s": 16.133, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461638, "rel_alt_m": 10.432000160217285}
+{"t_s": 16.422, "event": "estimator_status", "vel_ratio": 0.026881951838731766, "pos_horiz_ratio": 0.0019397323485463858, "pos_vert_ratio": 0.011736679822206497, "mag_ratio": 0.007580718025565147, "pos_horiz_accuracy": 0.1516043096780777, "pos_vert_accuracy": 0.1655629724264145, "flags": 831}
+{"t_s": 16.531, "event": "truth", "vehicle": "uav1", "east_m": -0.012, "north_m": 0.041, "alt_m": 11.108, "sim_s": 100.0}
+{"t_s": 16.635, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5461635, "rel_alt_m": 11.408000946044922}
+{"t_s": 17.031, "event": "truth", "vehicle": "uav1", "east_m": -0.012, "north_m": 0.037, "alt_m": 12.495, "sim_s": 100.5}
+{"t_s": 17.135, "event": "position", "lat_deg": 47.397971399999996, "lon_deg": 8.5461634, "rel_alt_m": 12.895000457763672}
+{"t_s": 17.424, "event": "estimator_status", "vel_ratio": 0.026618024334311485, "pos_horiz_ratio": 0.005753311328589916, "pos_vert_ratio": 0.010425245389342308, "mag_ratio": 0.007187874987721443, "pos_horiz_accuracy": 0.1505601406097412, "pos_vert_accuracy": 0.1648857444524765, "flags": 831}
+{"t_s": 17.531, "event": "truth", "vehicle": "uav1", "east_m": -0.003, "north_m": 0.028, "alt_m": 13.909, "sim_s": 101.0}
+{"t_s": 17.635, "event": "position", "lat_deg": 47.397971399999996, "lon_deg": 8.5461635, "rel_alt_m": 14.320000648498535}
+{"t_s": 18.047, "event": "truth", "vehicle": "uav1", "east_m": 0.013, "north_m": 0.013, "alt_m": 15.378, "sim_s": 101.516}
+{"t_s": 18.135, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5461638, "rel_alt_m": 15.78700065612793}
+{"t_s": 18.424, "event": "estimator_status", "vel_ratio": 0.010445195250213146, "pos_horiz_ratio": 0.003244763473048806, "pos_vert_ratio": 0.011901233345270157, "mag_ratio": 0.005744630936533213, "pos_horiz_accuracy": 0.1510835736989975, "pos_vert_accuracy": 0.16516555845737457, "flags": 831}
+{"t_s": 18.547, "event": "truth", "vehicle": "uav1", "east_m": 0.022, "north_m": -0.008, "alt_m": 16.831, "sim_s": 102.016}
+{"t_s": 18.655, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461639, "rel_alt_m": 17.325000762939453}
+{"t_s": 19.047, "event": "truth", "vehicle": "uav1", "east_m": 0.02, "north_m": -0.025, "alt_m": 18.297, "sim_s": 102.516}
+{"t_s": 19.175, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5461641, "rel_alt_m": 18.862001419067383}
+{"t_s": 19.423, "event": "estimator_status", "vel_ratio": 0.006324087735265493, "pos_horiz_ratio": 0.0030908375047147274, "pos_vert_ratio": 0.01064077578485012, "mag_ratio": 0.00682187220081687, "pos_horiz_accuracy": 0.15153615176677704, "pos_vert_accuracy": 0.16544774174690247, "flags": 831}
+{"t_s": 19.547, "event": "truth", "vehicle": "uav1", "east_m": 0.011, "north_m": -0.028, "alt_m": 19.77, "sim_s": 103.016}
+{"t_s": 19.695, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.546164, "rel_alt_m": 20.407001495361328}
+{"t_s": 20.063, "event": "truth", "vehicle": "uav1", "east_m": -0.007, "north_m": -0.017, "alt_m": 21.296, "sim_s": 103.532}
+{"t_s": 20.214, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5461638, "rel_alt_m": 21.95400047302246}
+{"t_s": 20.423, "event": "estimator_status", "vel_ratio": 0.007460661232471466, "pos_horiz_ratio": 0.007163547445088625, "pos_vert_ratio": 0.01818351075053215, "mag_ratio": 0.005724256858229637, "pos_horiz_accuracy": 0.15200163424015045, "pos_vert_accuracy": 0.16573233902454376, "flags": 831}
+{"t_s": 20.563, "event": "truth", "vehicle": "uav1", "east_m": -0.023, "north_m": -0.001, "alt_m": 22.779, "sim_s": 104.032}
+{"t_s": 20.715, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461636, "rel_alt_m": 23.42300033569336}
+{"t_s": 21.064, "event": "truth", "vehicle": "uav1", "east_m": -0.035, "north_m": 0.009, "alt_m": 24.177, "sim_s": 104.532}
+{"t_s": 21.235, "event": "position", "lat_deg": 47.397971399999996, "lon_deg": 8.5461636, "rel_alt_m": 24.784000396728516}
+{"t_s": 21.423, "event": "estimator_status", "vel_ratio": 0.0349523164331913, "pos_horiz_ratio": 0.0090698953717947, "pos_vert_ratio": 0.018988750874996185, "mag_ratio": 0.008841625414788723, "pos_horiz_accuracy": 0.15074822306632996, "pos_vert_accuracy": 0.16505594551563263, "flags": 831}
+{"t_s": 21.579, "event": "truth", "vehicle": "uav1", "east_m": -0.042, "north_m": 0.005, "alt_m": 25.365, "sim_s": 105.048}
+{"t_s": 21.755, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461635, "rel_alt_m": 25.876001358032227}
+{"t_s": 22.096, "event": "truth", "vehicle": "uav1", "east_m": -0.046, "north_m": -0.004, "alt_m": 26.342, "sim_s": 105.564}
+{"t_s": 22.275, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5461635, "rel_alt_m": 26.76700210571289}
+{"t_s": 22.424, "event": "estimator_status", "vel_ratio": 0.02333678863942623, "pos_horiz_ratio": 0.006899888161569834, "pos_vert_ratio": 0.022665012627840042, "mag_ratio": 0.009873507544398308, "pos_horiz_accuracy": 0.1511269062757492, "pos_vert_accuracy": 0.16533933579921722, "flags": 831}
+{"t_s": 22.61, "event": "truth", "vehicle": "uav1", "east_m": -0.048, "north_m": -0.002, "alt_m": 27.134, "sim_s": 106.08}
+{"t_s": 22.794, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461636, "rel_alt_m": 27.483001708984375}
+{"t_s": 23.123, "event": "truth", "vehicle": "uav1", "east_m": -0.051, "north_m": 0.007, "alt_m": 27.765, "sim_s": 106.592}
+{"t_s": 23.295, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461635, "rel_alt_m": 28.030000686645508}
+{"t_s": 23.424, "event": "estimator_status", "vel_ratio": 0.016373779624700546, "pos_horiz_ratio": 0.012878905981779099, "pos_vert_ratio": 0.023755118250846863, "mag_ratio": 0.009321784600615501, "pos_horiz_accuracy": 0.15157686173915863, "pos_vert_accuracy": 0.16562262177467346, "flags": 831}
+{"t_s": 23.623, "event": "truth", "vehicle": "uav1", "east_m": -0.056, "north_m": 0.011, "alt_m": 28.262, "sim_s": 107.092}
+{"t_s": 23.815, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461633, "rel_alt_m": 28.472002029418945}
+{"t_s": 24.123, "event": "truth", "vehicle": "uav1", "east_m": -0.056, "north_m": 0.012, "alt_m": 28.665, "sim_s": 107.592}
+{"t_s": 24.315, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.546163199999999, "rel_alt_m": 28.814001083374023}
+{"t_s": 24.424, "event": "estimator_status", "vel_ratio": 0.006282534915953875, "pos_horiz_ratio": 0.007327227853238583, "pos_vert_ratio": 0.024568531662225723, "mag_ratio": 0.005951732397079468, "pos_horiz_accuracy": 0.1504235416650772, "pos_vert_accuracy": 0.1649470031261444, "flags": 831}
+{"t_s": 24.638, "event": "truth", "vehicle": "uav1", "east_m": -0.045, "north_m": 0.012, "alt_m": 28.997, "sim_s": 108.108}
+{"t_s": 24.835, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461633, "rel_alt_m": 29.09200096130371}
+{"t_s": 25.124, "event": "mission_progress", "current": 1, "total": 4}
+{"t_s": 25.151, "event": "truth", "vehicle": "uav1", "east_m": -0.027, "north_m": 0.011, "alt_m": 29.257, "sim_s": 108.62}
+{"t_s": 25.335, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461634, "rel_alt_m": 29.31100082397461}
+{"t_s": 25.424, "event": "estimator_status", "vel_ratio": 0.009337028488516808, "pos_horiz_ratio": 0.005552030634135008, "pos_vert_ratio": 0.022749153897166252, "mag_ratio": 0.010197076015174389, "pos_horiz_accuracy": 0.1509961038827896, "pos_vert_accuracy": 0.1652311235666275, "flags": 831}
+{"t_s": 25.651, "event": "truth", "vehicle": "uav1", "east_m": -0.02, "north_m": 0.009, "alt_m": 29.459, "sim_s": 109.12}
+{"t_s": 25.855, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5461648, "rel_alt_m": 29.499000549316406}
+{"t_s": 26.167, "event": "truth", "vehicle": "uav1", "east_m": 0.27, "north_m": 0.013, "alt_m": 29.656, "sim_s": 109.636}
+{"t_s": 26.374, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5461741, "rel_alt_m": 29.661001205444336}
+{"t_s": 26.424, "event": "estimator_status", "vel_ratio": 0.09763772040605545, "pos_horiz_ratio": 0.003458472201600671, "pos_vert_ratio": 0.018100876361131668, "mag_ratio": 0.006460718344897032, "pos_horiz_accuracy": 0.15189553797245026, "pos_vert_accuracy": 0.16551798582077026, "flags": 831}
+{"t_s": 26.667, "event": "truth", "vehicle": "uav1", "east_m": 1.293, "north_m": 0.027, "alt_m": 29.782, "sim_s": 110.136}
+{"t_s": 26.875, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5461938, "rel_alt_m": 29.750001907348633}
+{"t_s": 27.183, "event": "truth", "vehicle": "uav1", "east_m": 3.103, "north_m": 0.028, "alt_m": 29.873, "sim_s": 110.652}
+{"t_s": 27.395, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.546224, "rel_alt_m": 29.82600212097168}
+{"t_s": 27.423, "event": "estimator_status", "vel_ratio": 0.05587490275502205, "pos_horiz_ratio": 0.006119075231254101, "pos_vert_ratio": 0.020250126719474792, "mag_ratio": 0.014703386463224888, "pos_horiz_accuracy": 0.15113091468811035, "pos_vert_accuracy": 0.1648729294538498, "flags": 831}
+{"t_s": 27.685, "event": "truth", "vehicle": "uav1", "east_m": 5.506, "north_m": 0.019, "alt_m": 29.96, "sim_s": 111.152}
+{"t_s": 27.914, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5462633, "rel_alt_m": 29.891000747680664}
+{"t_s": 28.198, "event": "truth", "vehicle": "uav1", "east_m": 8.673, "north_m": 0.012, "alt_m": 30.042, "sim_s": 111.668}
+{"t_s": 28.414, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.546310499999999, "rel_alt_m": 29.942001342773438}
+{"t_s": 28.423, "event": "estimator_status", "vel_ratio": 0.02028747648000717, "pos_horiz_ratio": 0.007263523060828447, "pos_vert_ratio": 0.01891339384019375, "mag_ratio": 0.016994088888168335, "pos_horiz_accuracy": 0.15197674930095673, "pos_vert_accuracy": 0.16525520384311676, "flags": 831}
+{"t_s": 28.715, "event": "truth", "vehicle": "uav1", "east_m": 12.566, "north_m": 0.013, "alt_m": 30.111, "sim_s": 112.184}
+{"t_s": 28.924, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5463659, "rel_alt_m": 29.977001190185547}
+{"t_s": 29.234, "event": "truth", "vehicle": "uav1", "east_m": 17.104, "north_m": 0.013, "alt_m": 30.133, "sim_s": 112.692}
+{"t_s": 29.425, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5464287, "rel_alt_m": 29.97300148010254}
+{"t_s": 29.434, "event": "estimator_status", "vel_ratio": 0.05309651046991348, "pos_horiz_ratio": 0.013393469154834747, "pos_vert_ratio": 0.017132995650172234, "mag_ratio": 0.010571852326393127, "pos_horiz_accuracy": 0.152164027094841, "pos_vert_accuracy": 0.16545142233371735, "flags": 831}
+{"t_s": 29.749, "event": "truth", "vehicle": "uav1", "east_m": 22.096, "north_m": 0.016, "alt_m": 30.128, "sim_s": 113.208}
+{"t_s": 29.945, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.546496099999999, "rel_alt_m": 29.974000930786133}
+{"t_s": 30.261, "event": "truth", "vehicle": "uav1", "east_m": 26.996, "north_m": 0.021, "alt_m": 30.135, "sim_s": 113.72}
+{"t_s": 30.434, "event": "estimator_status", "vel_ratio": 0.11216270923614502, "pos_horiz_ratio": 0.004399837460368872, "pos_vert_ratio": 0.011578316800296307, "mag_ratio": 0.010604502633213997, "pos_horiz_accuracy": 0.15230239927768707, "pos_vert_accuracy": 0.16588455438613892, "flags": 831}
+{"t_s": 30.465, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5465618, "rel_alt_m": 29.98600196838379}
+{"t_s": 30.761, "event": "truth", "vehicle": "uav1", "east_m": 31.787, "north_m": 0.021, "alt_m": 30.14, "sim_s": 114.22}
+{"t_s": 30.965, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.546626, "rel_alt_m": 29.9950008392334}
+{"t_s": 31.26, "event": "truth", "vehicle": "uav1", "east_m": 36.64, "north_m": 0.017, "alt_m": 30.139, "sim_s": 114.72}
+{"t_s": 31.433, "event": "estimator_status", "vel_ratio": 0.06012881547212601, "pos_horiz_ratio": 0.009227670729160309, "pos_vert_ratio": 0.012479536235332489, "mag_ratio": 0.009322814643383026, "pos_horiz_accuracy": 0.150649294257164, "pos_vert_accuracy": 0.16528916358947754, "flags": 831}
+{"t_s": 31.485, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.546693099999999, "rel_alt_m": 29.992000579833984}
+{"t_s": 31.761, "event": "truth", "vehicle": "uav1", "east_m": 41.545, "north_m": 0.015, "alt_m": 30.139, "sim_s": 115.22}
+{"t_s": 32.005, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5467608, "rel_alt_m": 29.99100112915039}
+{"t_s": 32.28, "event": "truth", "vehicle": "uav1", "east_m": 46.648, "north_m": 0.01, "alt_m": 30.142, "sim_s": 115.736}
+{"t_s": 32.438, "event": "estimator_status", "vel_ratio": 0.028007972985506058, "pos_horiz_ratio": 0.011564069427549839, "pos_vert_ratio": 0.00965876318514347, "mag_ratio": 0.013437746092677116, "pos_horiz_accuracy": 0.1511220633983612, "pos_vert_accuracy": 0.1656986027956009, "flags": 831}
+{"t_s": 32.508, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5468259, "rel_alt_m": 29.9950008392334}
+{"t_s": 32.796, "event": "truth", "vehicle": "uav1", "east_m": 51.779, "north_m": 0.003, "alt_m": 30.145, "sim_s": 116.252}
+{"t_s": 33.008, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5468922, "rel_alt_m": 29.998001098632812}
+{"t_s": 33.313, "event": "truth", "vehicle": "uav1", "east_m": 56.934, "north_m": -0.002, "alt_m": 30.146, "sim_s": 116.768}
+{"t_s": 33.437, "event": "estimator_status", "vel_ratio": 0.012943325564265251, "pos_horiz_ratio": 0.010334481485188007, "pos_vert_ratio": 0.007798957638442516, "mag_ratio": 0.01458320114761591, "pos_horiz_accuracy": 0.1517994999885559, "pos_vert_accuracy": 0.16614513099193573, "flags": 831}
+{"t_s": 33.51, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5469578, "rel_alt_m": 30.003002166748047}
+{"t_s": 33.826, "event": "truth", "vehicle": "uav1", "east_m": 62.067, "north_m": -0.003, "alt_m": 30.143, "sim_s": 117.28}
+{"t_s": 34.029, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.547027, "rel_alt_m": 30.001001358032227}
+{"t_s": 34.34, "event": "truth", "vehicle": "uav1", "east_m": 67.246, "north_m": -0.012, "alt_m": 30.141, "sim_s": 117.796}
+{"t_s": 34.438, "event": "estimator_status", "vel_ratio": 0.012153543531894684, "pos_horiz_ratio": 0.005410504061728716, "pos_vert_ratio": 0.007746613118797541, "mag_ratio": 0.010971317067742348, "pos_horiz_accuracy": 0.150697261095047, "pos_vert_accuracy": 0.16561900079250336, "flags": 831}
+{"t_s": 34.548, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.547096, "rel_alt_m": 30.000001907348633}
+{"t_s": 34.853, "event": "truth", "vehicle": "uav1", "east_m": 72.38, "north_m": -0.027, "alt_m": 30.142, "sim_s": 118.308}
+{"t_s": 35.048, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.547162799999999, "rel_alt_m": 30.00400161743164}
+{"t_s": 35.37, "event": "truth", "vehicle": "uav1", "east_m": 77.563, "north_m": -0.034, "alt_m": 30.141, "sim_s": 118.824}
+{"t_s": 35.438, "event": "estimator_status", "vel_ratio": 0.02051837556064129, "pos_horiz_ratio": 0.0016198790399357677, "pos_vert_ratio": 0.00912390649318695, "mag_ratio": 0.011439099907875061, "pos_horiz_accuracy": 0.15124282240867615, "pos_vert_accuracy": 0.16606946289539337, "flags": 831}
+{"t_s": 35.549, "event": "position", "lat_deg": 47.397970699999995, "lon_deg": 8.5472288, "rel_alt_m": 29.9950008392334}
+{"t_s": 35.868, "event": "truth", "vehicle": "uav1", "east_m": 82.592, "north_m": -0.03, "alt_m": 30.145, "sim_s": 119.324}
+{"t_s": 36.069, "event": "position", "lat_deg": 47.397970799999996, "lon_deg": 8.547298, "rel_alt_m": 29.987001419067383}
+{"t_s": 36.371, "event": "truth", "vehicle": "uav1", "east_m": 87.624, "north_m": -0.015, "alt_m": 30.156, "sim_s": 119.824}
+{"t_s": 36.437, "event": "estimator_status", "vel_ratio": 0.020376311615109444, "pos_horiz_ratio": 0.0038228316698223352, "pos_vert_ratio": 0.006446681451052427, "mag_ratio": 0.009808411821722984, "pos_horiz_accuracy": 0.15172965824604034, "pos_vert_accuracy": 0.1665017157793045, "flags": 831}
+{"t_s": 36.589, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5473672, "rel_alt_m": 29.994001388549805}
+{"t_s": 36.87, "event": "truth", "vehicle": "uav1", "east_m": 92.655, "north_m": -0.0, "alt_m": 30.166, "sim_s": 120.324}
+{"t_s": 37.109, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5474364, "rel_alt_m": 30.003002166748047}
+{"t_s": 37.368, "event": "truth", "vehicle": "uav1", "east_m": 97.682, "north_m": 0.011, "alt_m": 30.171, "sim_s": 120.824}
+{"t_s": 37.437, "event": "estimator_status", "vel_ratio": 0.017315257340669632, "pos_horiz_ratio": 0.0043026963248848915, "pos_vert_ratio": 0.007960865274071693, "mag_ratio": 0.009791992604732513, "pos_horiz_accuracy": 0.1521904021501541, "pos_vert_accuracy": 0.16690663993358612, "flags": 831}
+{"t_s": 37.629, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5475056, "rel_alt_m": 30.007001876831055}
+{"t_s": 37.885, "event": "truth", "vehicle": "uav1", "east_m": 102.868, "north_m": 0.023, "alt_m": 30.174, "sim_s": 121.34}
+{"t_s": 38.149, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5475748, "rel_alt_m": 30.020002365112305}
+{"t_s": 38.385, "event": "truth", "vehicle": "uav1", "east_m": 107.889, "north_m": 0.034, "alt_m": 30.169, "sim_s": 121.84}
+{"t_s": 38.438, "event": "estimator_status", "vel_ratio": 0.014087021350860596, "pos_horiz_ratio": 0.007771200966089964, "pos_vert_ratio": 0.005016271956264973, "mag_ratio": 0.008572232909500599, "pos_horiz_accuracy": 0.1509353071451187, "pos_vert_accuracy": 0.16628001630306244, "flags": 831}
+{"t_s": 38.669, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.547643899999999, "rel_alt_m": 30.018001556396484}
+{"t_s": 38.885, "event": "truth", "vehicle": "uav1", "east_m": 112.901, "north_m": 0.042, "alt_m": 30.16, "sim_s": 122.34}
+{"t_s": 39.169, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5477109, "rel_alt_m": 30.00800132751465}
+{"t_s": 39.385, "event": "truth", "vehicle": "uav1", "east_m": 117.91, "north_m": 0.042, "alt_m": 30.155, "sim_s": 122.84}
+{"t_s": 39.438, "event": "estimator_status", "vel_ratio": 0.02056724764406681, "pos_horiz_ratio": 0.006122080143541098, "pos_vert_ratio": 0.0038534831255674362, "mag_ratio": 0.004198386799544096, "pos_horiz_accuracy": 0.1513979583978653, "pos_vert_accuracy": 0.166616752743721, "flags": 831}
+{"t_s": 39.688, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.547780099999999, "rel_alt_m": 30.005001068115234}
+{"t_s": 39.885, "event": "truth", "vehicle": "uav1", "east_m": 122.914, "north_m": 0.036, "alt_m": 30.154, "sim_s": 123.34}
+{"t_s": 40.189, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5478458, "rel_alt_m": 30.00800132751465}
+{"t_s": 40.385, "event": "truth", "vehicle": "uav1", "east_m": 127.912, "north_m": 0.028, "alt_m": 30.153, "sim_s": 123.84}
+{"t_s": 40.438, "event": "estimator_status", "vel_ratio": 0.011056779883801937, "pos_horiz_ratio": 0.006808446254581213, "pos_vert_ratio": 0.005852662958204746, "mag_ratio": 0.0068030934780836105, "pos_horiz_accuracy": 0.15188848972320557, "pos_vert_accuracy": 0.16692879796028137, "flags": 831}
+{"t_s": 40.689, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5479126, "rel_alt_m": 30.00400161743164}
+{"t_s": 40.885, "event": "truth", "vehicle": "uav1", "east_m": 132.914, "north_m": 0.012, "alt_m": 30.151, "sim_s": 124.34}
+{"t_s": 41.189, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5479783, "rel_alt_m": 30.000001907348633}
+{"t_s": 41.401, "event": "truth", "vehicle": "uav1", "east_m": 138.084, "north_m": -0.006, "alt_m": 30.152, "sim_s": 124.856}
+{"t_s": 41.437, "event": "estimator_status", "vel_ratio": 0.009263918735086918, "pos_horiz_ratio": 0.004856760613620281, "pos_vert_ratio": 0.004225521348416805, "mag_ratio": 0.007287937216460705, "pos_horiz_accuracy": 0.1506861001253128, "pos_vert_accuracy": 0.16622310876846313, "flags": 831}
+{"t_s": 41.709, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5480475, "rel_alt_m": 29.999000549316406}
+{"t_s": 41.901, "event": "truth", "vehicle": "uav1", "east_m": 143.1, "north_m": -0.021, "alt_m": 30.153, "sim_s": 125.356}
+{"t_s": 42.211, "event": "position", "lat_deg": 47.397970799999996, "lon_deg": 8.5481146, "rel_alt_m": 29.992000579833984}
+{"t_s": 42.416, "event": "truth", "vehicle": "uav1", "east_m": 148.196, "north_m": -0.034, "alt_m": 30.157, "sim_s": 125.864}
+{"t_s": 42.441, "event": "estimator_status", "vel_ratio": 0.007119606714695692, "pos_horiz_ratio": 0.011175032705068588, "pos_vert_ratio": 0.003804562846198678, "mag_ratio": 0.009912251494824886, "pos_horiz_accuracy": 0.15119832754135132, "pos_vert_accuracy": 0.16649961471557617, "flags": 831}
+{"t_s": 42.713, "event": "position", "lat_deg": 47.397970699999995, "lon_deg": 8.5481806, "rel_alt_m": 29.99300193786621}
+{"t_s": 42.93, "event": "truth", "vehicle": "uav1", "east_m": 153.368, "north_m": -0.035, "alt_m": 30.165, "sim_s": 126.38}
+{"t_s": 43.213, "event": "position", "lat_deg": 47.397970699999995, "lon_deg": 8.5482475, "rel_alt_m": 29.998001098632812}
+{"t_s": 43.431, "event": "truth", "vehicle": "uav1", "east_m": 158.377, "north_m": -0.023, "alt_m": 30.172, "sim_s": 126.88}
+{"t_s": 43.442, "event": "estimator_status", "vel_ratio": 0.0064749992452561855, "pos_horiz_ratio": 0.004327223636209965, "pos_vert_ratio": 0.007283762097358704, "mag_ratio": 0.009112917818129063, "pos_horiz_accuracy": 0.15171653032302856, "pos_vert_accuracy": 0.1667650043964386, "flags": 831}
+{"t_s": 43.714, "event": "position", "lat_deg": 47.397970799999996, "lon_deg": 8.548313199999999, "rel_alt_m": 30.005001068115234}
+{"t_s": 43.946, "event": "truth", "vehicle": "uav1", "east_m": 163.549, "north_m": -0.004, "alt_m": 30.176, "sim_s": 127.396}
+{"t_s": 44.214, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5483802, "rel_alt_m": 30.00400161743164}
+{"t_s": 44.443, "event": "estimator_status", "vel_ratio": 0.006789947394281626, "pos_horiz_ratio": 0.004083642270416021, "pos_vert_ratio": 0.0033801679965108633, "mag_ratio": 0.006344088353216648, "pos_horiz_accuracy": 0.15052714943885803, "pos_vert_accuracy": 0.16603027284145355, "flags": 831}
+{"t_s": 44.458, "event": "truth", "vehicle": "uav1", "east_m": 168.687, "north_m": 0.008, "alt_m": 30.179, "sim_s": 127.908}
+{"t_s": 44.735, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5484493, "rel_alt_m": 30.007001876831055}
+{"t_s": 44.978, "event": "truth", "vehicle": "uav1", "east_m": 173.906, "north_m": 0.019, "alt_m": 30.18, "sim_s": 128.428}
+{"t_s": 45.236, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.548515199999999, "rel_alt_m": 30.016000747680664}
+{"t_s": 45.443, "event": "estimator_status", "vel_ratio": 0.008680839091539383, "pos_horiz_ratio": 0.00507469242438674, "pos_vert_ratio": 0.004866317380219698, "mag_ratio": 0.010398825630545616, "pos_horiz_accuracy": 0.15103568136692047, "pos_vert_accuracy": 0.16628402471542358, "flags": 831}
+{"t_s": 45.478, "event": "truth", "vehicle": "uav1", "east_m": 178.926, "north_m": 0.024, "alt_m": 30.176, "sim_s": 128.928}
+{"t_s": 45.754, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5485844, "rel_alt_m": 30.018001556396484}
+{"t_s": 45.978, "event": "truth", "vehicle": "uav1", "east_m": 183.948, "north_m": 0.021, "alt_m": 30.168, "sim_s": 129.428}
+{"t_s": 46.254, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.548651399999999, "rel_alt_m": 30.01300048828125}
+{"t_s": 46.443, "event": "estimator_status", "vel_ratio": 0.006563488859683275, "pos_horiz_ratio": 0.007229768205434084, "pos_vert_ratio": 0.005872361361980438, "mag_ratio": 0.007977190427482128, "pos_horiz_accuracy": 0.1515512317419052, "pos_vert_accuracy": 0.16653847694396973, "flags": 831}
+{"t_s": 46.494, "event": "truth", "vehicle": "uav1", "east_m": 189.13, "north_m": 0.012, "alt_m": 30.16, "sim_s": 129.944}
+{"t_s": 46.774, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5487206, "rel_alt_m": 30.006000518798828}
+{"t_s": 47.011, "event": "truth", "vehicle": "uav1", "east_m": 194.312, "north_m": 0.002, "alt_m": 30.155, "sim_s": 130.46}
+{"t_s": 47.295, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5487897, "rel_alt_m": 30.001001358032227}
+{"t_s": 47.441, "event": "estimator_status", "vel_ratio": 0.00761386239901185, "pos_horiz_ratio": 0.0049888864159584045, "pos_vert_ratio": 0.003696207422763109, "mag_ratio": 0.007800637744367123, "pos_horiz_accuracy": 0.15207958221435547, "pos_vert_accuracy": 0.1667947769165039, "flags": 831}
+{"t_s": 47.51, "event": "truth", "vehicle": "uav1", "east_m": 199.332, "north_m": -0.004, "alt_m": 30.153, "sim_s": 130.96}
+{"t_s": 47.542, "event": "gnss_enter", "east_m": 200.1, "north_m": 0.1}
+{"t_s": 47.814, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488584, "rel_alt_m": 30.001001358032227}
+{"t_s": 48.01, "event": "truth", "vehicle": "uav1", "east_m": 204.349, "north_m": -0.003, "alt_m": 30.153, "sim_s": 131.46}
+{"t_s": 48.334, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5489217, "rel_alt_m": 30.007001876831055}
+{"t_s": 48.443, "event": "estimator_status", "vel_ratio": 0.05182219669222832, "pos_horiz_ratio": 1.11531400680542, "pos_vert_ratio": 0.004089076537638903, "mag_ratio": 0.010628336109220982, "pos_horiz_accuracy": 0.162497878074646, "pos_vert_accuracy": 0.16605962812900543, "flags": 1855}
+{"t_s": 48.526, "event": "truth", "vehicle": "uav1", "east_m": 209.561, "north_m": 0.002, "alt_m": 30.158, "sim_s": 131.976}
+{"t_s": 48.838, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5489868, "rel_alt_m": 30.006000518798828}
+{"t_s": 49.046, "event": "truth", "vehicle": "uav1", "east_m": 214.881, "north_m": 0.006, "alt_m": 30.152, "sim_s": 132.492}
+{"t_s": 49.338, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.549054, "rel_alt_m": 30.00200080871582}
+{"t_s": 49.447, "event": "estimator_status", "vel_ratio": 0.0335957407951355, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0028148468118160963, "mag_ratio": 0.006985465995967388, "pos_horiz_accuracy": 0.1922350525856018, "pos_vert_accuracy": 0.1663161665201187, "flags": 1855}
+{"t_s": 49.561, "event": "truth", "vehicle": "uav1", "east_m": 220.211, "north_m": 0.007, "alt_m": 30.147, "sim_s": 133.008}
+{"t_s": 49.838, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491198, "rel_alt_m": 30.00400161743164}
+{"t_s": 50.074, "event": "truth", "vehicle": "uav1", "east_m": 225.498, "north_m": 0.007, "alt_m": 30.143, "sim_s": 133.52}
+{"t_s": 50.358, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549188899999999, "rel_alt_m": 30.006000518798828}
+{"t_s": 50.489, "event": "estimator_status", "vel_ratio": 0.021468276157975197, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004760094918310642, "mag_ratio": 0.007530790753662586, "pos_horiz_accuracy": 0.2179894894361496, "pos_vert_accuracy": 0.1665799766778946, "flags": 1855}
+{"t_s": 50.626, "event": "truth", "vehicle": "uav1", "east_m": 230.8, "north_m": 0.005, "alt_m": 30.136, "sim_s": 134.032}
+{"t_s": 50.879, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5492527, "rel_alt_m": 30.005001068115234}
+{"t_s": 51.126, "event": "truth", "vehicle": "uav1", "east_m": 235.994, "north_m": 0.0, "alt_m": 30.129, "sim_s": 134.532}
+{"t_s": 51.38, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5493198, "rel_alt_m": 30.00400161743164}
+{"t_s": 51.487, "event": "estimator_status", "vel_ratio": 0.01478433609008789, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.002783591393381357, "mag_ratio": 0.012135328724980354, "pos_horiz_accuracy": 0.23981419205665588, "pos_vert_accuracy": 0.1658628135919571, "flags": 1855}
+{"t_s": 51.641, "event": "truth", "vehicle": "uav1", "east_m": 241.369, "north_m": -0.008, "alt_m": 30.121, "sim_s": 135.048}
+{"t_s": 51.898, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549389, "rel_alt_m": 30.000001907348633}
+{"t_s": 52.158, "event": "truth", "vehicle": "uav1", "east_m": 246.76, "north_m": -0.02, "alt_m": 30.114, "sim_s": 135.564}
+{"t_s": 52.418, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5494582, "rel_alt_m": 30.001001358032227}
+{"t_s": 52.486, "event": "estimator_status", "vel_ratio": 0.009713019244372845, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004527437500655651, "mag_ratio": 0.011904127895832062, "pos_horiz_accuracy": 0.2606806457042694, "pos_vert_accuracy": 0.1661348193883896, "flags": 1855}
+{"t_s": 52.672, "event": "truth", "vehicle": "uav1", "east_m": 252.166, "north_m": -0.037, "alt_m": 30.107, "sim_s": 136.08}
+{"t_s": 52.937, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549527399999999, "rel_alt_m": 30.000001907348633}
+{"t_s": 53.189, "event": "truth", "vehicle": "uav1", "east_m": 257.587, "north_m": -0.059, "alt_m": 30.1, "sim_s": 136.596}
+{"t_s": 53.437, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495934, "rel_alt_m": 30.001001358032227}
+{"t_s": 53.486, "event": "estimator_status", "vel_ratio": 0.007678481284528971, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0017176915425807238, "mag_ratio": 0.011276689358055592, "pos_horiz_accuracy": 0.28009602427482605, "pos_vert_accuracy": 0.1664063036441803, "flags": 1855}
+{"t_s": 53.705, "event": "truth", "vehicle": "uav1", "east_m": 263.022, "north_m": -0.088, "alt_m": 30.092, "sim_s": 137.112}
+{"t_s": 53.937, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5496604, "rel_alt_m": 30.00200080871582}
+{"t_s": 54.206, "event": "truth", "vehicle": "uav1", "east_m": 268.301, "north_m": -0.123, "alt_m": 30.083, "sim_s": 137.612}
+{"t_s": 54.437, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549726399999999, "rel_alt_m": 30.003002166748047}
+{"t_s": 54.487, "event": "estimator_status", "vel_ratio": 0.00950509775429964, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.002851706463843584, "mag_ratio": 0.010902177542448044, "pos_horiz_accuracy": 0.29766035079956055, "pos_vert_accuracy": 0.16569846868515015, "flags": 1855}
+{"t_s": 54.705, "event": "truth", "vehicle": "uav1", "east_m": 273.591, "north_m": -0.166, "alt_m": 30.073, "sim_s": 138.112}
+{"t_s": 54.938, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5497935, "rel_alt_m": 30.00400161743164}
+{"t_s": 55.222, "event": "truth", "vehicle": "uav1", "east_m": 279.062, "north_m": -0.219, "alt_m": 30.061, "sim_s": 138.628}
+{"t_s": 55.458, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.548859199999999, "rel_alt_m": 30.005001068115234}
+{"t_s": 55.487, "event": "estimator_status", "vel_ratio": 0.011006182990968227, "pos_horiz_ratio": 0.16849055886268616, "pos_vert_ratio": 0.0040290034376084805, "mag_ratio": 0.0128855649381876, "pos_horiz_accuracy": 0.39305609464645386, "pos_vert_accuracy": 0.16597384214401245, "flags": 831}
+{"t_s": 55.738, "event": "truth", "vehicle": "uav1", "east_m": 284.557, "north_m": -0.279, "alt_m": 30.063, "sim_s": 139.144}
+{"t_s": 55.977, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488962, "rel_alt_m": 30.014001846313477}
+{"t_s": 56.254, "event": "truth", "vehicle": "uav1", "east_m": 290.273, "north_m": -0.339, "alt_m": 30.062, "sim_s": 139.66}
+{"t_s": 56.478, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548945, "rel_alt_m": 30.009000778198242}
+{"t_s": 56.487, "event": "estimator_status", "vel_ratio": 0.1357754021883011, "pos_horiz_ratio": 1.2484687566757202, "pos_vert_ratio": 0.004851950332522392, "mag_ratio": 0.02161114662885666, "pos_horiz_accuracy": 0.2515971064567566, "pos_vert_accuracy": 0.16625282168388367, "flags": 1855}
+{"t_s": 56.754, "event": "truth", "vehicle": "uav1", "east_m": 296.035, "north_m": -0.404, "alt_m": 30.037, "sim_s": 140.16}
+{"t_s": 56.998, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5490127, "rel_alt_m": 29.99700164794922}
+{"t_s": 57.27, "event": "truth", "vehicle": "uav1", "east_m": 301.964, "north_m": -0.48, "alt_m": 30.015, "sim_s": 140.676}
+{"t_s": 57.486, "event": "estimator_status", "vel_ratio": 0.1347750574350357, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0046633388847112656, "mag_ratio": 0.03655232489109039, "pos_horiz_accuracy": 0.26995670795440674, "pos_vert_accuracy": 0.1655609905719757, "flags": 1855}
+{"t_s": 57.518, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5490813, "rel_alt_m": 29.999000549316406}
+{"t_s": 57.77, "event": "truth", "vehicle": "uav1", "east_m": 307.705, "north_m": -0.562, "alt_m": 30.001, "sim_s": 141.176}
+{"t_s": 58.038, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549150599999999, "rel_alt_m": 29.999000549316406}
+{"t_s": 58.27, "event": "truth", "vehicle": "uav1", "east_m": 313.506, "north_m": -0.652, "alt_m": 29.983, "sim_s": 141.676}
+{"t_s": 58.487, "event": "estimator_status", "vel_ratio": 0.05702698975801468, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005981416441500187, "mag_ratio": 0.039759665727615356, "pos_horiz_accuracy": 0.28880998492240906, "pos_vert_accuracy": 0.16585274040699005, "flags": 1855}
+{"t_s": 58.558, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549220199999999, "rel_alt_m": 29.99700164794922}
+{"t_s": 58.786, "event": "truth", "vehicle": "uav1", "east_m": 319.552, "north_m": -0.754, "alt_m": 29.965, "sim_s": 142.192}
+{"t_s": 59.058, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549287699999999, "rel_alt_m": 29.996002197265625}
+{"t_s": 59.286, "event": "truth", "vehicle": "uav1", "east_m": 325.459, "north_m": -0.861, "alt_m": 29.947, "sim_s": 142.692}
+{"t_s": 59.487, "event": "estimator_status", "vel_ratio": 0.02319902367889881, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0060471901670098305, "mag_ratio": 0.04796618968248367, "pos_horiz_accuracy": 0.30634135007858276, "pos_vert_accuracy": 0.1661512702703476, "flags": 1855}
+{"t_s": 59.558, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549354, "rel_alt_m": 29.996002197265625}
+{"t_s": 59.786, "event": "truth", "vehicle": "uav1", "east_m": 331.412, "north_m": -0.979, "alt_m": 29.928, "sim_s": 143.192}
+{"t_s": 60.078, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5494234, "rel_alt_m": 29.9950008392334}
+{"t_s": 60.303, "event": "truth", "vehicle": "uav1", "east_m": 337.601, "north_m": -1.112, "alt_m": 29.909, "sim_s": 143.708}
+{"t_s": 60.486, "event": "estimator_status", "vel_ratio": 0.01530575193464756, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005772933829575777, "mag_ratio": 0.04318849742412567, "pos_horiz_accuracy": 0.32277557253837585, "pos_vert_accuracy": 0.16645547747612, "flags": 1855}
+{"t_s": 60.598, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549492899999999, "rel_alt_m": 29.994001388549805}
+{"t_s": 60.811, "event": "truth", "vehicle": "uav1", "east_m": 343.686, "north_m": -1.254, "alt_m": 29.89, "sim_s": 144.212}
+{"t_s": 61.113, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495602, "rel_alt_m": 29.99300193786621}
+{"t_s": 61.327, "event": "truth", "vehicle": "uav1", "east_m": 349.808, "north_m": -1.408, "alt_m": 29.871, "sim_s": 144.716}
+{"t_s": 61.501, "event": "estimator_status", "vel_ratio": 0.03668656200170517, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.007296571973711252, "mag_ratio": 0.0410039946436882, "pos_horiz_accuracy": 0.33775290846824646, "pos_vert_accuracy": 0.16577859222888947, "flags": 1855}
+{"t_s": 61.633, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5496296, "rel_alt_m": 29.992000579833984}
+{"t_s": 61.841, "event": "truth", "vehicle": "uav1", "east_m": 356.109, "north_m": -1.58, "alt_m": 29.853, "sim_s": 145.232}
+{"t_s": 62.153, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549699, "rel_alt_m": 29.99300193786621}
+{"t_s": 62.357, "event": "truth", "vehicle": "uav1", "east_m": 362.436, "north_m": -1.766, "alt_m": 29.834, "sim_s": 145.748}
+{"t_s": 62.502, "event": "estimator_status", "vel_ratio": 0.05457518249750137, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.007056999020278454, "mag_ratio": 0.035878002643585205, "pos_horiz_accuracy": 0.3529086112976074, "pos_vert_accuracy": 0.16608312726020813, "flags": 1855}
+{"t_s": 62.672, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497684, "rel_alt_m": 29.99300193786621}
+{"t_s": 62.872, "event": "truth", "vehicle": "uav1", "east_m": 368.785, "north_m": -1.968, "alt_m": 29.816, "sim_s": 146.264}
+{"t_s": 63.173, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488375, "rel_alt_m": 29.9950008392334}
+{"t_s": 63.391, "event": "truth", "vehicle": "uav1", "east_m": 375.141, "north_m": -2.188, "alt_m": 29.804, "sim_s": 146.78}
+{"t_s": 63.502, "event": "estimator_status", "vel_ratio": 0.07003092020750046, "pos_horiz_ratio": 0.21418967843055725, "pos_vert_ratio": 0.006729138549417257, "mag_ratio": 0.03309572860598564, "pos_horiz_accuracy": 0.3604694604873657, "pos_vert_accuracy": 0.1663861721754074, "flags": 831}
+{"t_s": 63.692, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488802, "rel_alt_m": 30.01000213623047}
+{"t_s": 63.889, "event": "truth", "vehicle": "uav1", "east_m": 381.442, "north_m": -2.412, "alt_m": 29.805, "sim_s": 147.28}
+{"t_s": 64.193, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5489192, "rel_alt_m": 30.011001586914062}
+{"t_s": 64.389, "event": "truth", "vehicle": "uav1", "east_m": 388.036, "north_m": -2.649, "alt_m": 29.779, "sim_s": 147.78}
+{"t_s": 64.501, "event": "estimator_status", "vel_ratio": 0.13735640048980713, "pos_horiz_ratio": 1.4140459299087524, "pos_vert_ratio": 0.007094521075487137, "mag_ratio": 0.025990676134824753, "pos_horiz_accuracy": 0.2528269290924072, "pos_vert_accuracy": 0.1657048463821411, "flags": 1855}
+{"t_s": 64.713, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548983699999999, "rel_alt_m": 29.996002197265625}
+{"t_s": 64.901, "event": "truth", "vehicle": "uav1", "east_m": 394.935, "north_m": -2.91, "alt_m": 29.737, "sim_s": 148.292}
+{"t_s": 65.234, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549052099999999, "rel_alt_m": 29.99300193786621}
+{"t_s": 65.417, "event": "truth", "vehicle": "uav1", "east_m": 401.865, "north_m": -3.188, "alt_m": 29.708, "sim_s": 148.808}
+{"t_s": 65.501, "event": "estimator_status", "vel_ratio": 0.11025254428386688, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008663172833621502, "mag_ratio": 0.047231029719114304, "pos_horiz_accuracy": 0.2717289924621582, "pos_vert_accuracy": 0.1660134494304657, "flags": 1855}
+{"t_s": 65.735, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491178, "rel_alt_m": 29.9950008392334}
+{"t_s": 65.917, "event": "truth", "vehicle": "uav1", "east_m": 408.637, "north_m": -3.475, "alt_m": 29.681, "sim_s": 149.308}
+{"t_s": 66.253, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491874, "rel_alt_m": 29.9950008392334}
+{"t_s": 66.417, "event": "truth", "vehicle": "uav1", "east_m": 415.492, "north_m": -3.778, "alt_m": 29.651, "sim_s": 149.808}
+{"t_s": 66.501, "event": "estimator_status", "vel_ratio": 0.04302624240517616, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008533868938684464, "mag_ratio": 0.045943114906549454, "pos_horiz_accuracy": 0.29056620597839355, "pos_vert_accuracy": 0.16633078455924988, "flags": 1855}
+{"t_s": 66.754, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549253799999999, "rel_alt_m": 29.99300193786621}
+{"t_s": 66.916, "event": "truth", "vehicle": "uav1", "east_m": 422.418, "north_m": -4.097, "alt_m": 29.621, "sim_s": 150.308}
+{"t_s": 67.273, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5493234, "rel_alt_m": 29.994001388549805}
+{"t_s": 67.429, "event": "truth", "vehicle": "uav1", "east_m": 429.587, "north_m": -4.443, "alt_m": 29.59, "sim_s": 150.82}
+{"t_s": 67.503, "event": "estimator_status", "vel_ratio": 0.011813146993517876, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008234001696109772, "mag_ratio": 0.04969235509634018, "pos_horiz_accuracy": 0.307233989238739, "pos_vert_accuracy": 0.16566497087478638, "flags": 1855}
+{"t_s": 67.781, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5493908, "rel_alt_m": 29.99300193786621}
+{"t_s": 67.946, "event": "truth", "vehicle": "uav1", "east_m": 436.773, "north_m": -4.804, "alt_m": 29.558, "sim_s": 151.328}
+{"t_s": 68.289, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549455, "rel_alt_m": 29.992000579833984}
+{"t_s": 68.477, "event": "truth", "vehicle": "uav1", "east_m": 443.967, "north_m": -5.181, "alt_m": 29.527, "sim_s": 151.832}
+{"t_s": 68.541, "event": "estimator_status", "vel_ratio": 0.02617986686527729, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008750846609473228, "mag_ratio": 0.043599825352430344, "pos_horiz_accuracy": 0.32360586524009705, "pos_vert_accuracy": 0.165983185172081, "flags": 1855}
+{"t_s": 68.795, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495073, "rel_alt_m": 29.99100112915039}
+{"t_s": 69.117, "event": "truth", "vehicle": "uav1", "east_m": 451.22, "north_m": -5.578, "alt_m": 29.498, "sim_s": 152.336}
+{"t_s": 69.304, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495704, "rel_alt_m": 29.992000579833984}
+{"t_s": 71.073, "event": "estimator_status", "vel_ratio": 0.03461836650967598, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.009308390319347382, "mag_ratio": 0.03941701352596283, "pos_horiz_accuracy": 0.3386988043785095, "pos_vert_accuracy": 0.16581663489341736, "flags": 1855}
+{"t_s": 71.102, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495736, "rel_alt_m": 29.992000579833984}
+{"t_s": 71.109, "event": "truth", "vehicle": "uav1", "east_m": 458.731, "north_m": -6.006, "alt_m": 29.467, "sim_s": 152.852}
+{"t_s": 71.11, "event": "truth", "vehicle": "uav1", "east_m": 466.319, "north_m": -6.457, "alt_m": 29.433, "sim_s": 153.368}
+{"t_s": 71.11, "event": "truth", "vehicle": "uav1", "east_m": 473.908, "north_m": -6.927, "alt_m": 29.402, "sim_s": 153.88}
+{"t_s": 71.121, "event": "estimator_status", "vel_ratio": 0.035852596163749695, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.01030464842915535, "mag_ratio": 0.04213942587375641, "pos_horiz_accuracy": 0.3538307249546051, "pos_vert_accuracy": 0.1662096530199051, "flags": 1855}
+{"t_s": 71.196, "event": "truth", "vehicle": "uav1", "east_m": 481.621, "north_m": -7.425, "alt_m": 29.372, "sim_s": 154.396}
+{"t_s": 71.612, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488655, "rel_alt_m": 29.994001388549805}
+{"t_s": 71.702, "event": "estimator_status", "vel_ratio": 0.040983885526657104, "pos_horiz_ratio": 0.28702569007873535, "pos_vert_ratio": 0.009314538910984993, "mag_ratio": 0.03671294450759888, "pos_horiz_accuracy": 0.3239043056964874, "pos_vert_accuracy": 0.16560155153274536, "flags": 831}
+{"t_s": 71.716, "event": "truth", "vehicle": "uav1", "east_m": 489.341, "north_m": -7.943, "alt_m": 29.355, "sim_s": 154.908}
+{"t_s": 72.135, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5489009, "rel_alt_m": 30.006000518798828}
+{"t_s": 72.233, "event": "truth", "vehicle": "uav1", "east_m": 497.367, "north_m": -8.486, "alt_m": 29.338, "sim_s": 155.424}
+{"t_s": 72.652, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548957399999999, "rel_alt_m": 29.996002197265625}
+{"t_s": 72.712, "event": "estimator_status", "vel_ratio": 0.1419866532087326, "pos_horiz_ratio": 1.5324984788894653, "pos_vert_ratio": 0.00894409604370594, "mag_ratio": 0.03989613801240921, "pos_horiz_accuracy": 0.25392892956733704, "pos_vert_accuracy": 0.16570782661437988, "flags": 1855}
+{"t_s": 72.743, "event": "truth", "vehicle": "uav1", "east_m": 505.644, "north_m": -9.054, "alt_m": 29.282, "sim_s": 155.936}
+{"t_s": 73.158, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549023499999999, "rel_alt_m": 29.98600196838379}
+{"t_s": 73.297, "event": "truth", "vehicle": "uav1", "east_m": 513.913, "north_m": -9.641, "alt_m": 29.228, "sim_s": 156.444}
+{"t_s": 73.683, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5490698, "rel_alt_m": 29.988000869750977}
+{"t_s": 73.867, "event": "estimator_status", "vel_ratio": 0.09683669358491898, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.010366401635110378, "mag_ratio": 0.05026984214782715, "pos_horiz_accuracy": 0.2723819315433502, "pos_vert_accuracy": 0.16555771231651306, "flags": 1855}
+{"t_s": 73.961, "event": "truth", "vehicle": "uav1", "east_m": 522.213, "north_m": -10.25, "alt_m": 29.188, "sim_s": 156.952}
+{"t_s": 74.195, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549123999999999, "rel_alt_m": 29.990001678466797}
+{"t_s": 74.548, "event": "truth", "vehicle": "uav1", "east_m": 530.777, "north_m": -10.896, "alt_m": 29.142, "sim_s": 157.468}
+{"t_s": 74.704, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491906, "rel_alt_m": 29.987001419067383}
+{"t_s": 74.973, "event": "estimator_status", "vel_ratio": 0.038255300372838974, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.011177735403180122, "mag_ratio": 0.05016831308603287, "pos_horiz_accuracy": 0.2911090850830078, "pos_vert_accuracy": 0.16597004234790802, "flags": 1855}
+{"t_s": 75.064, "event": "truth", "vehicle": "uav1", "east_m": 539.452, "north_m": -11.566, "alt_m": 29.094, "sim_s": 157.984}
+{"t_s": 75.204, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549258, "rel_alt_m": 29.985000610351562}
+{"t_s": 75.581, "event": "truth", "vehicle": "uav1", "east_m": 548.221, "north_m": -12.263, "alt_m": 29.048, "sim_s": 158.5}
+{"t_s": 75.726, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5493275, "rel_alt_m": 29.98400115966797}
+{"t_s": 75.979, "event": "estimator_status", "vel_ratio": 0.018749017268419266, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.012905709445476532, "mag_ratio": 0.05149032920598984, "pos_horiz_accuracy": 0.3084941506385803, "pos_vert_accuracy": 0.16636639833450317, "flags": 1855}
+{"t_s": 76.091, "event": "truth", "vehicle": "uav1", "east_m": 556.884, "north_m": -12.97, "alt_m": 29.003, "sim_s": 159.004}
+{"t_s": 76.231, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549393799999999, "rel_alt_m": 29.983001708984375}
+{"t_s": 76.613, "event": "truth", "vehicle": "uav1", "east_m": 565.778, "north_m": -13.713, "alt_m": 28.957, "sim_s": 159.516}
+{"t_s": 76.741, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494612, "rel_alt_m": 29.98200225830078}
+{"t_s": 76.989, "event": "estimator_status", "vel_ratio": 0.04390626400709152, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.012676224112510681, "mag_ratio": 0.046188320964574814, "pos_horiz_accuracy": 0.3240742087364197, "pos_vert_accuracy": 0.1657537966966629, "flags": 1855}
+{"t_s": 77.125, "event": "truth", "vehicle": "uav1", "east_m": 574.759, "north_m": -14.484, "alt_m": 28.912, "sim_s": 160.028}
+{"t_s": 77.241, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495275, "rel_alt_m": 29.981000900268555}
+{"t_s": 77.632, "event": "truth", "vehicle": "uav1", "east_m": 583.75, "north_m": -15.275, "alt_m": 28.869, "sim_s": 160.536}
+{"t_s": 77.761, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549597, "rel_alt_m": 29.98000144958496}
+{"t_s": 77.995, "event": "estimator_status", "vel_ratio": 0.06588365882635117, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.013838335871696472, "mag_ratio": 0.04455024376511574, "pos_horiz_accuracy": 0.3397216498851776, "pos_vert_accuracy": 0.16611263155937195, "flags": 1855}
+{"t_s": 78.146, "event": "truth", "vehicle": "uav1", "east_m": 592.814, "north_m": -16.094, "alt_m": 28.826, "sim_s": 161.044}
+{"t_s": 78.272, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5496643, "rel_alt_m": 29.981000900268555}
+{"t_s": 78.661, "event": "truth", "vehicle": "uav1", "east_m": 602.09, "north_m": -16.954, "alt_m": 28.787, "sim_s": 161.56}
+{"t_s": 78.786, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5497318, "rel_alt_m": 29.981000900268555}
+{"t_s": 79.001, "event": "estimator_status", "vel_ratio": 0.07791509479284286, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.014828491024672985, "mag_ratio": 0.03562759608030319, "pos_horiz_accuracy": 0.35428372025489807, "pos_vert_accuracy": 0.1659875512123108, "flags": 1855}
+{"t_s": 79.175, "event": "truth", "vehicle": "uav1", "east_m": 611.313, "north_m": -17.83, "alt_m": 28.747, "sim_s": 162.068}
+{"t_s": 79.296, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497982, "rel_alt_m": 29.981000900268555}
+{"t_s": 79.697, "event": "truth", "vehicle": "uav1", "east_m": 620.676, "north_m": -18.745, "alt_m": 28.712, "sim_s": 162.58}
+{"t_s": 79.8, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488629, "rel_alt_m": 29.987001419067383}
+{"t_s": 80.008, "event": "estimator_status", "vel_ratio": 0.06897695362567902, "pos_horiz_ratio": 0.3417678773403168, "pos_vert_ratio": 0.01427113264799118, "mag_ratio": 0.030011992901563644, "pos_horiz_accuracy": 0.3052363693714142, "pos_vert_accuracy": 0.16642704606056213, "flags": 831}
+{"t_s": 80.204, "event": "truth", "vehicle": "uav1", "east_m": 630.114, "north_m": -19.678, "alt_m": 28.698, "sim_s": 163.088}
+{"t_s": 80.301, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548897499999999, "rel_alt_m": 30.001001358032227}
+{"t_s": 80.731, "event": "truth", "vehicle": "uav1", "east_m": 639.96, "north_m": -20.656, "alt_m": 28.652, "sim_s": 163.6}
+{"t_s": 80.811, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548948, "rel_alt_m": 29.99300193786621}
+{"t_s": 81.02, "event": "estimator_status", "vel_ratio": 0.13243594765663147, "pos_horiz_ratio": 1.6538865566253662, "pos_vert_ratio": 0.013833274133503437, "mag_ratio": 0.030120978131890297, "pos_horiz_accuracy": 0.2556705176830292, "pos_vert_accuracy": 0.166560098528862, "flags": 1855}
+{"t_s": 81.228, "event": "truth", "vehicle": "uav1", "east_m": 649.772, "north_m": -21.645, "alt_m": 28.582, "sim_s": 164.1}
+{"t_s": 81.312, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5490136, "rel_alt_m": 29.979001998901367}
+{"t_s": 81.744, "event": "truth", "vehicle": "uav1", "east_m": 659.911, "north_m": -22.692, "alt_m": 28.528, "sim_s": 164.616}
+{"t_s": 81.83, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549082, "rel_alt_m": 29.98000144958496}
+{"t_s": 82.029, "event": "estimator_status", "vel_ratio": 0.07546976953744888, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.014116516336798668, "mag_ratio": 0.0382055826485157, "pos_horiz_accuracy": 0.27440574765205383, "pos_vert_accuracy": 0.1659480631351471, "flags": 1855}
+{"t_s": 82.251, "event": "truth", "vehicle": "uav1", "east_m": 669.98, "north_m": -23.752, "alt_m": 28.48, "sim_s": 165.124}
+{"t_s": 82.334, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491481, "rel_alt_m": 29.981000900268555}
+{"t_s": 82.766, "event": "truth", "vehicle": "uav1", "east_m": 680.328, "north_m": -24.861, "alt_m": 28.429, "sim_s": 165.64}
+{"t_s": 82.851, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5492178, "rel_alt_m": 29.97800064086914}
+{"t_s": 83.018, "event": "estimator_status", "vel_ratio": 0.018300596624612808, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.018019376322627068, "mag_ratio": 0.039166636765003204, "pos_horiz_accuracy": 0.2929697632789612, "pos_vert_accuracy": 0.1663118600845337, "flags": 1855}
+{"t_s": 83.267, "event": "truth", "vehicle": "uav1", "east_m": 690.456, "north_m": -25.965, "alt_m": 28.38, "sim_s": 166.14}
+{"t_s": 83.355, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549284199999999, "rel_alt_m": 29.976001739501953}
+{"t_s": 83.78, "event": "truth", "vehicle": "uav1", "east_m": 700.76, "north_m": -27.107, "alt_m": 28.334, "sim_s": 166.644}
+{"t_s": 83.86, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549351699999999, "rel_alt_m": 29.977001190185547}
+{"t_s": 84.028, "event": "estimator_status", "vel_ratio": 0.04195011779665947, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.015743298456072807, "mag_ratio": 0.031265463680028915, "pos_horiz_accuracy": 0.3102072775363922, "pos_vert_accuracy": 0.1666652113199234, "flags": 1855}
+{"t_s": 84.28, "event": "truth", "vehicle": "uav1", "east_m": 711.081, "north_m": -28.27, "alt_m": 28.287, "sim_s": 167.144}
+{"t_s": 84.362, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494181, "rel_alt_m": 29.97800064086914}
+{"t_s": 84.794, "event": "truth", "vehicle": "uav1", "east_m": 721.737, "north_m": -29.492, "alt_m": 28.239, "sim_s": 167.656}
+{"t_s": 84.88, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494877, "rel_alt_m": 29.977001190185547}
+{"t_s": 85.03, "event": "estimator_status", "vel_ratio": 0.06163749843835831, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.014175972901284695, "mag_ratio": 0.03177942335605621, "pos_horiz_accuracy": 0.32644346356391907, "pos_vert_accuracy": 0.1670115888118744, "flags": 1855}
+{"t_s": 85.309, "event": "truth", "vehicle": "uav1", "east_m": 732.556, "north_m": -30.755, "alt_m": 28.193, "sim_s": 168.172}
+{"t_s": 85.38, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549555, "rel_alt_m": 29.97800064086914}
+{"t_s": 85.821, "event": "truth", "vehicle": "uav1", "east_m": 743.112, "north_m": -32.008, "alt_m": 28.149, "sim_s": 168.672}
+{"t_s": 85.893, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5496213, "rel_alt_m": 29.976001739501953}
+{"t_s": 86.04, "event": "estimator_status", "vel_ratio": 0.08429171144962311, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0182630717754364, "mag_ratio": 0.023798247799277306, "pos_horiz_accuracy": 0.34129592776298523, "pos_vert_accuracy": 0.16634970903396606, "flags": 1855}
+{"t_s": 86.332, "event": "truth", "vehicle": "uav1", "east_m": 753.986, "north_m": -33.323, "alt_m": 28.107, "sim_s": 169.184}
+{"t_s": 86.412, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5496908, "rel_alt_m": 29.974000930786133}
+{"t_s": 86.841, "event": "truth", "vehicle": "uav1", "east_m": 764.83, "north_m": -34.657, "alt_m": 28.069, "sim_s": 169.692}
+{"t_s": 86.932, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549760299999999, "rel_alt_m": 29.97500228881836}
+{"t_s": 87.04, "event": "estimator_status", "vel_ratio": 0.10465072840452194, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.01753479801118374, "mag_ratio": 0.026238026097416878, "pos_horiz_accuracy": 0.3563341200351715, "pos_vert_accuracy": 0.16667713224887848, "flags": 1855}
+{"t_s": 87.341, "event": "truth", "vehicle": "uav1", "east_m": 775.548, "north_m": -35.999, "alt_m": 28.033, "sim_s": 170.192}
+{"t_s": 87.433, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488318, "rel_alt_m": 29.97500228881836}
+{"t_s": 87.848, "event": "truth", "vehicle": "uav1", "east_m": 786.479, "north_m": -37.393, "alt_m": 28.022, "sim_s": 170.7}
+{"t_s": 87.951, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488764, "rel_alt_m": 29.9950008392334}
+{"t_s": 88.041, "event": "estimator_status", "vel_ratio": 0.10790975391864777, "pos_horiz_ratio": 0.39221200346946716, "pos_vert_ratio": 0.015241004526615143, "mag_ratio": 0.020649898797273636, "pos_horiz_accuracy": 0.28954219818115234, "pos_vert_accuracy": 0.16699910163879395, "flags": 831}
+{"t_s": 88.357, "event": "truth", "vehicle": "uav1", "east_m": 797.662, "north_m": -38.82, "alt_m": 28.007, "sim_s": 171.208}
+{"t_s": 88.479, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5489128, "rel_alt_m": 30.000001907348633}
+{"t_s": 88.987, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5489579, "rel_alt_m": 29.98600196838379}
+{"t_s": 89.026, "event": "truth", "vehicle": "uav1", "east_m": 809.335, "north_m": -40.315, "alt_m": 27.951, "sim_s": 171.724}
+{"t_s": 89.198, "event": "estimator_status", "vel_ratio": 0.1260608285665512, "pos_horiz_ratio": 1.8410788774490356, "pos_vert_ratio": 0.016663730144500732, "mag_ratio": 0.02604672871530056, "pos_horiz_accuracy": 0.2569628059864044, "pos_vert_accuracy": 0.1663081794977188, "flags": 1855}
+{"t_s": 89.488, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5490227, "rel_alt_m": 29.97300148010254}
+{"t_s": 89.543, "event": "truth", "vehicle": "uav1", "east_m": 821.079, "north_m": -41.841, "alt_m": 27.895, "sim_s": 172.24}
+{"t_s": 90.008, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5490911, "rel_alt_m": 29.977001190185547}
+{"t_s": 90.057, "event": "truth", "vehicle": "uav1", "east_m": 832.747, "north_m": -43.383, "alt_m": 27.86, "sim_s": 172.752}
+{"t_s": 90.196, "event": "estimator_status", "vel_ratio": 0.05976508930325508, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.015823107212781906, "mag_ratio": 0.022172437980771065, "pos_horiz_accuracy": 0.27619004249572754, "pos_vert_accuracy": 0.16662295162677765, "flags": 1855}
+{"t_s": 90.527, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5491605, "rel_alt_m": 29.98000144958496}
+{"t_s": 90.567, "event": "truth", "vehicle": "uav1", "east_m": 844.51, "north_m": -44.958, "alt_m": 27.823, "sim_s": 173.264}
+{"t_s": 91.028, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549228, "rel_alt_m": 29.979001998901367}
+{"t_s": 91.079, "event": "truth", "vehicle": "uav1", "east_m": 856.367, "north_m": -46.565, "alt_m": 27.786, "sim_s": 173.776}
+{"t_s": 91.195, "event": "estimator_status", "vel_ratio": 0.02339649200439453, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.014962362125515938, "mag_ratio": 0.02432774007320404, "pos_horiz_accuracy": 0.29470449686050415, "pos_vert_accuracy": 0.16693943738937378, "flags": 1855}
+{"t_s": 91.548, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5492977, "rel_alt_m": 29.979001998901367}
+{"t_s": 91.588, "event": "truth", "vehicle": "uav1", "east_m": 868.114, "north_m": -48.177, "alt_m": 27.751, "sim_s": 174.28}
+{"t_s": 92.068, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5493673, "rel_alt_m": 29.97800064086914}
+{"t_s": 92.099, "event": "truth", "vehicle": "uav1", "east_m": 880.213, "north_m": -49.859, "alt_m": 27.717, "sim_s": 174.796}
+{"t_s": 92.198, "event": "estimator_status", "vel_ratio": 0.056621309369802475, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.015144416131079197, "mag_ratio": 0.022215628996491432, "pos_horiz_accuracy": 0.31108319759368896, "pos_vert_accuracy": 0.1662532091140747, "flags": 1855}
+{"t_s": 92.57, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494336, "rel_alt_m": 29.97800064086914}
+{"t_s": 92.614, "event": "truth", "vehicle": "uav1", "east_m": 892.378, "north_m": -51.572, "alt_m": 27.686, "sim_s": 175.312}
+{"t_s": 93.088, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495032, "rel_alt_m": 29.977001190185547}
+{"t_s": 93.127, "event": "truth", "vehicle": "uav1", "east_m": 904.505, "north_m": -53.301, "alt_m": 27.658, "sim_s": 175.824}
+{"t_s": 93.197, "event": "estimator_status", "vel_ratio": 0.0801125019788742, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.015554976649582386, "mag_ratio": 0.02111058682203293, "pos_horiz_accuracy": 0.32727229595184326, "pos_vert_accuracy": 0.1665646731853485, "flags": 1855}
+{"t_s": 93.612, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495728, "rel_alt_m": 29.977001190185547}
+{"t_s": 93.639, "event": "truth", "vehicle": "uav1", "east_m": 916.678, "north_m": -55.061, "alt_m": 27.632, "sim_s": 176.336}
+{"t_s": 94.115, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5496418, "rel_alt_m": 29.97500228881836}
+{"t_s": 94.156, "event": "truth", "vehicle": "uav1", "east_m": 928.793, "north_m": -56.835, "alt_m": 27.607, "sim_s": 176.844}
+{"t_s": 94.204, "event": "estimator_status", "vel_ratio": 0.10305044800043106, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.015100313350558281, "mag_ratio": 0.0210867952555418, "pos_horiz_accuracy": 0.3425506353378296, "pos_vert_accuracy": 0.1662830412387848, "flags": 1855}
+{"t_s": 94.615, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5497079, "rel_alt_m": 29.97500228881836}
+{"t_s": 94.668, "event": "truth", "vehicle": "uav1", "east_m": 940.998, "north_m": -58.649, "alt_m": 27.587, "sim_s": 177.356}
+{"t_s": 95.116, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497751, "rel_alt_m": 29.977001190185547}
+{"t_s": 95.179, "event": "truth", "vehicle": "uav1", "east_m": 953.197, "north_m": -60.49, "alt_m": 27.572, "sim_s": 177.868}
+{"t_s": 95.206, "event": "estimator_status", "vel_ratio": 0.1484239399433136, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.014402327127754688, "mag_ratio": 0.028525829315185547, "pos_horiz_accuracy": 0.357559472322464, "pos_vert_accuracy": 0.16660243272781372, "flags": 1855}
+{"t_s": 95.635, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488458, "rel_alt_m": 29.983001708984375}
+{"t_s": 95.696, "event": "truth", "vehicle": "uav1", "east_m": 965.189, "north_m": -62.327, "alt_m": 27.568, "sim_s": 178.372}
+{"t_s": 96.136, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488755, "rel_alt_m": 30.003002166748047}
+{"t_s": 96.321, "event": "truth", "vehicle": "uav1", "east_m": 977.583, "north_m": -64.237, "alt_m": 27.592, "sim_s": 178.888}
+{"t_s": 96.326, "event": "estimator_status", "vel_ratio": 0.13142934441566467, "pos_horiz_ratio": 0.47636181116104126, "pos_vert_ratio": 0.012246206402778625, "mag_ratio": 0.04262842983007431, "pos_horiz_accuracy": 0.2700687348842621, "pos_vert_accuracy": 0.16691336035728455, "flags": 831}
+{"t_s": 96.637, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.548912399999999, "rel_alt_m": 30.007001876831055}
+{"t_s": 96.837, "event": "truth", "vehicle": "uav1", "east_m": 990.28, "north_m": -66.185, "alt_m": 27.582, "sim_s": 179.404}
+{"t_s": 97.157, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.548975, "rel_alt_m": 29.988000869750977}
+{"t_s": 97.326, "event": "estimator_status", "vel_ratio": 0.11918922513723373, "pos_horiz_ratio": 1.9709378480911255, "pos_vert_ratio": 0.010520350188016891, "mag_ratio": 0.04243661090731621, "pos_horiz_accuracy": 0.25896984338760376, "pos_vert_accuracy": 0.16720110177993774, "flags": 1855}
+{"t_s": 97.353, "event": "truth", "vehicle": "uav1", "east_m": 1003.131, "north_m": -68.166, "alt_m": 27.546, "sim_s": 179.92}
+{"t_s": 97.678, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5490431, "rel_alt_m": 29.983001708984375}
+{"t_s": 97.853, "event": "truth", "vehicle": "uav1", "east_m": 1015.54, "north_m": -70.108, "alt_m": 27.533, "sim_s": 180.42}
+{"t_s": 98.181, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5491086, "rel_alt_m": 29.989002227783203}
+{"t_s": 98.325, "event": "estimator_status", "vel_ratio": 0.04887765645980835, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.010374002158641815, "mag_ratio": 0.040382031351327896, "pos_horiz_accuracy": 0.27782493829727173, "pos_vert_accuracy": 0.166484072804451, "flags": 1855}
+{"t_s": 98.351, "event": "truth", "vehicle": "uav1", "east_m": 1027.97, "north_m": -72.074, "alt_m": 27.525, "sim_s": 180.92}
+{"t_s": 98.696, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549178099999999, "rel_alt_m": 29.988000869750977}
+{"t_s": 98.853, "event": "truth", "vehicle": "uav1", "east_m": 1040.455, "north_m": -74.067, "alt_m": 27.517, "sim_s": 181.42}
+{"t_s": 99.196, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492446, "rel_alt_m": 29.990001678466797}
+{"t_s": 99.327, "event": "estimator_status", "vel_ratio": 0.025098973885178566, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.00989371445029974, "mag_ratio": 0.03841427341103554, "pos_horiz_accuracy": 0.29585134983062744, "pos_vert_accuracy": 0.16649216413497925, "flags": 1855}
+{"t_s": 99.365, "event": "truth", "vehicle": "uav1", "east_m": 1053.287, "north_m": -76.132, "alt_m": 27.51, "sim_s": 181.932}
+{"t_s": 99.717, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5493142, "rel_alt_m": 29.988000869750977}
+{"t_s": 99.865, "event": "truth", "vehicle": "uav1", "east_m": 1065.853, "north_m": -78.173, "alt_m": 27.504, "sim_s": 182.432}
+{"t_s": 100.22, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5493816, "rel_alt_m": 29.988000869750977}
+{"t_s": 100.327, "event": "estimator_status", "vel_ratio": 0.04987955838441849, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008890918456017971, "mag_ratio": 0.04145574942231178, "pos_horiz_accuracy": 0.3128921687602997, "pos_vert_accuracy": 0.16677269339561462, "flags": 1855}
+{"t_s": 100.376, "event": "truth", "vehicle": "uav1", "east_m": 1078.748, "north_m": -80.288, "alt_m": 27.501, "sim_s": 182.944}
+{"t_s": 100.736, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5494512, "rel_alt_m": 29.989002227783203}
+{"t_s": 100.894, "event": "truth", "vehicle": "uav1", "east_m": 1091.763, "north_m": -82.442, "alt_m": 27.5, "sim_s": 183.46}
+{"t_s": 101.241, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5495175, "rel_alt_m": 29.989002227783203}
+{"t_s": 101.332, "event": "estimator_status", "vel_ratio": 0.06983792036771774, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008079616352915764, "mag_ratio": 0.04694637283682823, "pos_horiz_accuracy": 0.3289956748485565, "pos_vert_accuracy": 0.16705521941184998, "flags": 1855}
+{"t_s": 101.405, "event": "truth", "vehicle": "uav1", "east_m": 1104.59, "north_m": -84.586, "alt_m": 27.501, "sim_s": 183.968}
+{"t_s": 101.761, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5495871, "rel_alt_m": 29.988000869750977}
+{"t_s": 101.922, "event": "truth", "vehicle": "uav1", "east_m": 1117.522, "north_m": -86.768, "alt_m": 27.504, "sim_s": 184.48}
+{"t_s": 102.272, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5496544, "rel_alt_m": 29.989002227783203}
+{"t_s": 102.341, "event": "estimator_status", "vel_ratio": 0.08783067762851715, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0069565558806061745, "mag_ratio": 0.05670420825481415, "pos_horiz_accuracy": 0.3437649607658386, "pos_vert_accuracy": 0.16633769869804382, "flags": 1855}
+{"t_s": 102.428, "event": "truth", "vehicle": "uav1", "east_m": 1130.144, "north_m": -88.92, "alt_m": 27.508, "sim_s": 184.98}
+{"t_s": 102.79, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497239, "rel_alt_m": 29.990001678466797}
+{"t_s": 102.928, "event": "truth", "vehicle": "uav1", "east_m": 1142.751, "north_m": -91.09, "alt_m": 27.515, "sim_s": 185.48}
+{"t_s": 103.305, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497901, "rel_alt_m": 29.99100112915039}
+{"t_s": 103.371, "event": "estimator_status", "vel_ratio": 0.10496246814727783, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005282137077301741, "mag_ratio": 0.06506936997175217, "pos_horiz_accuracy": 0.35872188210487366, "pos_vert_accuracy": 0.1666162610054016, "flags": 1855}
+{"t_s": 103.461, "event": "truth", "vehicle": "uav1", "east_m": 1155.333, "north_m": -93.279, "alt_m": 27.523, "sim_s": 185.98}
+{"t_s": 103.824, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488541, "rel_alt_m": 30.000001907348633}
+{"t_s": 103.961, "event": "truth", "vehicle": "uav1", "east_m": 1167.885, "north_m": -95.487, "alt_m": 27.551, "sim_s": 186.48}
+{"t_s": 104.324, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5488907, "rel_alt_m": 30.023000717163086}
+{"t_s": 104.373, "event": "estimator_status", "vel_ratio": 0.08576719462871552, "pos_horiz_ratio": 0.5402663350105286, "pos_vert_ratio": 0.004655716475099325, "mag_ratio": 0.07249146699905396, "pos_horiz_accuracy": 0.259318083524704, "pos_vert_accuracy": 0.1668897271156311, "flags": 831}
+{"t_s": 104.461, "event": "truth", "vehicle": "uav1", "east_m": 1180.582, "north_m": -97.711, "alt_m": 27.588, "sim_s": 186.98}
+{"t_s": 104.843, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5489386, "rel_alt_m": 30.01500129699707}
+{"t_s": 105.002, "event": "truth", "vehicle": "uav1", "east_m": 1193.934, "north_m": -100.032, "alt_m": 27.59, "sim_s": 187.496}
+{"t_s": 105.35, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549000399999999, "rel_alt_m": 29.9950008392334}
+{"t_s": 105.4, "event": "estimator_status", "vel_ratio": 0.13631649315357208, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005138258915394545, "mag_ratio": 0.06581833213567734, "pos_horiz_accuracy": 0.26002219319343567, "pos_vert_accuracy": 0.1661602109670639, "flags": 1855}
+{"t_s": 105.507, "event": "truth", "vehicle": "uav1", "east_m": 1207.006, "north_m": -102.32, "alt_m": 27.584, "sim_s": 188.0}
+{"t_s": 105.851, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5490656, "rel_alt_m": 29.996002197265625}
+{"t_s": 106.01, "event": "truth", "vehicle": "uav1", "east_m": 1220.005, "north_m": -104.621, "alt_m": 27.598, "sim_s": 188.504}
+{"t_s": 106.37, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5491346, "rel_alt_m": 29.999000549316406}
+{"t_s": 106.4, "event": "estimator_status", "vel_ratio": 0.05702302232384682, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006048470735549927, "mag_ratio": 0.058716047555208206, "pos_horiz_accuracy": 0.2792884409427643, "pos_vert_accuracy": 0.1664334088563919, "flags": 1855}
+{"t_s": 106.527, "event": "truth", "vehicle": "uav1", "east_m": 1233.327, "north_m": -106.996, "alt_m": 27.612, "sim_s": 189.02}
+{"t_s": 106.88, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492021, "rel_alt_m": 29.999000549316406}
+{"t_s": 107.041, "event": "truth", "vehicle": "uav1", "east_m": 1246.357, "north_m": -109.332, "alt_m": 27.626, "sim_s": 189.524}
+{"t_s": 107.402, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492718, "rel_alt_m": 30.000001907348633}
+{"t_s": 107.408, "event": "estimator_status", "vel_ratio": 0.006257643923163414, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.003161561908200383, "mag_ratio": 0.05783950164914131, "pos_horiz_accuracy": 0.297562837600708, "pos_vert_accuracy": 0.16671043634414673, "flags": 1855}
+{"t_s": 107.551, "event": "truth", "vehicle": "uav1", "east_m": 1259.598, "north_m": -111.721, "alt_m": 27.641, "sim_s": 190.036}
+{"t_s": 107.921, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5493419, "rel_alt_m": 30.003002166748047}
+{"t_s": 108.065, "event": "truth", "vehicle": "uav1", "east_m": 1272.838, "north_m": -114.125, "alt_m": 27.656, "sim_s": 190.548}
+{"t_s": 108.408, "event": "estimator_status", "vel_ratio": 0.045229438692331314, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0045995251275599, "mag_ratio": 0.059707578271627426, "pos_horiz_accuracy": 0.31390494108200073, "pos_vert_accuracy": 0.16612333059310913, "flags": 1855}
+{"t_s": 108.44, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5494113, "rel_alt_m": 30.00200080871582}
+{"t_s": 108.563, "event": "truth", "vehicle": "uav1", "east_m": 1285.746, "north_m": -116.486, "alt_m": 27.668, "sim_s": 191.048}
+{"t_s": 108.954, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5494679, "rel_alt_m": 30.00200080871582}
+{"t_s": 109.152, "event": "truth", "vehicle": "uav1", "east_m": 1298.72, "north_m": -118.879, "alt_m": 27.686, "sim_s": 191.552}
+{"t_s": 109.465, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5495371, "rel_alt_m": 30.007001876831055}
+{"t_s": 109.494, "event": "estimator_status", "vel_ratio": 0.07297895848751068, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0028971792198717594, "mag_ratio": 0.06426090747117996, "pos_horiz_accuracy": 0.32982367277145386, "pos_vert_accuracy": 0.16628187894821167, "flags": 1855}
+{"t_s": 109.665, "event": "truth", "vehicle": "uav1", "east_m": 1311.909, "north_m": -121.323, "alt_m": 27.702, "sim_s": 192.064}
+{"t_s": 109.965, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5496036, "rel_alt_m": 30.001001358032227}
+{"t_s": 110.184, "event": "truth", "vehicle": "uav1", "east_m": 1325.05, "north_m": -123.779, "alt_m": 27.715, "sim_s": 192.576}
+{"t_s": 110.478, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5496707, "rel_alt_m": 30.003002166748047}
+{"t_s": 110.508, "event": "estimator_status", "vel_ratio": 0.08520936220884323, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004270931705832481, "mag_ratio": 0.07238618284463882, "pos_horiz_accuracy": 0.34526124596595764, "pos_vert_accuracy": 0.16661006212234497, "flags": 1855}
+{"t_s": 110.699, "event": "truth", "vehicle": "uav1", "east_m": 1338.024, "north_m": -126.225, "alt_m": 27.733, "sim_s": 193.084}
+{"t_s": 110.984, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497369, "rel_alt_m": 30.003002166748047}
+{"t_s": 111.219, "event": "truth", "vehicle": "uav1", "east_m": 1351.146, "north_m": -128.72, "alt_m": 27.749, "sim_s": 193.6}
+{"t_s": 111.504, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5498064, "rel_alt_m": 30.003002166748047}
+{"t_s": 111.513, "event": "estimator_status", "vel_ratio": 0.1069783940911293, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0045189885422587395, "mag_ratio": 0.07951986789703369, "pos_horiz_accuracy": 0.3595609962940216, "pos_vert_accuracy": 0.16593585908412933, "flags": 1855}
+{"t_s": 111.732, "event": "truth", "vehicle": "uav1", "east_m": 1364.095, "north_m": -131.206, "alt_m": 27.766, "sim_s": 194.112}
+{"t_s": 112.023, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488656, "rel_alt_m": 30.019001007080078}
+{"t_s": 112.232, "event": "truth", "vehicle": "uav1", "east_m": 1376.715, "north_m": -133.64, "alt_m": 27.819, "sim_s": 194.612}
+{"t_s": 112.512, "event": "estimator_status", "vel_ratio": 0.07547256350517273, "pos_horiz_ratio": 0.628363311290741, "pos_vert_ratio": 0.0075750709511339664, "mag_ratio": 0.08644033968448639, "pos_horiz_accuracy": 0.24531938135623932, "pos_vert_accuracy": 0.16622617840766907, "flags": 831}
+{"t_s": 112.543, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.548901899999999, "rel_alt_m": 30.032001495361328}
+{"t_s": 112.738, "event": "truth", "vehicle": "uav1", "east_m": 1389.744, "north_m": -136.117, "alt_m": 27.854, "sim_s": 195.12}
+{"t_s": 113.044, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.548957399999999, "rel_alt_m": 30.01700210571289}
+{"t_s": 113.261, "event": "truth", "vehicle": "uav1", "east_m": 1403.125, "north_m": -138.642, "alt_m": 27.857, "sim_s": 195.636}
+{"t_s": 113.524, "event": "estimator_status", "vel_ratio": 0.14565420150756836, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.007223311811685562, "mag_ratio": 0.07739268988370895, "pos_horiz_accuracy": 0.2618378698825836, "pos_vert_accuracy": 0.16649580001831055, "flags": 1855}
+{"t_s": 113.554, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549022299999999, "rel_alt_m": 30.003002166748047}
+{"t_s": 113.778, "event": "truth", "vehicle": "uav1", "east_m": 1416.312, "north_m": -141.157, "alt_m": 27.87, "sim_s": 196.148}
+{"t_s": 114.054, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5490887, "rel_alt_m": 30.00800132751465}
+{"t_s": 114.291, "event": "truth", "vehicle": "uav1", "east_m": 1429.332, "north_m": -143.658, "alt_m": 27.893, "sim_s": 196.656}
+{"t_s": 114.524, "event": "estimator_status", "vel_ratio": 0.06195738539099693, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.010121628642082214, "mag_ratio": 0.06624513864517212, "pos_horiz_accuracy": 0.2812328338623047, "pos_vert_accuracy": 0.16676399111747742, "flags": 1855}
+{"t_s": 114.573, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549158, "rel_alt_m": 30.012001037597656}
+{"t_s": 114.789, "event": "truth", "vehicle": "uav1", "east_m": 1442.239, "north_m": -146.146, "alt_m": 27.912, "sim_s": 197.16}
+{"t_s": 115.074, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5492244, "rel_alt_m": 30.012001037597656}
+{"t_s": 115.291, "event": "truth", "vehicle": "uav1", "east_m": 1455.026, "north_m": -148.619, "alt_m": 27.928, "sim_s": 197.66}
+{"t_s": 115.522, "event": "estimator_status", "vel_ratio": 0.021528812125325203, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008264953270554543, "mag_ratio": 0.06348259747028351, "pos_horiz_accuracy": 0.29866382479667664, "pos_vert_accuracy": 0.16603802144527435, "flags": 1855}
+{"t_s": 115.594, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549294, "rel_alt_m": 30.012001037597656}
+{"t_s": 115.811, "event": "truth", "vehicle": "uav1", "east_m": 1468.195, "north_m": -151.176, "alt_m": 27.945, "sim_s": 198.176}
+{"t_s": 116.1, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5493614, "rel_alt_m": 30.012001037597656}
+{"t_s": 116.328, "event": "truth", "vehicle": "uav1", "east_m": 1481.33, "north_m": -153.737, "alt_m": 27.962, "sim_s": 198.692}
+{"t_s": 116.528, "event": "estimator_status", "vel_ratio": 0.02341456152498722, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006373287178575993, "mag_ratio": 0.06196194142103195, "pos_horiz_accuracy": 0.31552430987358093, "pos_vert_accuracy": 0.16630001366138458, "flags": 1855}
+{"t_s": 116.619, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549430899999999, "rel_alt_m": 30.01000213623047}
+{"t_s": 116.827, "event": "truth", "vehicle": "uav1", "east_m": 1494.02, "north_m": -156.222, "alt_m": 27.978, "sim_s": 199.192}
+{"t_s": 117.12, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5494971, "rel_alt_m": 30.01000213623047}
+{"t_s": 117.34, "event": "truth", "vehicle": "uav1", "east_m": 1506.97, "north_m": -158.771, "alt_m": 27.994, "sim_s": 199.704}
+{"t_s": 117.527, "event": "estimator_status", "vel_ratio": 0.04048728570342064, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008060717955231667, "mag_ratio": 0.06554408371448517, "pos_horiz_accuracy": 0.331508070230484, "pos_vert_accuracy": 0.1665647029876709, "flags": 1855}
+{"t_s": 117.639, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5495666, "rel_alt_m": 30.01000213623047}
+{"t_s": 117.855, "event": "truth", "vehicle": "uav1", "east_m": 1519.969, "north_m": -161.342, "alt_m": 28.01, "sim_s": 200.22}
+{"t_s": 118.141, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5496339, "rel_alt_m": 30.011001586914062}
+{"t_s": 118.356, "event": "truth", "vehicle": "uav1", "east_m": 1532.508, "north_m": -163.836, "alt_m": 28.023, "sim_s": 200.72}
+{"t_s": 118.527, "event": "estimator_status", "vel_ratio": 0.055367402732372284, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.00876709260046482, "mag_ratio": 0.07163718342781067, "pos_horiz_accuracy": 0.34619784355163574, "pos_vert_accuracy": 0.1658458709716797, "flags": 1855}
+{"t_s": 118.643, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549700099999999, "rel_alt_m": 30.01000213623047}
+{"t_s": 118.871, "event": "truth", "vehicle": "uav1", "east_m": 1545.383, "north_m": -166.413, "alt_m": 28.035, "sim_s": 201.236}
+{"t_s": 119.16, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5497695, "rel_alt_m": 30.01000213623047}
+{"t_s": 119.371, "event": "truth", "vehicle": "uav1", "east_m": 1557.786, "north_m": -168.912, "alt_m": 28.045, "sim_s": 201.736}
+{"t_s": 119.527, "event": "estimator_status", "vel_ratio": 0.06811566650867462, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.00965185184031725, "mag_ratio": 0.07067688554525375, "pos_horiz_accuracy": 0.36107349395751953, "pos_vert_accuracy": 0.16611258685588837, "flags": 1855}
+{"t_s": 119.679, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488418, "rel_alt_m": 30.012001037597656}
+{"t_s": 119.888, "event": "truth", "vehicle": "uav1", "east_m": 1570.498, "north_m": -171.494, "alt_m": 28.068, "sim_s": 202.252}
+{"t_s": 120.181, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548881999999999, "rel_alt_m": 30.03400230407715}
+{"t_s": 120.403, "event": "truth", "vehicle": "uav1", "east_m": 1583.282, "north_m": -174.066, "alt_m": 28.111, "sim_s": 202.768}
+{"t_s": 120.529, "event": "estimator_status", "vel_ratio": 0.01753784529864788, "pos_horiz_ratio": 0.6989016532897949, "pos_vert_ratio": 0.008403006941080093, "mag_ratio": 0.07816927134990692, "pos_horiz_accuracy": 0.24628624320030212, "pos_vert_accuracy": 0.16637420654296875, "flags": 1855}
+{"t_s": 120.699, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5489237, "rel_alt_m": 30.033000946044922}
+{"t_s": 120.903, "event": "truth", "vehicle": "uav1", "east_m": 1595.867, "north_m": -176.551, "alt_m": 28.125, "sim_s": 203.268}
+{"t_s": 121.199, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.548986, "rel_alt_m": 30.01000213623047}
+{"t_s": 121.417, "event": "truth", "vehicle": "uav1", "east_m": 1608.775, "north_m": -179.095, "alt_m": 28.122, "sim_s": 203.78}
+{"t_s": 121.528, "event": "estimator_status", "vel_ratio": 0.16060131788253784, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.007655685301870108, "mag_ratio": 0.06497099995613098, "pos_horiz_accuracy": 0.2631203234195709, "pos_vert_accuracy": 0.1656549572944641, "flags": 1855}
+{"t_s": 121.72, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5490544, "rel_alt_m": 30.005001068115234}
+{"t_s": 121.916, "event": "truth", "vehicle": "uav1", "east_m": 1621.264, "north_m": -181.581, "alt_m": 28.137, "sim_s": 204.28}
+{"t_s": 122.22, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5491212, "rel_alt_m": 30.01000213623047}
+{"t_s": 122.431, "event": "truth", "vehicle": "uav1", "east_m": 1634.114, "north_m": -184.147, "alt_m": 28.153, "sim_s": 204.796}
+{"t_s": 122.527, "event": "estimator_status", "vel_ratio": 0.06969033926725388, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.009084004908800125, "mag_ratio": 0.05051710456609726, "pos_horiz_accuracy": 0.28232237696647644, "pos_vert_accuracy": 0.1659211963415146, "flags": 1855}
+{"t_s": 122.738, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5491908, "rel_alt_m": 30.011001586914062}
+{"t_s": 122.948, "event": "truth", "vehicle": "uav1", "east_m": 1646.946, "north_m": -186.71, "alt_m": 28.164, "sim_s": 205.312}
+{"t_s": 123.239, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492572, "rel_alt_m": 30.01000213623047}
+{"t_s": 123.447, "event": "truth", "vehicle": "uav1", "east_m": 1659.35, "north_m": -189.193, "alt_m": 28.175, "sim_s": 205.812}
+{"t_s": 123.528, "event": "estimator_status", "vel_ratio": 0.029041128233075142, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008242863230407238, "mag_ratio": 0.045854292809963226, "pos_horiz_accuracy": 0.3003556430339813, "pos_vert_accuracy": 0.16619066894054413, "flags": 1855}
+{"t_s": 123.759, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5493267, "rel_alt_m": 30.01000213623047}
+{"t_s": 123.948, "event": "truth", "vehicle": "uav1", "east_m": 1671.722, "north_m": -191.673, "alt_m": 28.186, "sim_s": 206.312}
+{"t_s": 124.26, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549394, "rel_alt_m": 30.01000213623047}
+{"t_s": 124.448, "event": "truth", "vehicle": "uav1", "east_m": 1684.056, "north_m": -194.153, "alt_m": 28.196, "sim_s": 206.812}
+{"t_s": 124.528, "event": "estimator_status", "vel_ratio": 0.009724007919430733, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006331928074359894, "mag_ratio": 0.045675814151763916, "pos_horiz_accuracy": 0.3163714110851288, "pos_vert_accuracy": 0.16548296809196472, "flags": 1855}
+{"t_s": 124.779, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5494635, "rel_alt_m": 30.00800132751465}
+{"t_s": 124.963, "event": "truth", "vehicle": "uav1", "east_m": 1696.742, "north_m": -196.71, "alt_m": 28.206, "sim_s": 207.328}
+{"t_s": 125.279, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549529699999999, "rel_alt_m": 30.007001876831055}
+{"t_s": 125.479, "event": "truth", "vehicle": "uav1", "east_m": 1709.382, "north_m": -199.267, "alt_m": 28.216, "sim_s": 207.844}
+{"t_s": 125.528, "event": "estimator_status", "vel_ratio": 0.02164565771818161, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006587733048945665, "mag_ratio": 0.04275328665971756, "pos_horiz_accuracy": 0.33232250809669495, "pos_vert_accuracy": 0.16574950516223907, "flags": 1855}
+{"t_s": 125.789, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5495969, "rel_alt_m": 30.007001876831055}
+{"t_s": 125.998, "event": "truth", "vehicle": "uav1", "east_m": 1721.772, "north_m": -201.783, "alt_m": 28.225, "sim_s": 208.352}
+{"t_s": 126.311, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5496663, "rel_alt_m": 30.00800132751465}
+{"t_s": 126.497, "event": "truth", "vehicle": "uav1", "east_m": 1733.913, "north_m": -204.259, "alt_m": 28.233, "sim_s": 208.852}
+{"t_s": 126.538, "event": "estimator_status", "vel_ratio": 0.035185132175683975, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.008836552500724792, "mag_ratio": 0.04825781658291817, "pos_horiz_accuracy": 0.34766101837158203, "pos_vert_accuracy": 0.16601787507534027, "flags": 1855}
+{"t_s": 126.83, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5497357, "rel_alt_m": 30.00800132751465}
+{"t_s": 126.998, "event": "truth", "vehicle": "uav1", "east_m": 1745.991, "north_m": -206.735, "alt_m": 28.238, "sim_s": 209.352}
+{"t_s": 127.341, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5498019, "rel_alt_m": 30.00800132751465}
+{"t_s": 127.513, "event": "truth", "vehicle": "uav1", "east_m": 1758.099, "north_m": -209.232, "alt_m": 28.243, "sim_s": 209.856}
+{"t_s": 127.55, "event": "estimator_status", "vel_ratio": 0.04783597216010094, "pos_horiz_ratio": 0.010007701814174652, "pos_vert_ratio": 0.006736074574291706, "mag_ratio": 0.049208033829927444, "pos_horiz_accuracy": 1.039235234260559, "pos_vert_accuracy": 0.16628794372081757, "flags": 831}
+{"t_s": 127.842, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488618, "rel_alt_m": 30.01700210571289}
+{"t_s": 128.026, "event": "truth", "vehicle": "uav1", "east_m": 1770.342, "north_m": -211.766, "alt_m": 28.275, "sim_s": 210.368}
+{"t_s": 128.361, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488986, "rel_alt_m": 30.033000946044922}
+{"t_s": 128.537, "event": "truth", "vehicle": "uav1", "east_m": 1782.746, "north_m": -214.28, "alt_m": 28.305, "sim_s": 210.88}
+{"t_s": 128.549, "event": "estimator_status", "vel_ratio": 0.06834318488836288, "pos_horiz_ratio": 0.825933039188385, "pos_vert_ratio": 0.006238090805709362, "mag_ratio": 0.05097300931811333, "pos_horiz_accuracy": 0.24726749956607819, "pos_vert_accuracy": 0.16557985544204712, "flags": 1855}
+{"t_s": 128.881, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.548953, "rel_alt_m": 30.020002365112305}
+{"t_s": 129.038, "event": "truth", "vehicle": "uav1", "east_m": 1795.03, "north_m": -216.723, "alt_m": 28.301, "sim_s": 211.38}
+{"t_s": 129.387, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549017899999999, "rel_alt_m": 30.005001068115234}
+{"t_s": 129.555, "event": "estimator_status", "vel_ratio": 0.16825006902217865, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006536632776260376, "mag_ratio": 0.035623472183942795, "pos_horiz_accuracy": 0.2648405432701111, "pos_vert_accuracy": 0.16584697365760803, "flags": 1855}
+{"t_s": 129.558, "event": "truth", "vehicle": "uav1", "east_m": 1807.645, "north_m": -219.244, "alt_m": 28.299, "sim_s": 211.896}
+{"t_s": 129.906, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5490865, "rel_alt_m": 30.00800132751465}
+{"t_s": 130.075, "event": "truth", "vehicle": "uav1", "east_m": 1820.178, "north_m": -221.764, "alt_m": 28.309, "sim_s": 212.412}
+{"t_s": 130.406, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5491527, "rel_alt_m": 30.01000213623047}
+{"t_s": 130.556, "event": "estimator_status", "vel_ratio": 0.07638386636972427, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006941255182027817, "mag_ratio": 0.022396862506866455, "pos_horiz_accuracy": 0.28409168124198914, "pos_vert_accuracy": 0.16611728072166443, "flags": 1855}
+{"t_s": 130.576, "event": "truth", "vehicle": "uav1", "east_m": 1832.318, "north_m": -224.201, "alt_m": 28.315, "sim_s": 212.912}
+{"t_s": 130.927, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5492223, "rel_alt_m": 30.00800132751465}
+{"t_s": 131.075, "event": "truth", "vehicle": "uav1", "east_m": 1844.446, "north_m": -226.634, "alt_m": 28.32, "sim_s": 213.412}
+{"t_s": 131.446, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549291799999999, "rel_alt_m": 30.00800132751465}
+{"t_s": 131.555, "event": "estimator_status", "vel_ratio": 0.03535936400294304, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006992470473051071, "mag_ratio": 0.01678585447371006, "pos_horiz_accuracy": 0.3012726902961731, "pos_vert_accuracy": 0.1654159277677536, "flags": 1855}
+{"t_s": 131.579, "event": "truth", "vehicle": "uav1", "east_m": 1856.558, "north_m": -229.064, "alt_m": 28.325, "sim_s": 213.912}
+{"t_s": 131.946, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5493591, "rel_alt_m": 30.00800132751465}
+{"t_s": 132.1, "event": "truth", "vehicle": "uav1", "east_m": 1869.037, "north_m": -231.568, "alt_m": 28.329, "sim_s": 214.428}
+{"t_s": 132.456, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549425399999999, "rel_alt_m": 30.00800132751465}
+{"t_s": 132.565, "event": "estimator_status", "vel_ratio": 0.014221522957086563, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.007428386248648167, "mag_ratio": 0.018805179744958878, "pos_horiz_accuracy": 0.31797295808792114, "pos_vert_accuracy": 0.16568849980831146, "flags": 1855}
+{"t_s": 132.611, "event": "truth", "vehicle": "uav1", "east_m": 1881.397, "north_m": -234.05, "alt_m": 28.333, "sim_s": 214.94}
+{"t_s": 132.961, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549492599999999, "rel_alt_m": 30.007001876831055}
+{"t_s": 133.124, "event": "truth", "vehicle": "uav1", "east_m": 1893.635, "north_m": -236.51, "alt_m": 28.336, "sim_s": 215.448}
+{"t_s": 133.481, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549562, "rel_alt_m": 30.005001068115234}
+{"t_s": 133.573, "event": "estimator_status", "vel_ratio": 0.011910335160791874, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005370715633034706, "mag_ratio": 0.01783444546163082, "pos_horiz_accuracy": 0.33385342359542847, "pos_vert_accuracy": 0.1659635603427887, "flags": 1855}
+{"t_s": 133.641, "event": "truth", "vehicle": "uav1", "east_m": 1906.036, "north_m": -239.008, "alt_m": 28.339, "sim_s": 215.964}
+{"t_s": 134.001, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549631399999999, "rel_alt_m": 30.003002166748047}
+{"t_s": 134.158, "event": "truth", "vehicle": "uav1", "east_m": 1918.403, "north_m": -241.506, "alt_m": 28.343, "sim_s": 216.48}
+{"t_s": 134.521, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549700699999999, "rel_alt_m": 30.00400161743164}
+{"t_s": 134.571, "event": "estimator_status", "vel_ratio": 0.026675019413232803, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004611397162079811, "mag_ratio": 0.017553843557834625, "pos_horiz_accuracy": 0.3484802842140198, "pos_vert_accuracy": 0.16526535153388977, "flags": 1855}
+{"t_s": 134.672, "event": "truth", "vehicle": "uav1", "east_m": 1930.731, "north_m": -244.004, "alt_m": 28.346, "sim_s": 216.996}
+{"t_s": 135.021, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5497669, "rel_alt_m": 30.005001068115234}
+{"t_s": 135.189, "event": "truth", "vehicle": "uav1", "east_m": 1943.015, "north_m": -246.503, "alt_m": 28.348, "sim_s": 217.512}
+{"t_s": 135.541, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488394, "rel_alt_m": 30.006000518798828}
+{"t_s": 135.57, "event": "estimator_status", "vel_ratio": 0.0394892655313015, "pos_horiz_ratio": 0.0488320030272007, "pos_vert_ratio": 0.004338905680924654, "mag_ratio": 0.018494226038455963, "pos_horiz_accuracy": 0.6000279784202576, "pos_vert_accuracy": 0.16553713381290436, "flags": 831}
+{"t_s": 135.689, "event": "truth", "vehicle": "uav1", "east_m": 1954.866, "north_m": -248.929, "alt_m": 28.357, "sim_s": 218.012}
+{"t_s": 136.042, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488805, "rel_alt_m": 30.027002334594727}
+{"t_s": 136.205, "event": "truth", "vehicle": "uav1", "east_m": 1967.146, "north_m": -251.422, "alt_m": 28.392, "sim_s": 218.528}
+{"t_s": 136.561, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5489202, "rel_alt_m": 30.030000686645508}
+{"t_s": 136.569, "event": "estimator_status", "vel_ratio": 0.08550255000591278, "pos_horiz_ratio": 0.9141177535057068, "pos_vert_ratio": 0.007071273401379585, "mag_ratio": 0.01691344566643238, "pos_horiz_accuracy": 0.24829663336277008, "pos_vert_accuracy": 0.16555413603782654, "flags": 1855}
+{"t_s": 136.705, "event": "truth", "vehicle": "uav1", "east_m": 1979.273, "north_m": -253.818, "alt_m": 28.403, "sim_s": 219.028}
+{"t_s": 137.081, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548985199999999, "rel_alt_m": 30.007001876831055}
+{"t_s": 137.205, "event": "truth", "vehicle": "uav1", "east_m": 1991.502, "north_m": -256.209, "alt_m": 28.386, "sim_s": 219.528}
+{"t_s": 137.568, "event": "estimator_status", "vel_ratio": 0.16411884129047394, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004657036624848843, "mag_ratio": 0.014281138777732849, "pos_horiz_accuracy": 0.266341894865036, "pos_vert_accuracy": 0.16586485505104065, "flags": 1855}
+{"t_s": 137.6, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5490538, "rel_alt_m": 30.003002166748047}
+{"t_s": 137.705, "event": "truth", "vehicle": "uav1", "east_m": 2003.643, "north_m": -258.604, "alt_m": 28.387, "sim_s": 220.028}
+{"t_s": 138.101, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491206, "rel_alt_m": 30.009000778198242}
+{"t_s": 138.205, "event": "truth", "vehicle": "uav1", "east_m": 2015.769, "north_m": -260.998, "alt_m": 28.391, "sim_s": 220.528}
+{"t_s": 138.57, "event": "estimator_status", "vel_ratio": 0.07077721506357193, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006253087893128395, "mag_ratio": 0.01885242387652397, "pos_horiz_accuracy": 0.2848978042602539, "pos_vert_accuracy": 0.16520383954048157, "flags": 1855}
+{"t_s": 138.621, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491902, "rel_alt_m": 30.009000778198242}
+{"t_s": 138.728, "event": "truth", "vehicle": "uav1", "east_m": 2028.305, "north_m": -263.466, "alt_m": 28.392, "sim_s": 221.044}
+{"t_s": 139.133, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5492566, "rel_alt_m": 30.006000518798828}
+{"t_s": 139.245, "event": "truth", "vehicle": "uav1", "east_m": 2040.756, "north_m": -265.915, "alt_m": 28.392, "sim_s": 221.556}
+{"t_s": 139.591, "event": "estimator_status", "vel_ratio": 0.03249352425336838, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006120096892118454, "mag_ratio": 0.026742607355117798, "pos_horiz_accuracy": 0.3026965856552124, "pos_vert_accuracy": 0.16550295054912567, "flags": 1855}
+{"t_s": 139.642, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5493229, "rel_alt_m": 30.005001068115234}
+{"t_s": 139.762, "event": "truth", "vehicle": "uav1", "east_m": 2053.114, "north_m": -268.344, "alt_m": 28.394, "sim_s": 222.064}
+{"t_s": 140.144, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5493902, "rel_alt_m": 30.006000518798828}
+{"t_s": 140.273, "event": "truth", "vehicle": "uav1", "east_m": 2065.486, "north_m": -270.773, "alt_m": 28.396, "sim_s": 222.572}
+{"t_s": 140.591, "event": "estimator_status", "vel_ratio": 0.013287439942359924, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004262617323547602, "mag_ratio": 0.024820251390337944, "pos_horiz_accuracy": 0.31932690739631653, "pos_vert_accuracy": 0.16579750180244446, "flags": 1855}
+{"t_s": 140.662, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494597, "rel_alt_m": 30.005001068115234}
+{"t_s": 140.772, "event": "truth", "vehicle": "uav1", "east_m": 2077.672, "north_m": -273.164, "alt_m": 28.398, "sim_s": 223.072}
+{"t_s": 141.183, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549529099999999, "rel_alt_m": 30.00400161743164}
+{"t_s": 141.283, "event": "truth", "vehicle": "uav1", "east_m": 2090.054, "north_m": -275.596, "alt_m": 28.399, "sim_s": 223.58}
+{"t_s": 141.596, "event": "estimator_status", "vel_ratio": 0.01053907722234726, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004472593776881695, "mag_ratio": 0.02186563052237034, "pos_horiz_accuracy": 0.33443883061408997, "pos_vert_accuracy": 0.16511762142181396, "flags": 1855}
+{"t_s": 141.687, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549595199999999, "rel_alt_m": 30.00400161743164}
+{"t_s": 141.799, "event": "truth", "vehicle": "uav1", "east_m": 2102.631, "north_m": -278.07, "alt_m": 28.401, "sim_s": 224.096}
+{"t_s": 142.201, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5496625, "rel_alt_m": 30.005001068115234}
+{"t_s": 142.329, "event": "truth", "vehicle": "uav1", "east_m": 2115.205, "north_m": -280.548, "alt_m": 28.402, "sim_s": 224.612}
+{"t_s": 142.617, "event": "estimator_status", "vel_ratio": 0.024390146136283875, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004787774756550789, "mag_ratio": 0.0230637826025486, "pos_horiz_accuracy": 0.34971290826797485, "pos_vert_accuracy": 0.1654004454612732, "flags": 1855}
+{"t_s": 142.708, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497286, "rel_alt_m": 30.00400161743164}
+{"t_s": 142.848, "event": "truth", "vehicle": "uav1", "east_m": 2127.675, "north_m": -283.013, "alt_m": 28.402, "sim_s": 225.124}
+{"t_s": 143.208, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5497958, "rel_alt_m": 30.00400161743164}
+{"t_s": 143.361, "event": "truth", "vehicle": "uav1", "east_m": 2140.134, "north_m": -285.485, "alt_m": 28.403, "sim_s": 225.636}
+{"t_s": 143.622, "event": "estimator_status", "vel_ratio": 0.03756831958889961, "pos_horiz_ratio": 0.08629843592643738, "pos_vert_ratio": 0.006022433750331402, "mag_ratio": 0.021962400525808334, "pos_horiz_accuracy": 0.4993099570274353, "pos_vert_accuracy": 0.16541990637779236, "flags": 831}
+{"t_s": 143.714, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488578, "rel_alt_m": 30.012001037597656}
+{"t_s": 143.868, "event": "truth", "vehicle": "uav1", "east_m": 2152.292, "north_m": -287.906, "alt_m": 28.425, "sim_s": 226.136}
+{"t_s": 144.22, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488935, "rel_alt_m": 30.030000686645508}
+{"t_s": 144.388, "event": "truth", "vehicle": "uav1", "east_m": 2165.027, "north_m": -290.393, "alt_m": 28.45, "sim_s": 226.652}
+{"t_s": 144.628, "event": "estimator_status", "vel_ratio": 0.10639938712120056, "pos_horiz_ratio": 1.0253576040267944, "pos_vert_ratio": 0.0029659676365554333, "mag_ratio": 0.02138429880142212, "pos_horiz_accuracy": 0.24948713183403015, "pos_vert_accuracy": 0.16570191085338593, "flags": 1855}
+{"t_s": 144.739, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548943399999999, "rel_alt_m": 30.020002365112305}
+{"t_s": 144.903, "event": "truth", "vehicle": "uav1", "east_m": 2178.015, "north_m": -292.873, "alt_m": 28.437, "sim_s": 227.168}
+{"t_s": 145.24, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5490079, "rel_alt_m": 30.001001358032227}
+{"t_s": 145.416, "event": "truth", "vehicle": "uav1", "east_m": 2190.915, "north_m": -295.341, "alt_m": 28.421, "sim_s": 227.68}
+{"t_s": 145.629, "event": "estimator_status", "vel_ratio": 0.14642010629177094, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0026666377671062946, "mag_ratio": 0.04418898746371269, "pos_horiz_accuracy": 0.26745033264160156, "pos_vert_accuracy": 0.16502024233341217, "flags": 1855}
+{"t_s": 145.741, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5490743, "rel_alt_m": 30.00400161743164}
+{"t_s": 145.928, "event": "truth", "vehicle": "uav1", "east_m": 2203.778, "north_m": -297.817, "alt_m": 28.421, "sim_s": 228.192}
+{"t_s": 146.259, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491435, "rel_alt_m": 30.005001068115234}
+{"t_s": 146.445, "event": "truth", "vehicle": "uav1", "east_m": 2216.791, "north_m": -300.317, "alt_m": 28.419, "sim_s": 228.708}
+{"t_s": 146.628, "event": "estimator_status", "vel_ratio": 0.06127382069826126, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.002465138677507639, "mag_ratio": 0.046607449650764465, "pos_horiz_accuracy": 0.28644847869873047, "pos_vert_accuracy": 0.16530153155326843, "flags": 1855}
+{"t_s": 146.76, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.54921, "rel_alt_m": 30.00400161743164}
+{"t_s": 146.944, "event": "truth", "vehicle": "uav1", "east_m": 2229.447, "north_m": -302.744, "alt_m": 28.415, "sim_s": 229.208}
+{"t_s": 147.26, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5492774, "rel_alt_m": 30.00400161743164}
+{"t_s": 147.459, "event": "truth", "vehicle": "uav1", "east_m": 2242.548, "north_m": -305.256, "alt_m": 28.411, "sim_s": 229.724}
+{"t_s": 147.629, "event": "estimator_status", "vel_ratio": 0.024881931021809578, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0036855507642030716, "mag_ratio": 0.050351500511169434, "pos_horiz_accuracy": 0.3041522800922394, "pos_vert_accuracy": 0.16558556258678436, "flags": 1855}
+{"t_s": 147.779, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5493469, "rel_alt_m": 30.003002166748047}
+{"t_s": 147.976, "event": "truth", "vehicle": "uav1", "east_m": 2255.685, "north_m": -307.775, "alt_m": 28.407, "sim_s": 230.24}
+{"t_s": 148.279, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494132, "rel_alt_m": 30.00200080871582}
+{"t_s": 148.492, "event": "truth", "vehicle": "uav1", "east_m": 2268.855, "north_m": -310.302, "alt_m": 28.403, "sim_s": 230.756}
+{"t_s": 148.629, "event": "estimator_status", "vel_ratio": 0.014388500712811947, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.003374552121385932, "mag_ratio": 0.05182461813092232, "pos_horiz_accuracy": 0.32070890069007874, "pos_vert_accuracy": 0.16587260365486145, "flags": 1855}
+{"t_s": 148.78, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494805, "rel_alt_m": 30.000001907348633}
+{"t_s": 149.004, "event": "truth", "vehicle": "uav1", "east_m": 2281.952, "north_m": -312.82, "alt_m": 28.399, "sim_s": 231.268}
+{"t_s": 149.28, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495494, "rel_alt_m": 29.998001098632812}
+{"t_s": 149.511, "event": "truth", "vehicle": "uav1", "east_m": 2294.956, "north_m": -315.329, "alt_m": 28.391, "sim_s": 231.776}
+{"t_s": 149.63, "event": "estimator_status", "vel_ratio": 0.04809153452515602, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005305355414748192, "mag_ratio": 0.04897581785917282, "pos_horiz_accuracy": 0.33620262145996094, "pos_vert_accuracy": 0.16559535264968872, "flags": 1855}
+{"t_s": 149.8, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5496185, "rel_alt_m": 29.999000549316406}
+{"t_s": 150.028, "event": "truth", "vehicle": "uav1", "east_m": 2308.139, "north_m": -317.89, "alt_m": 28.39, "sim_s": 232.292}
+{"t_s": 150.301, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5496847, "rel_alt_m": 30.000001907348633}
+{"t_s": 150.528, "event": "truth", "vehicle": "uav1", "east_m": 2320.91, "north_m": -320.384, "alt_m": 28.387, "sim_s": 232.792}
+{"t_s": 150.629, "event": "estimator_status", "vel_ratio": 0.08979038894176483, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004676829092204571, "mag_ratio": 0.034562256187200546, "pos_horiz_accuracy": 0.3514057993888855, "pos_vert_accuracy": 0.16590382158756256, "flags": 1855}
+{"t_s": 150.82, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497543, "rel_alt_m": 30.00200080871582}
+{"t_s": 151.044, "event": "truth", "vehicle": "uav1", "east_m": 2334.077, "north_m": -322.973, "alt_m": 28.383, "sim_s": 233.308}
+{"t_s": 151.34, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488277, "rel_alt_m": 30.00200080871582}
+{"t_s": 151.544, "event": "truth", "vehicle": "uav1", "east_m": 2346.801, "north_m": -325.497, "alt_m": 28.387, "sim_s": 233.808}
+{"t_s": 151.629, "event": "estimator_status", "vel_ratio": 0.11027173697948456, "pos_horiz_ratio": 0.14333143830299377, "pos_vert_ratio": 0.004805196542292833, "mag_ratio": 0.030198294669389725, "pos_horiz_accuracy": 0.4131358861923218, "pos_vert_accuracy": 0.16523802280426025, "flags": 831}
+{"t_s": 151.861, "event": "position", "lat_deg": 47.3979709, "lon_deg": 8.5488742, "rel_alt_m": 30.0260009765625}
+{"t_s": 152.044, "event": "truth", "vehicle": "uav1", "east_m": 2359.606, "north_m": -328.029, "alt_m": 28.422, "sim_s": 234.308}
+{"t_s": 152.379, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5489125, "rel_alt_m": 30.031002044677734}
+{"t_s": 152.556, "event": "truth", "vehicle": "uav1", "east_m": 2373.002, "north_m": -330.62, "alt_m": 28.423, "sim_s": 234.82}
+{"t_s": 152.627, "event": "estimator_status", "vel_ratio": 0.09765893965959549, "pos_horiz_ratio": 1.1751066446304321, "pos_vert_ratio": 0.004772907588630915, "mag_ratio": 0.02487470768392086, "pos_horiz_accuracy": 0.25090810656547546, "pos_vert_accuracy": 0.1655256599187851, "flags": 1855}
+{"t_s": 152.879, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5489731, "rel_alt_m": 30.01000213623047}
+{"t_s": 153.064, "event": "truth", "vehicle": "uav1", "east_m": 2386.45, "north_m": -333.199, "alt_m": 28.395, "sim_s": 235.328}
+{"t_s": 153.38, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5490383, "rel_alt_m": 30.001001358032227}
+{"t_s": 153.58, "event": "truth", "vehicle": "uav1", "east_m": 2400.061, "north_m": -335.836, "alt_m": 28.384, "sim_s": 235.844}
+{"t_s": 153.631, "event": "estimator_status", "vel_ratio": 0.1181643158197403, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.002161834854632616, "mag_ratio": 0.043020255863666534, "pos_horiz_accuracy": 0.26962971687316895, "pos_vert_accuracy": 0.16580502688884735, "flags": 1855}
+{"t_s": 153.885, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491049, "rel_alt_m": 30.005001068115234}
+{"t_s": 154.096, "event": "truth", "vehicle": "uav1", "east_m": 2413.583, "north_m": -338.467, "alt_m": 28.38, "sim_s": 236.356}
+{"t_s": 154.404, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5491744, "rel_alt_m": 30.00400161743164}
+{"t_s": 154.612, "event": "truth", "vehicle": "uav1", "east_m": 2427.267, "north_m": -341.133, "alt_m": 28.373, "sim_s": 236.872}
+{"t_s": 154.633, "event": "estimator_status", "vel_ratio": 0.04457903280854225, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004017165396362543, "mag_ratio": 0.041948139667510986, "pos_horiz_accuracy": 0.287960022687912, "pos_vert_accuracy": 0.16512061655521393, "flags": 1855}
+{"t_s": 154.905, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5492408, "rel_alt_m": 30.00200080871582}
+{"t_s": 155.129, "event": "truth", "vehicle": "uav1", "east_m": 2440.997, "north_m": -343.815, "alt_m": 28.365, "sim_s": 237.388}
+{"t_s": 155.424, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5493103, "rel_alt_m": 30.00200080871582}
+{"t_s": 155.628, "event": "truth", "vehicle": "uav1", "east_m": 2454.338, "north_m": -346.428, "alt_m": 28.359, "sim_s": 237.888}
+{"t_s": 155.633, "event": "estimator_status", "vel_ratio": 0.012263786979019642, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0034122683573514223, "mag_ratio": 0.05049173906445503, "pos_horiz_accuracy": 0.3055258095264435, "pos_vert_accuracy": 0.16540247201919556, "flags": 1855}
+{"t_s": 155.924, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.549377699999999, "rel_alt_m": 30.00400161743164}
+{"t_s": 156.144, "event": "truth", "vehicle": "uav1", "east_m": 2468.141, "north_m": -349.141, "alt_m": 28.352, "sim_s": 238.404}
+{"t_s": 156.424, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549444, "rel_alt_m": 30.003002166748047}
+{"t_s": 156.633, "event": "estimator_status", "vel_ratio": 0.030658746138215065, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0034603627864271402, "mag_ratio": 0.0417451411485672, "pos_horiz_accuracy": 0.32199668884277344, "pos_vert_accuracy": 0.16568885743618011, "flags": 1855}
+{"t_s": 156.66, "event": "truth", "vehicle": "uav1", "east_m": 2481.974, "north_m": -351.871, "alt_m": 28.344, "sim_s": 238.92}
+{"t_s": 156.944, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495135, "rel_alt_m": 30.003002166748047}
+{"t_s": 157.16, "event": "truth", "vehicle": "uav1", "east_m": 2495.404, "north_m": -354.534, "alt_m": 28.336, "sim_s": 239.42}
+{"t_s": 157.444, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495808, "rel_alt_m": 30.00200080871582}
+{"t_s": 157.633, "event": "estimator_status", "vel_ratio": 0.050093017518520355, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0024758221115916967, "mag_ratio": 0.0373523123562336, "pos_horiz_accuracy": 0.3370121121406555, "pos_vert_accuracy": 0.16501331329345703, "flags": 1855}
+{"t_s": 157.661, "event": "truth", "vehicle": "uav1", "east_m": 2508.852, "north_m": -357.216, "alt_m": 28.329, "sim_s": 239.92}
+{"t_s": 157.946, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549647, "rel_alt_m": 30.00200080871582}
+{"t_s": 158.176, "event": "truth", "vehicle": "uav1", "east_m": 2522.743, "north_m": -360.003, "alt_m": 28.321, "sim_s": 240.436}
+{"t_s": 158.463, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497164, "rel_alt_m": 30.00200080871582}
+{"t_s": 158.633, "event": "estimator_status", "vel_ratio": 0.06778604537248611, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0041094752959907055, "mag_ratio": 0.03099016845226288, "pos_horiz_accuracy": 0.35220006108283997, "pos_vert_accuracy": 0.16530025005340576, "flags": 1855}
+{"t_s": 158.688, "event": "truth", "vehicle": "uav1", "east_m": 2536.532, "north_m": -362.789, "alt_m": 28.314, "sim_s": 240.948}
+{"t_s": 158.969, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497826, "rel_alt_m": 30.003002166748047}
+{"t_s": 159.2, "event": "truth", "vehicle": "uav1", "east_m": 2550.213, "north_m": -365.575, "alt_m": 28.308, "sim_s": 241.456}
+{"t_s": 159.486, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548849299999999, "rel_alt_m": 30.006000518798828}
+{"t_s": 159.656, "event": "estimator_status", "vel_ratio": 0.0797201544046402, "pos_horiz_ratio": 0.188482865691185, "pos_vert_ratio": 0.0040872409008443356, "mag_ratio": 0.025003129616379738, "pos_horiz_accuracy": 0.37568455934524536, "pos_vert_accuracy": 0.16559043526649475, "flags": 831}
+{"t_s": 159.735, "event": "truth", "vehicle": "uav1", "east_m": 2564.116, "north_m": -368.429, "alt_m": 28.323, "sim_s": 241.972}
+{"t_s": 159.986, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488868, "rel_alt_m": 30.027002334594727}
+{"t_s": 160.235, "event": "truth", "vehicle": "uav1", "east_m": 2577.774, "north_m": -371.203, "alt_m": 28.343, "sim_s": 242.472}
+{"t_s": 160.511, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548926999999999, "rel_alt_m": 30.024002075195312}
+{"t_s": 160.695, "event": "estimator_status", "vel_ratio": 0.11374614387750626, "pos_horiz_ratio": 1.2963945865631104, "pos_vert_ratio": 0.0046999529004096985, "mag_ratio": 0.024415768682956696, "pos_horiz_accuracy": 0.25233152508735657, "pos_vert_accuracy": 0.16588018834590912, "flags": 1855}
+{"t_s": 160.782, "event": "truth", "vehicle": "uav1", "east_m": 2591.912, "north_m": -374.036, "alt_m": 28.322, "sim_s": 242.98}
+{"t_s": 161.025, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5489929, "rel_alt_m": 30.001001358032227}
+{"t_s": 161.282, "event": "truth", "vehicle": "uav1", "east_m": 2605.867, "north_m": -376.846, "alt_m": 28.296, "sim_s": 243.48}
+{"t_s": 161.525, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5490581, "rel_alt_m": 30.000001907348633}
+{"t_s": 161.694, "event": "estimator_status", "vel_ratio": 0.1039012223482132, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004164482466876507, "mag_ratio": 0.040401916950941086, "pos_horiz_accuracy": 0.2705772817134857, "pos_vert_accuracy": 0.16495509445667267, "flags": 1855}
+{"t_s": 161.79, "event": "truth", "vehicle": "uav1", "east_m": 2620.016, "north_m": -379.723, "alt_m": 28.29, "sim_s": 243.988}
+{"t_s": 162.034, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5491251, "rel_alt_m": 30.003002166748047}
+{"t_s": 162.311, "event": "truth", "vehicle": "uav1", "east_m": 2634.22, "north_m": -382.621, "alt_m": 28.281, "sim_s": 244.496}
+{"t_s": 162.538, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5491915, "rel_alt_m": 30.00200080871582}
+{"t_s": 162.706, "event": "estimator_status", "vel_ratio": 0.04004906862974167, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.003658904228359461, "mag_ratio": 0.03844334930181503, "pos_horiz_accuracy": 0.28941434621810913, "pos_vert_accuracy": 0.1652836799621582, "flags": 1855}
+{"t_s": 162.809, "event": "truth", "vehicle": "uav1", "east_m": 2648.254, "north_m": -385.495, "alt_m": 28.271, "sim_s": 244.996}
+{"t_s": 163.058, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549261099999999, "rel_alt_m": 30.00200080871582}
+{"t_s": 163.31, "event": "truth", "vehicle": "uav1", "east_m": 2662.331, "north_m": -388.39, "alt_m": 28.261, "sim_s": 245.496}
+{"t_s": 163.577, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5493306, "rel_alt_m": 30.003002166748047}
+{"t_s": 163.706, "event": "estimator_status", "vel_ratio": 0.01246973779052496, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005638636648654938, "mag_ratio": 0.04067784175276756, "pos_horiz_accuracy": 0.3069152534008026, "pos_vert_accuracy": 0.16560792922973633, "flags": 1855}
+{"t_s": 163.826, "event": "truth", "vehicle": "uav1", "east_m": 2676.901, "north_m": -391.4, "alt_m": 28.249, "sim_s": 246.012}
+{"t_s": 164.08, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549398, "rel_alt_m": 30.001001358032227}
+{"t_s": 164.339, "event": "truth", "vehicle": "uav1", "east_m": 2691.394, "north_m": -394.411, "alt_m": 28.239, "sim_s": 246.524}
+{"t_s": 164.583, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494643, "rel_alt_m": 30.001001358032227}
+{"t_s": 164.706, "event": "estimator_status", "vel_ratio": 0.04039386659860611, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004026196897029877, "mag_ratio": 0.04318813234567642, "pos_horiz_accuracy": 0.32257261872291565, "pos_vert_accuracy": 0.16496117413043976, "flags": 1855}
+{"t_s": 164.889, "event": "truth", "vehicle": "uav1", "east_m": 2705.577, "north_m": -397.374, "alt_m": 28.23, "sim_s": 247.024}
+{"t_s": 165.09, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495263, "rel_alt_m": 30.000001907348633}
+{"t_s": 165.409, "event": "truth", "vehicle": "uav1", "east_m": 2720.126, "north_m": -400.432, "alt_m": 28.221, "sim_s": 247.536}
+{"t_s": 165.597, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5495926, "rel_alt_m": 29.998001098632812}
+{"t_s": 165.769, "event": "estimator_status", "vel_ratio": 0.059866175055503845, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006696545053273439, "mag_ratio": 0.03309659659862518, "pos_horiz_accuracy": 0.33827701210975647, "pos_vert_accuracy": 0.1652671992778778, "flags": 1855}
+{"t_s": 165.925, "event": "truth", "vehicle": "uav1", "east_m": 2734.806, "north_m": -403.54, "alt_m": 28.213, "sim_s": 248.052}
+{"t_s": 166.1, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5496546, "rel_alt_m": 29.998001098632812}
+{"t_s": 166.476, "event": "truth", "vehicle": "uav1", "east_m": 2749.155, "north_m": -406.6, "alt_m": 28.207, "sim_s": 248.556}
+{"t_s": 166.604, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497208, "rel_alt_m": 29.998001098632812}
+{"t_s": 166.812, "event": "estimator_status", "vel_ratio": 0.07855898141860962, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.00486641563475132, "mag_ratio": 0.025649622082710266, "pos_horiz_accuracy": 0.353413850069046, "pos_vert_accuracy": 0.16557015478610992, "flags": 1855}
+{"t_s": 166.984, "event": "truth", "vehicle": "uav1", "east_m": 2763.62, "north_m": -409.711, "alt_m": 28.201, "sim_s": 249.064}
+{"t_s": 167.109, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549787, "rel_alt_m": 29.998001098632812}
+{"t_s": 167.533, "event": "truth", "vehicle": "uav1", "east_m": 2777.965, "north_m": -412.824, "alt_m": 28.199, "sim_s": 249.568}
+{"t_s": 167.609, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.548849299999999, "rel_alt_m": 30.00200080871582}
+{"t_s": 167.859, "event": "estimator_status", "vel_ratio": 0.08922424912452698, "pos_horiz_ratio": 0.23837438225746155, "pos_vert_ratio": 0.0032187639735639095, "mag_ratio": 0.021626047790050507, "pos_horiz_accuracy": 0.3469894528388977, "pos_vert_accuracy": 0.1658712774515152, "flags": 831}
+{"t_s": 168.033, "event": "truth", "vehicle": "uav1", "east_m": 2792.242, "north_m": -415.935, "alt_m": 28.229, "sim_s": 250.068}
+{"t_s": 168.13, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488882, "rel_alt_m": 30.0260009765625}
+{"t_s": 168.554, "event": "truth", "vehicle": "uav1", "east_m": 2807.237, "north_m": -419.162, "alt_m": 28.238, "sim_s": 250.584}
+{"t_s": 168.635, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5489312, "rel_alt_m": 30.0210018157959}
+{"t_s": 168.863, "event": "estimator_status", "vel_ratio": 0.12742681801319122, "pos_horiz_ratio": 1.4765608310699463, "pos_vert_ratio": 0.005300699733197689, "mag_ratio": 0.023169947788119316, "pos_horiz_accuracy": 0.2534841299057007, "pos_vert_accuracy": 0.16519980132579803, "flags": 1855}
+{"t_s": 169.069, "event": "truth", "vehicle": "uav1", "east_m": 2822.436, "north_m": -422.414, "alt_m": 28.206, "sim_s": 251.1}
+{"t_s": 169.138, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5489955, "rel_alt_m": 29.99700164794922}
+{"t_s": 169.587, "event": "truth", "vehicle": "uav1", "east_m": 2837.481, "north_m": -425.668, "alt_m": 28.192, "sim_s": 251.612}
+{"t_s": 169.658, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.549063799999999, "rel_alt_m": 29.99700164794922}
+{"t_s": 169.866, "event": "estimator_status", "vel_ratio": 0.09185877442359924, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0047213174402713776, "mag_ratio": 0.0266716405749321, "pos_horiz_accuracy": 0.2724918723106384, "pos_vert_accuracy": 0.1654931902885437, "flags": 1855}
+{"t_s": 170.098, "event": "truth", "vehicle": "uav1", "east_m": 2852.532, "north_m": -428.949, "alt_m": 28.188, "sim_s": 252.124}
+{"t_s": 170.159, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5491297, "rel_alt_m": 30.00200080871582}
+{"t_s": 170.606, "event": "truth", "vehicle": "uav1", "east_m": 2867.285, "north_m": -432.178, "alt_m": 28.18, "sim_s": 252.624}
+{"t_s": 170.667, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5491972, "rel_alt_m": 30.00200080871582}
+{"t_s": 170.884, "event": "estimator_status", "vel_ratio": 0.034017518162727356, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004718432202935219, "mag_ratio": 0.02763742208480835, "pos_horiz_accuracy": 0.2909685969352722, "pos_vert_accuracy": 0.16552375257015228, "flags": 1855}
+{"t_s": 171.123, "event": "truth", "vehicle": "uav1", "east_m": 2882.318, "north_m": -435.484, "alt_m": 28.171, "sim_s": 253.132}
+{"t_s": 171.175, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5492636, "rel_alt_m": 30.001001358032227}
+{"t_s": 171.626, "event": "truth", "vehicle": "uav1", "east_m": 2897.28, "north_m": -438.789, "alt_m": 28.163, "sim_s": 253.636}
+{"t_s": 171.676, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.54933, "rel_alt_m": 29.999000549316406}
+{"t_s": 171.885, "event": "estimator_status", "vel_ratio": 0.017091119661927223, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004755672998726368, "mag_ratio": 0.03108915500342846, "pos_horiz_accuracy": 0.3083711266517639, "pos_vert_accuracy": 0.16581958532333374, "flags": 1855}
+{"t_s": 172.143, "event": "truth", "vehicle": "uav1", "east_m": 2912.635, "north_m": -442.2, "alt_m": 28.156, "sim_s": 254.152}
+{"t_s": 172.194, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5493996, "rel_alt_m": 29.998001098632812}
+{"t_s": 172.694, "event": "truth", "vehicle": "uav1", "east_m": 2927.544, "north_m": -445.531, "alt_m": 28.149, "sim_s": 254.652}
+{"t_s": 172.717, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5494605, "rel_alt_m": 29.998001098632812}
+{"t_s": 172.943, "event": "estimator_status", "vel_ratio": 0.041845567524433136, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.002190316328778863, "mag_ratio": 0.02084800787270069, "pos_horiz_accuracy": 0.3239494562149048, "pos_vert_accuracy": 0.16515041887760162, "flags": 1855}
+{"t_s": 173.234, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5495247, "rel_alt_m": 30.001001358032227}
+{"t_s": 173.234, "event": "truth", "vehicle": "uav1", "east_m": 2942.479, "north_m": -448.887, "alt_m": 28.144, "sim_s": 255.152}
+{"t_s": 173.745, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549593999999999, "rel_alt_m": 29.998001098632812}
+{"t_s": 173.764, "event": "truth", "vehicle": "uav1", "east_m": 2957.805, "north_m": -452.35, "alt_m": 28.133, "sim_s": 255.664}
+{"t_s": 173.992, "event": "estimator_status", "vel_ratio": 0.054862622171640396, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.003240329446271062, "mag_ratio": 0.021682806313037872, "pos_horiz_accuracy": 0.3400307893753052, "pos_vert_accuracy": 0.16585339605808258, "flags": 1855}
+{"t_s": 174.265, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5496629, "rel_alt_m": 30.003002166748047}
+{"t_s": 174.273, "event": "truth", "vehicle": "uav1", "east_m": 2972.993, "north_m": -455.812, "alt_m": 28.112, "sim_s": 256.172}
+{"t_s": 174.77, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549729, "rel_alt_m": 30.00200080871582}
+{"t_s": 174.793, "event": "truth", "vehicle": "uav1", "east_m": 2988.406, "north_m": -459.355, "alt_m": 28.085, "sim_s": 256.688}
+{"t_s": 174.997, "event": "estimator_status", "vel_ratio": 0.0980563536286354, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.00613931892439723, "mag_ratio": 0.021067483350634575, "pos_horiz_accuracy": 0.35447612404823303, "pos_vert_accuracy": 0.16523852944374084, "flags": 1855}
+{"t_s": 175.274, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497964, "rel_alt_m": 29.998001098632812}
+{"t_s": 175.305, "event": "truth", "vehicle": "uav1", "east_m": 3003.455, "north_m": -462.842, "alt_m": 28.058, "sim_s": 257.192}
+{"t_s": 175.776, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488579, "rel_alt_m": 30.006000518798828}
+{"t_s": 175.807, "event": "truth", "vehicle": "uav1", "east_m": 3018.362, "north_m": -466.329, "alt_m": 28.051, "sim_s": 257.692}
+{"t_s": 176.004, "event": "estimator_status", "vel_ratio": 0.1011599525809288, "pos_horiz_ratio": 0.3149368166923523, "pos_vert_ratio": 0.005528438836336136, "mag_ratio": 0.019126415252685547, "pos_horiz_accuracy": 0.3141794800758362, "pos_vert_accuracy": 0.16557711362838745, "flags": 831}
+{"t_s": 176.296, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.548895, "rel_alt_m": 30.025001525878906}
+{"t_s": 176.308, "event": "truth", "vehicle": "uav1", "east_m": 3033.531, "north_m": -469.86, "alt_m": 28.061, "sim_s": 258.196}
+{"t_s": 176.815, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5489467, "rel_alt_m": 30.012001037597656}
+{"t_s": 176.824, "event": "truth", "vehicle": "uav1", "east_m": 3049.329, "north_m": -473.496, "alt_m": 28.033, "sim_s": 258.712}
+{"t_s": 177.004, "event": "estimator_status", "vel_ratio": 0.1307729333639145, "pos_horiz_ratio": 1.5950347185134888, "pos_vert_ratio": 0.006610988639295101, "mag_ratio": 0.02059052139520645, "pos_horiz_accuracy": 0.25523102283477783, "pos_vert_accuracy": 0.1658930778503418, "flags": 1855}
+{"t_s": 177.315, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549012099999999, "rel_alt_m": 29.992000579833984}
+{"t_s": 177.327, "event": "truth", "vehicle": "uav1", "east_m": 3064.838, "north_m": -477.073, "alt_m": 27.987, "sim_s": 259.216}
+{"t_s": 177.836, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5490806, "rel_alt_m": 29.9950008392334}
+{"t_s": 177.839, "event": "truth", "vehicle": "uav1", "east_m": 3080.538, "north_m": -480.732, "alt_m": 27.964, "sim_s": 259.728}
+{"t_s": 178.004, "event": "estimator_status", "vel_ratio": 0.079319529235363, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.007621826138347387, "mag_ratio": 0.017083730548620224, "pos_horiz_accuracy": 0.27399197220802307, "pos_vert_accuracy": 0.1652294099330902, "flags": 1855}
+{"t_s": 178.351, "event": "truth", "vehicle": "uav1", "east_m": 3096.262, "north_m": -484.417, "alt_m": 27.943, "sim_s": 260.24}
+{"t_s": 178.355, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5491499, "rel_alt_m": 29.99700164794922}
+{"t_s": 178.857, "event": "truth", "vehicle": "uav1", "east_m": 3111.659, "north_m": -488.039, "alt_m": 27.92, "sim_s": 260.74}
+{"t_s": 178.861, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492163, "rel_alt_m": 29.996002197265625}
+{"t_s": 179.009, "event": "estimator_status", "vel_ratio": 0.027155648916959763, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005861855112016201, "mag_ratio": 0.016347404569387436, "pos_horiz_accuracy": 0.2926141619682312, "pos_vert_accuracy": 0.16552576422691345, "flags": 1855}
+{"t_s": 179.361, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492838, "rel_alt_m": 29.994001388549805}
+{"t_s": 179.373, "event": "truth", "vehicle": "uav1", "east_m": 3127.576, "north_m": -491.802, "alt_m": 27.897, "sim_s": 261.256}
+{"t_s": 179.871, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5493501, "rel_alt_m": 29.99300193786621}
+{"t_s": 179.887, "event": "truth", "vehicle": "uav1", "east_m": 3143.144, "north_m": -495.501, "alt_m": 27.876, "sim_s": 261.76}
+{"t_s": 180.021, "event": "estimator_status", "vel_ratio": 0.03262800723314285, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006389573682099581, "mag_ratio": 0.014194397255778313, "pos_horiz_accuracy": 0.3098886013031006, "pos_vert_accuracy": 0.16581584513187408, "flags": 1855}
+{"t_s": 180.389, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5494197, "rel_alt_m": 29.99300193786621}
+{"t_s": 180.4, "event": "truth", "vehicle": "uav1", "east_m": 3158.975, "north_m": -499.283, "alt_m": 27.856, "sim_s": 262.272}
+{"t_s": 180.894, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5494732, "rel_alt_m": 29.99100112915039}
+{"t_s": 181.014, "event": "truth", "vehicle": "uav1", "east_m": 3174.567, "north_m": -503.03, "alt_m": 27.837, "sim_s": 262.776}
+{"t_s": 181.131, "event": "estimator_status", "vel_ratio": 0.05594875290989876, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.007934621535241604, "mag_ratio": 0.017686791718006134, "pos_horiz_accuracy": 0.3253960907459259, "pos_vert_accuracy": 0.16514034569263458, "flags": 1855}
+{"t_s": 181.402, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5495406, "rel_alt_m": 29.99100112915039}
+{"t_s": 181.531, "event": "truth", "vehicle": "uav1", "east_m": 3190.533, "north_m": -506.89, "alt_m": 27.819, "sim_s": 263.292}
+{"t_s": 181.903, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549606899999999, "rel_alt_m": 29.990001678466797}
+{"t_s": 182.04, "event": "truth", "vehicle": "uav1", "east_m": 3206.244, "north_m": -510.714, "alt_m": 27.803, "sim_s": 263.8}
+{"t_s": 182.132, "event": "estimator_status", "vel_ratio": 0.07539612054824829, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.009355347603559494, "mag_ratio": 0.013585144653916359, "pos_horiz_accuracy": 0.34099140763282776, "pos_vert_accuracy": 0.16543078422546387, "flags": 1855}
+{"t_s": 182.408, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5496742, "rel_alt_m": 29.990001678466797}
+{"t_s": 182.553, "event": "truth", "vehicle": "uav1", "east_m": 3221.939, "north_m": -514.561, "alt_m": 27.788, "sim_s": 264.308}
+{"t_s": 182.909, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5497404, "rel_alt_m": 29.992000579833984}
+{"t_s": 183.07, "event": "truth", "vehicle": "uav1", "east_m": 3237.857, "north_m": -518.492, "alt_m": 27.773, "sim_s": 264.824}
+{"t_s": 183.138, "event": "estimator_status", "vel_ratio": 0.09386942535638809, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.007899044081568718, "mag_ratio": 0.017043475061655045, "pos_horiz_accuracy": 0.3560341000556946, "pos_vert_accuracy": 0.1657240092754364, "flags": 1855}
+{"t_s": 183.409, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5498078, "rel_alt_m": 29.992000579833984}
+{"t_s": 183.581, "event": "truth", "vehicle": "uav1", "east_m": 3253.372, "north_m": -522.355, "alt_m": 27.758, "sim_s": 265.328}
+{"t_s": 183.917, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488643, "rel_alt_m": 30.006000518798828}
+{"t_s": 184.082, "event": "truth", "vehicle": "uav1", "east_m": 3268.757, "north_m": -526.209, "alt_m": 27.781, "sim_s": 265.828}
+{"t_s": 184.146, "event": "estimator_status", "vel_ratio": 0.0914669930934906, "pos_horiz_ratio": 0.39243271946907043, "pos_vert_ratio": 0.008869522251188755, "mag_ratio": 0.026682952418923378, "pos_horiz_accuracy": 0.28931924700737, "pos_vert_accuracy": 0.16505174338817596, "flags": 831}
+{"t_s": 184.418, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5488994, "rel_alt_m": 30.0210018157959}
+{"t_s": 184.598, "event": "truth", "vehicle": "uav1", "east_m": 3284.855, "north_m": -530.198, "alt_m": 27.79, "sim_s": 266.344}
+{"t_s": 184.924, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5489518, "rel_alt_m": 30.007001876831055}
+{"t_s": 185.112, "event": "truth", "vehicle": "uav1", "east_m": 3300.777, "north_m": -534.112, "alt_m": 27.76, "sim_s": 266.848}
+{"t_s": 185.153, "event": "estimator_status", "vel_ratio": 0.14250610768795013, "pos_horiz_ratio": 1.7853474617004395, "pos_vert_ratio": 0.007998577319085598, "mag_ratio": 0.022592417895793915, "pos_horiz_accuracy": 0.25651654601097107, "pos_vert_accuracy": 0.16533611714839935, "flags": 1855}
+{"t_s": 185.432, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5490164, "rel_alt_m": 29.989002227783203}
+{"t_s": 185.628, "event": "truth", "vehicle": "uav1", "east_m": 3316.912, "north_m": -538.111, "alt_m": 27.738, "sim_s": 267.36}
+{"t_s": 185.952, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549085, "rel_alt_m": 29.994001388549805}
+{"t_s": 186.141, "event": "truth", "vehicle": "uav1", "east_m": 3332.633, "north_m": -542.037, "alt_m": 27.731, "sim_s": 267.86}
+{"t_s": 186.175, "event": "estimator_status", "vel_ratio": 0.07641331851482391, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005737341474741697, "mag_ratio": 0.01228652149438858, "pos_horiz_accuracy": 0.2754668891429901, "pos_vert_accuracy": 0.16536231338977814, "flags": 1855}
+{"t_s": 186.466, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549152099999999, "rel_alt_m": 29.99700164794922}
+{"t_s": 186.657, "event": "truth", "vehicle": "uav1", "east_m": 3348.879, "north_m": -546.108, "alt_m": 27.719, "sim_s": 268.376}
+{"t_s": 186.985, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492218, "rel_alt_m": 29.994001388549805}
+{"t_s": 187.162, "event": "truth", "vehicle": "uav1", "east_m": 3364.764, "north_m": -550.104, "alt_m": 27.708, "sim_s": 268.88}
+{"t_s": 187.174, "event": "estimator_status", "vel_ratio": 0.02704586647450924, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.00943369697779417, "mag_ratio": 0.015289874747395515, "pos_horiz_accuracy": 0.29401957988739014, "pos_vert_accuracy": 0.16565439105033875, "flags": 1855}
+{"t_s": 187.504, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492881, "rel_alt_m": 29.99300193786621}
+{"t_s": 187.695, "event": "truth", "vehicle": "uav1", "east_m": 3381.037, "north_m": -554.215, "alt_m": 27.699, "sim_s": 269.396}
+{"t_s": 188.008, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5493556, "rel_alt_m": 29.99300193786621}
+{"t_s": 188.198, "event": "estimator_status", "vel_ratio": 0.028450187295675278, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.006414695642888546, "mag_ratio": 0.011511841788887978, "pos_horiz_accuracy": 0.3112157881259918, "pos_vert_accuracy": 0.16594888269901276, "flags": 1855}
+{"t_s": 188.217, "event": "truth", "vehicle": "uav1", "east_m": 3397.311, "north_m": -558.345, "alt_m": 27.69, "sim_s": 269.912}
+{"t_s": 188.508, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5494219, "rel_alt_m": 29.99300193786621}
+{"t_s": 188.729, "event": "truth", "vehicle": "uav1", "east_m": 3413.456, "north_m": -562.462, "alt_m": 27.682, "sim_s": 270.424}
+{"t_s": 189.01, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5494893, "rel_alt_m": 29.99100112915039}
+{"t_s": 189.197, "event": "estimator_status", "vel_ratio": 0.05041037127375603, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005183798260986805, "mag_ratio": 0.016269300132989883, "pos_horiz_accuracy": 0.32665693759918213, "pos_vert_accuracy": 0.1652735024690628, "flags": 1855}
+{"t_s": 189.237, "event": "truth", "vehicle": "uav1", "east_m": 3429.465, "north_m": -566.565, "alt_m": 27.675, "sim_s": 270.932}
+{"t_s": 189.52, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5495545, "rel_alt_m": 29.992000579833984}
+{"t_s": 189.759, "event": "truth", "vehicle": "uav1", "east_m": 3445.457, "north_m": -570.686, "alt_m": 27.668, "sim_s": 271.44}
+{"t_s": 190.023, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5496234, "rel_alt_m": 29.99100112915039}
+{"t_s": 190.219, "event": "estimator_status", "vel_ratio": 0.06938934326171875, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005414517596364021, "mag_ratio": 0.019609827548265457, "pos_horiz_accuracy": 0.3423424959182739, "pos_vert_accuracy": 0.165697380900383, "flags": 1855}
+{"t_s": 190.272, "event": "truth", "vehicle": "uav1", "east_m": 3461.294, "north_m": -574.793, "alt_m": 27.66, "sim_s": 271.944}
+{"t_s": 190.537, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5496885, "rel_alt_m": 29.99300193786621}
+{"t_s": 190.796, "event": "truth", "vehicle": "uav1", "east_m": 3477.466, "north_m": -579.016, "alt_m": 27.657, "sim_s": 272.46}
+{"t_s": 191.04, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549756, "rel_alt_m": 29.994001388549805}
+{"t_s": 191.235, "event": "estimator_status", "vel_ratio": 0.08391448110342026, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0048076980747282505, "mag_ratio": 0.029987582936882973, "pos_horiz_accuracy": 0.35685214400291443, "pos_vert_accuracy": 0.16515932977199554, "flags": 1855}
+{"t_s": 191.31, "event": "truth", "vehicle": "uav1", "east_m": 3493.366, "north_m": -583.191, "alt_m": 27.649, "sim_s": 272.968}
+{"t_s": 191.546, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488292, "rel_alt_m": 29.99100112915039}
+{"t_s": 191.834, "event": "truth", "vehicle": "uav1", "east_m": 3509.323, "north_m": -587.419, "alt_m": 27.657, "sim_s": 273.48}
+{"t_s": 192.057, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488732, "rel_alt_m": 30.01500129699707}
+{"t_s": 192.256, "event": "estimator_status", "vel_ratio": 0.07723518460988998, "pos_horiz_ratio": 0.45275792479515076, "pos_vert_ratio": 0.00824422761797905, "mag_ratio": 0.03215828910470009, "pos_horiz_accuracy": 0.2759275436401367, "pos_vert_accuracy": 0.16519226133823395, "flags": 831}
+{"t_s": 192.343, "event": "truth", "vehicle": "uav1", "east_m": 3524.985, "north_m": -591.554, "alt_m": 27.69, "sim_s": 273.98}
+{"t_s": 192.568, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5489084, "rel_alt_m": 30.022001266479492}
+{"t_s": 192.857, "event": "truth", "vehicle": "uav1", "east_m": 3541.133, "north_m": -595.762, "alt_m": 27.692, "sim_s": 274.488}
+{"t_s": 193.079, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5489663, "rel_alt_m": 30.00200080871582}
+{"t_s": 193.279, "event": "estimator_status", "vel_ratio": 0.15508200228214264, "pos_horiz_ratio": 1.9105559587478638, "pos_vert_ratio": 0.0070655434392392635, "mag_ratio": 0.03054840676486492, "pos_horiz_accuracy": 0.2579081058502197, "pos_vert_accuracy": 0.16548331081867218, "flags": 1855}
+{"t_s": 193.367, "event": "truth", "vehicle": "uav1", "east_m": 3557.235, "north_m": -599.949, "alt_m": 27.667, "sim_s": 274.992}
+{"t_s": 193.598, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549035, "rel_alt_m": 29.990001678466797}
+{"t_s": 193.883, "event": "truth", "vehicle": "uav1", "east_m": 3573.623, "north_m": -604.255, "alt_m": 27.666, "sim_s": 275.508}
+{"t_s": 194.099, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5491016, "rel_alt_m": 29.99700164794922}
+{"t_s": 194.268, "event": "estimator_status", "vel_ratio": 0.07629720866680145, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.005402435548603535, "mag_ratio": 0.021482272073626518, "pos_horiz_accuracy": 0.27740997076034546, "pos_vert_accuracy": 0.16590622067451477, "flags": 1855}
+{"t_s": 194.383, "event": "truth", "vehicle": "uav1", "east_m": 3589.489, "north_m": -608.44, "alt_m": 27.667, "sim_s": 276.008}
+{"t_s": 194.599, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5491678, "rel_alt_m": 29.998001098632812}
+{"t_s": 194.894, "event": "truth", "vehicle": "uav1", "east_m": 3605.748, "north_m": -612.739, "alt_m": 27.665, "sim_s": 276.52}
+{"t_s": 195.118, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5492375, "rel_alt_m": 29.998001098632812}
+{"t_s": 195.267, "event": "estimator_status", "vel_ratio": 0.027467986568808556, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004497681278735399, "mag_ratio": 0.017052019014954567, "pos_horiz_accuracy": 0.29515594244003296, "pos_vert_accuracy": 0.16523133218288422, "flags": 1855}
+{"t_s": 195.411, "event": "truth", "vehicle": "uav1", "east_m": 3622.132, "north_m": -617.086, "alt_m": 27.663, "sim_s": 277.036}
+{"t_s": 195.622, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.5493049, "rel_alt_m": 29.998001098632812}
+{"t_s": 195.937, "event": "truth", "vehicle": "uav1", "east_m": 3638.509, "north_m": -621.445, "alt_m": 27.661, "sim_s": 277.552}
+{"t_s": 196.14, "event": "position", "lat_deg": 47.3979712, "lon_deg": 8.549371299999999, "rel_alt_m": 30.000001907348633}
+{"t_s": 196.333, "event": "estimator_status", "vel_ratio": 0.02270602248609066, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.003756761085242033, "mag_ratio": 0.016770321875810623, "pos_horiz_accuracy": 0.31191983819007874, "pos_vert_accuracy": 0.16525545716285706, "flags": 1855}
+{"t_s": 196.506, "event": "truth", "vehicle": "uav1", "east_m": 3654.744, "north_m": -625.784, "alt_m": 27.658, "sim_s": 278.064}
+{"t_s": 196.641, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5494333, "rel_alt_m": 29.999000549316406}
+{"t_s": 197.006, "event": "truth", "vehicle": "uav1", "east_m": 3670.707, "north_m": -630.067, "alt_m": 27.656, "sim_s": 278.568}
+{"t_s": 197.144, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549499599999999, "rel_alt_m": 29.99700164794922}
+{"t_s": 197.338, "event": "estimator_status", "vel_ratio": 0.043411001563072205, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.003490271745249629, "mag_ratio": 0.021739890798926353, "pos_horiz_accuracy": 0.3283713757991791, "pos_vert_accuracy": 0.16580328345298767, "flags": 1855}
+{"t_s": 197.511, "event": "truth", "vehicle": "uav1", "east_m": 3686.519, "north_m": -634.329, "alt_m": 27.654, "sim_s": 279.068}
+{"t_s": 197.647, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5495669, "rel_alt_m": 29.998001098632812}
+{"t_s": 198.012, "event": "truth", "vehicle": "uav1", "east_m": 3702.3, "north_m": -638.603, "alt_m": 27.652, "sim_s": 279.568}
+{"t_s": 198.155, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.549633199999999, "rel_alt_m": 29.998001098632812}
+{"t_s": 198.343, "event": "estimator_status", "vel_ratio": 0.060754548758268356, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.004286698065698147, "mag_ratio": 0.02195567823946476, "pos_horiz_accuracy": 0.343166321516037, "pos_vert_accuracy": 0.16512353718280792, "flags": 1855}
+{"t_s": 198.539, "event": "truth", "vehicle": "uav1", "east_m": 3718.545, "north_m": -643.026, "alt_m": 27.649, "sim_s": 280.084}
+{"t_s": 198.661, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5497005, "rel_alt_m": 29.999000549316406}
+{"t_s": 199.045, "event": "truth", "vehicle": "uav1", "east_m": 3734.242, "north_m": -647.325, "alt_m": 27.646, "sim_s": 280.584}
+{"t_s": 199.165, "event": "position", "lat_deg": 47.397971299999995, "lon_deg": 8.5497667, "rel_alt_m": 29.998001098632812}
+{"t_s": 199.353, "event": "estimator_status", "vel_ratio": 0.07567015290260315, "pos_horiz_ratio": 2.0, "pos_vert_ratio": 0.0035073470789939165, "mag_ratio": 0.03469549119472504, "pos_horiz_accuracy": 0.35814571380615234, "pos_vert_accuracy": 0.16540904343128204, "flags": 1855}
+{"t_s": 199.56, "event": "truth", "vehicle": "uav1", "east_m": 3750.385, "north_m": -651.773, "alt_m": 27.642, "sim_s": 281.1}
+{"t_s": 199.687, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488392, "rel_alt_m": 29.996002197265625}
+{"t_s": 200.08, "event": "truth", "vehicle": "uav1", "east_m": 3766.351, "north_m": -656.2, "alt_m": 27.669, "sim_s": 281.612}
+{"t_s": 200.193, "event": "position", "lat_deg": 47.397971, "lon_deg": 8.5488802, "rel_alt_m": 30.0210018157959}
+{"t_s": 200.362, "event": "estimator_status", "vel_ratio": 0.0646071508526802, "pos_horiz_ratio": 0.507972240447998, "pos_vert_ratio": 0.004065110348165035, "mag_ratio": 0.040802791714668274, "pos_horiz_accuracy": 0.2645091712474823, "pos_vert_accuracy": 0.1656966358423233, "flags": 831}
+{"t_s": 200.586, "event": "truth", "vehicle": "uav1", "east_m": 3782.229, "north_m": -660.553, "alt_m": 27.698, "sim_s": 282.116}
+{"t_s": 200.695, "event": "position", "lat_deg": 47.3979711, "lon_deg": 8.5489183, "rel_alt_m": 30.025001525878906}
+{"t_s": 200.965, "event": "recording_stopped", "reason": "max_duration", "max_duration_s": 200.0}

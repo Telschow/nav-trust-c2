@@ -59,6 +59,14 @@ Try it without the simulator: `make demo`, then open http://127.0.0.1:8000. That
 header whenever the data is not live. Map tiles are OpenStreetMap (internet needed; attribution
 is shown on the map).
 
+## Results
+
+The evaluation (time to detect, false alerts, time spent GREEN while the position was actually
+wrong, error at the alert, mission completion, operator interruptions) is generated from
+recorded simulator runs with ground truth: [eval/results.md](eval/results.md). CI recomputes it
+and fails if it differs. The scenarios are in [scenarios/](scenarios/); `make record-all`
+re-records them (simulator needed, about 1.5 hours) and `make eval` regenerates the table.
+
 ## How this was built
 
 _To be written by the maintainer: which parts were written by hand and which with AI assistance._

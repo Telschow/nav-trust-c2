@@ -1,0 +1,14 @@
+name: wrong_fix
+class: wrong_fix
+description: >
+  For about 4 s per crossing the receiver reports a degraded fix type (2D) while the position is
+  left untouched; PX4's `gps wrong` mode.
+expected_px4: >
+  PX4 flies through; the mission completes. Position and the estimator's test ratios do not
+  change, only the reported fix type.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+fault:
+  mode: wrong
+  zone: {west: 250, south: -50, east: 290, north: 150}
+runs: 2
+max_duration_s: 400
