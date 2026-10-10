@@ -16,8 +16,14 @@ dataclass field names; enums are their string values.
 | stamp_s | float | |
 | state | GREEN, AMBER, RED | |
 | reason | GNSS_LOSS, INCONSISTENT_INNOVATION, BIAS_DRIFT, STALE, or null | null only in GREEN |
-| horizontal_bound_m | float or `null` | JSON has no infinity: unknown is `null` (the engine gives it outside GREEN) |
-| confidence | float 0..1 | ordinal placeholder, meaning undefined (see ADR/PR 27) |
+| horizontal_bound_m | float or `null` | GREEN: a bound calibrated against ground truth (3.0 m). Otherwise unknown: `null` in JSON (infinity in the engine) |
+| confidence | float 0..1 | the share of calibration reports in which the true error stayed within `horizontal_bound_m` (0.99). 0 when the bound is unknown. Not a per-moment probability |
+| headroom | float 0..1 | GREEN only (0 otherwise): how far the vehicle is from an alert. The smaller of two margins: the worst recent innovation test ratio against the estimator's own rejection gate, and how long the inputs have been silent against the stale limit. Not a probability |
+
+`GET /calibration` serves how the bound and its coverage were obtained (counts, measured coverage
+on the development and the held-out sets, source). The numbers live in `navtrust/calibration.py`
+and `tests/test_calibration.py` recomputes them from the recordings. They hold for PX4 SITL in
+Gazebo at 5 to 12 m/s and say nothing about other conditions.
 
 ## Recommendation (produced by the recommender, shown to the operator)
 | field | type | note |

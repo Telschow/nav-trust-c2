@@ -2,6 +2,7 @@ import math
 
 import pytest
 
+from navtrust.calibration import GREEN_BOUND
 from navtrust.engine import EngineConfig, TrustEngine
 from navtrust.types import ReasonCode, TrustState
 
@@ -31,8 +32,10 @@ def test_healthy_vehicle_is_green_with_a_bound_and_no_reason() -> None:
     e = TrustEngine("uav1")
     t = start_green(e)
     out = e.report(t)
-    assert (out.state, out.reason, out.horizontal_bound_m) == (TrustState.GREEN, None, 0.15)
-    assert out.confidence == 1.0
+    cal = GREEN_BOUND
+    assert (out.state, out.reason) == (TrustState.GREEN, None)
+    assert (out.horizontal_bound_m, out.confidence) == (cal.bound_m, cal.coverage)
+    assert 0.0 < out.headroom <= 1.0
 
 
 def test_loss_is_amber_then_red_after_red_after_s() -> None:
@@ -137,3 +140,49 @@ def test_a_long_stale_start_still_escalates_but_data_arriving_does_not() -> None
     e2.report(3.8)
     good(e2, 5.0)
     assert e2.report(5.0).state is TrustState.AMBER  # data is flowing, only the hold remains
+
+
+def test_headroom_shrinks_as_the_test_ratio_nears_the_estimators_gate() -> None:
+    def headroom(ratio: float) -> float:
+        e = TrustEngine("uav1")
+        t = start_green(e)
+        for dt in range(1, 4):
+            good(e, t + dt, pos=ratio, vel=ratio)
+        out = e.report(t + 3)
+        assert out.state is TrustState.GREEN
+        return out.headroom
+
+    assert headroom(0.05) == pytest.approx(0.95, abs=0.01)
+    assert headroom(0.5) == pytest.approx(0.5, abs=0.01)
+    assert headroom(0.9) == pytest.approx(0.1, abs=0.01)
+    assert headroom(0.05) > headroom(0.5) > headroom(0.9)
+
+
+def test_headroom_shrinks_when_inputs_go_quiet_but_not_at_the_normal_one_second_cadence() -> None:
+    e = TrustEngine("uav1", EngineConfig())
+    t = start_green(e)
+    for dt in range(1, 4):
+        good(e, t + dt)
+    assert e.report(t + 3.9).headroom == pytest.approx(0.95, abs=0.01)  # 0.9 s since the last input
+    quiet = e.report(
+        t + 3 + 2.25
+    )  # 2.25 s of silence: halfway between the grace and the stale limit
+    assert quiet.state is TrustState.GREEN
+    assert quiet.headroom == pytest.approx(0.5, abs=0.05)
+
+
+def test_headroom_and_confidence_are_zero_and_the_bound_unknown_outside_green() -> None:
+    e = TrustEngine("uav1")
+    t = start_green(e)
+    e.update_fix(t + 1, "NO_GPS")
+    good(e, t + 1)
+    out = e.report(t + 1)
+    assert out.state is TrustState.AMBER
+    assert (out.headroom, out.confidence) == (0.0, 0.0) and math.isinf(out.horizontal_bound_m)
+
+
+def test_headroom_must_be_a_fraction() -> None:
+    from navtrust.types import NavTrust
+
+    with pytest.raises(ValueError):
+        NavTrust("u", 0.0, TrustState.GREEN, None, 3.0, 0.99, headroom=1.5)

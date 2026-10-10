@@ -1,5 +1,6 @@
 import { actionsOf, reasonText, titleOf, urgencyRank } from "./language";
 import type {
+  Calibration,
   Decision,
   Fleet,
   NavTrust,
@@ -40,6 +41,7 @@ export interface ConsoleState {
   recommendations: Record<string, Recommendation>;
   decisions: Record<string, Decision>;
   fleet: Fleet;
+  calibration: Calibration | null;
   log: LogEntry[];
   nextLogId: number;
 }
@@ -57,6 +59,7 @@ export const initialState: ConsoleState = {
   recommendations: {},
   decisions: {},
   fleet: {},
+  calibration: null,
   log: [],
   nextLogId: 1,
 };
@@ -65,6 +68,7 @@ export type Action =
   | { type: "connection"; connected: boolean }
   | { type: "server"; event: ServerEvent; clientNow: number }
   | { type: "fleet"; fleet: Fleet }
+  | { type: "calibration"; calibration: Calibration }
   | { type: "decided"; decision: Decision };
 
 function withLog(
@@ -118,6 +122,8 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
       return { ...s, connected: action.connected };
     case "fleet":
       return { ...s, fleet: action.fleet };
+    case "calibration":
+      return { ...s, calibration: action.calibration };
     case "decided":
       return { ...s, decisions: { ...s.decisions, [action.decision.recommendation_id]: action.decision } };
     case "server": {

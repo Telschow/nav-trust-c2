@@ -5,7 +5,7 @@ import { defineConfig } from "vite";
 
 // In development the console talks to the backend on :8000 (python -m c2.server).
 const backend = "http://127.0.0.1:8000";
-const proxied = ["/state", "/fleet", "/decisions", "/audit"];
+const proxied = ["/state", "/fleet", "/decisions", "/audit", "/calibration"];
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],

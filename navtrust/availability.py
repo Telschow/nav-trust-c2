@@ -47,6 +47,7 @@ class AvailabilityReport:
     # True while the fix already looks good and the previous non-OK status is only being held
     # until recover_after_s has passed. Callers must not count this time as outage time.
     recovering: bool = False
+    input_age_s: float | None = None  # time since any input arrived; None before the first
 
 
 def classify_fix(fix_type: str) -> Availability:
@@ -101,6 +102,7 @@ class AvailabilityDetector:
             since_s=t_s - self._reported_since_s,
             horizontal_bound_m=self._bound,
             recovering=raw is Availability.OK and self._reported is not Availability.OK,
+            input_age_s=None if self._last_input_s is None else t_s - self._last_input_s,
         )
 
     def _raw(self, t_s: float) -> Availability:
