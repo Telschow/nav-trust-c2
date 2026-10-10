@@ -88,8 +88,10 @@ count, then stop. Fixing the top three is enough for issue 16.
 
 Limits to repeat in every write-up:
 - Convenience sample, not trained operators.
-- A replay: the trust data is recorded, the positions are synthetic, and one scenario (a drone
-  whose GPS position freezes) is the only thing that happens. Participants know it is a simulation.
+- A replay: the trust data is recorded, the positions are synthetic, and only one event happens
+  (by default a drone whose GPS position freezes). Participants know it is a simulation. The demo
+  runs five times faster than the flight it was recorded from, so the time pressure is not the real
+  one and times to notice and decide are not transferable to a live flight.
 - The first alert is a surprise only once per person; there is no learning-effect measurement.
 - The facilitator built the system, which affects what participants say and what you notice.
 

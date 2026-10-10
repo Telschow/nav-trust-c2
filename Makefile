@@ -64,10 +64,11 @@ demo: console demo-run
 
 # Same without rebuilding the console. One database per session: make demo-run DEMO_DB=logs/usability/P1.sqlite
 DEMO_DB ?= logs/audit-demo.sqlite
+DEMO_SCENARIO ?= stuck
 demo-run:
 	mkdir -p $(dir $(DEMO_DB))
 	python -m c2.server --db $(DEMO_DB) --source "REPLAY DEMO" & SERVER=$$!; trap "kill $$SERVER" EXIT INT TERM; \
-	sleep 3; python -m sim.demo_feed --speed 5
+	sleep 3; python -m sim.demo_feed --speed 5 --scenario $(DEMO_SCENARIO)
 
 scenario:
 	docker exec -w /workspaces/nav-trust-c2 $(IMAGE) python -m sim.run_scenario $(NAME) --run $(or $(RUN),1)
