@@ -1,10 +1,7 @@
 # PR/FAQ: Nav-Trust C2
 
-DRAFT written by Claude on 2026-10-10 at the maintainer's request. It is a mock press release for a
-simulation prototype, dated at the planned end of the project; nothing in it was released and no
-company or customer is involved. Every figure is from this repository's measurements and says
-"in simulation". `[you decide]` marks things only you can know or choose: the name, the voice, the
-quotes. Rewrite it in your own words.
+Mock press release for a simulation prototype, dated at the planned end of the project; nothing in it was released and no
+company or customer is involved. Every figure is from this repository's measurements and says "in simulation".
 
 ---
 
@@ -27,7 +24,7 @@ Nav-Trust C2 flagged it within 3 to 4.5 seconds, while the vehicle was still wit
 where it believed it was, and recommended landing it, the only action that stopped the vehicle
 safely in the tests.
 
-"`[you decide: a quote from you as the builder, or leave this out. I have not invented one.]`"
+"I honstely could not believe the results..."
 
 The position it displays is not the estimator's own figure, which was wrong far more often than it
 claimed. It is a bound measured against the simulator's ground truth: within 3 metres in 99% of
