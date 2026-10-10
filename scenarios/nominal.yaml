@@ -1,0 +1,9 @@
+name: nominal
+class: nominal
+description: >
+  The survey flown with no fault. Used for false alerts and to show normal behaviour.
+expected_px4: >
+  The mission completes, the vehicle returns and lands.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+runs: 4
+max_duration_s: 400

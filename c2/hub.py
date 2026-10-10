@@ -76,6 +76,10 @@ class Hub:
     # --- inputs --------------------------------------------------------------------------
 
     def ingest_navtrust(self, msg: NavTrust) -> None:
+        # Trust arrives continuously in any real session, so this is what closes recommendations
+        # that expired unanswered (and lets the recommender issue them again). Without it nothing
+        # would ever mark them expired unless a client happened to ask for the state.
+        self.sweep()
         previous = self._trust.get(msg.vehicle_id)
         self._trust[msg.vehicle_id] = msg
         if previous is None or (previous.state, previous.reason) != (msg.state, msg.reason):

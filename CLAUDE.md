@@ -22,9 +22,14 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
 - Bag replay tests (from M1b): `pytest tests/replay`
 - Console (React, TypeScript, Vite, MapLibre; Node 22+): `make console` builds it, `make demo` runs backend +
   console + replayed demo data with no simulator, `cd console && npm test` for its tests
+- Usability session (issue 16): `docs/usability/` has the facilitator script, metrics and session
+  sheet; `python -m eval.usability logs/usability/P1.sqlite` gives time to decision from a
+  session's audit database. Session data lives in `logs/` and is never committed.
 - Sim: `make sim-build`, `make sim-up`, `make fly`, `make sim-down`
-- Scenarios and eval (from M1a / M3): `make scenario NAME=jamming_zone`, `make eval`; CI checks
-  that the generated table matches the committed one.
+- Scenarios and eval: scenario files in `scenarios/`; `make record-all` records every run with
+  ground truth into `eval/recordings` (simulator, about 1.5 h); `make eval` regenerates
+  `eval/results.json` and `eval/results.md`; CI fails if the committed table differs from the
+  recordings. Ground truth is evaluation-only: the trust engine never sees it.
 
 ## Rules
 - CI must not need Gazebo: replay recorded bags.
