@@ -21,8 +21,8 @@ These are **hypotheses**, not research: no operator has been interviewed. The us
 - **Pain.** No consolidated trust picture across vehicles.
 - **What the console gives them.** A fleet summary in the header (how many vehicles are trusted,
   degraded or not trusted) and a map with the survey sectors coloured by the vehicle that owns them.
-- **What it does not give them.** A coverage figure, or a mission-level risk view. Mission
-  completion is not measured (`docs/product/requirements.md`, M-04). **Partly supported.**
+- **What it does not give them.** A coverage figure in the console, or a mission-level risk view. Area covered is
+  measured offline per run, but not for a fleet after a re-task (`docs/product/requirements.md`, M-04). **Partly supported.**
 
 ## 3. Maintainer and test engineer
 

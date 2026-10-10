@@ -11,6 +11,8 @@ Definitions (all thresholds are proposals, see EvalConfig):
 - misleading trust: seconds in which the engine reported GREEN while the true horizontal error
   of the estimated position exceeded `misleading_error_m`. Needs ground truth.
 - error at detection: true horizontal error at the first non-GREEN report after the fault began.
+- area covered: share of the survey rectangle within half the lane spacing of the true track
+  while airborne (eval/coverage.py). Needs ground truth.
 - interruptions: recommendations the recommender raises over the run, with two other vehicles
   assumed GREEN. Recommendations are not repeated, so this counts episodes, not nagging.
 """
@@ -24,6 +26,7 @@ from typing import Any
 from c2.allocator import assign, split_area
 from c2.fleet import FleetState
 from c2.recommender import Recommender
+from eval.coverage import area_coverage
 from navtrust.engine import TrustEngine
 from navtrust.recording import Recording
 from navtrust.replay import replay_engine
@@ -59,6 +62,7 @@ class RunMetrics:
     waypoints_reached: float | None  # fraction of the mission's waypoints
     landed: bool
     interruptions: int
+    area_covered: float | None = None  # fraction of the survey area flown (eval/coverage.py)
 
 
 def position_errors(rec: Recording) -> list[tuple[float, float]]:
@@ -244,6 +248,7 @@ def run_metrics(name: str, rec: Recording, cfg: EvalConfig) -> RunMetrics:
         waypoints_reached=reached,
         landed=rec.first("landed") is not None,
         interruptions=count_interruptions(reports),
+        area_covered=area_coverage(rec),
     )
 
 
