@@ -54,10 +54,10 @@ def test_red_gnss_loss_retasks_without_a_vehicle_command() -> None:
     assert "uav2" in rec.rationale and "S2" in rec.rationale
 
 
-def test_red_inconsistency_holds_and_retasks() -> None:
+def test_red_inconsistency_lands_and_retasks() -> None:
     r, f, _ = make()
     [rec] = r.observe(msg("uav3", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION), f)
-    assert rec.command is Command.HOLD
+    assert rec.command is Command.LAND
     assert [m.sector_id for m in rec.sector_moves] == ["S3"]
 
 
@@ -82,7 +82,7 @@ def test_a_changed_reason_during_red_is_a_new_recommendation() -> None:
     r, f, _ = make()
     assert len(r.observe(msg("uav2", TrustState.RED, ReasonCode.GNSS_LOSS), f)) == 1
     [second] = r.observe(msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION), f)
-    assert second.command is Command.HOLD
+    assert second.command is Command.LAND
 
 
 def test_untrusted_vehicles_do_not_take_work() -> None:
@@ -92,21 +92,21 @@ def test_untrusted_vehicles_do_not_take_work() -> None:
     assert [m.to_vehicle for m in rec.sector_moves] == ["uav3"]
 
 
-def test_nobody_available_means_no_loss_recommendation_but_still_a_hold() -> None:
+def test_nobody_available_means_no_loss_recommendation_but_still_a_land() -> None:
     r, f, _ = make()
     r.observe(msg("uav1", TrustState.RED, ReasonCode.GNSS_LOSS), f)  # moves S1 away first
     r.observe(msg("uav3", TrustState.AMBER, ReasonCode.GNSS_LOSS), f)
     assert r.observe(msg("uav2", TrustState.RED, ReasonCode.GNSS_LOSS), f) == []
-    [hold] = r.observe(msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION), f)
-    assert hold.command is Command.HOLD and hold.sector_moves == ()
+    [land] = r.observe(msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION), f)
+    assert land.command is Command.LAND and land.sector_moves == ()
 
 
 def test_finished_sectors_are_not_moved() -> None:
     r, f, _ = make()
     f.done_sector_ids.add("S2")
     assert r.observe(msg("uav2", TrustState.RED, ReasonCode.GNSS_LOSS), f) == []
-    [hold] = r.observe(msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION), f)
-    assert hold.command is Command.HOLD and hold.sector_moves == ()
+    [land] = r.observe(msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION), f)
+    assert land.command is Command.LAND and land.sector_moves == ()
 
 
 def test_ids_are_unique() -> None:
@@ -119,3 +119,26 @@ def test_ids_are_unique() -> None:
 def test_config_validation() -> None:
     with pytest.raises(ValueError):
         RecommenderConfig(ttl_s=0)
+
+
+def test_an_unanswered_recommendation_is_issued_again_while_the_vehicle_is_still_red() -> None:
+    from c2.messages import Decision, Outcome
+
+    r, f, _ = make()
+    red = msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION)
+    [first] = r.observe(red, f)
+    assert r.observe(red, f) == []
+    r.on_decision(Decision(first.id, Outcome.EXPIRED, 120.0, "system"), "uav2")
+    [again] = r.observe(red, f)
+    assert again.id != first.id and again.command is Command.LAND
+
+
+def test_a_denied_or_approved_recommendation_is_not_repeated() -> None:
+    from c2.messages import Decision, Outcome
+
+    r, f, _ = make()
+    red = msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION)
+    [rec] = r.observe(red, f)
+    for outcome in (Outcome.DENIED, Outcome.APPROVED):
+        r.on_decision(Decision(rec.id, outcome, 60.0, "daniel"), "uav2")
+        assert r.observe(red, f) == []

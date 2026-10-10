@@ -63,3 +63,18 @@ def test_failed_injection_is_retried_on_next_position() -> None:
     assert asyncio.run(go()) == ["enter", None]
     assert calls == [FailureType.OFF, FailureType.OFF]
     assert inj.inside
+
+
+def test_a_latched_fault_is_never_cleared_when_the_position_leaves_the_zone() -> None:
+    sent: list[FailureType] = []
+
+    async def inject(t: FailureType) -> None:
+        sent.append(t)
+
+    inj = ZoneInjector(rectangle(400, 0, 700, 1000), FailureType.STUCK, inject, latch=True)
+
+    async def go() -> list[str | None]:
+        return [await inj.update(LocalPoint(e, 10)) for e in (100, 500, 800, 100, 500)]
+
+    assert asyncio.run(go()) == [None, "enter", None, None, None]
+    assert sent == [FailureType.STUCK]

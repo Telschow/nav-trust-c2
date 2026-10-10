@@ -44,3 +44,8 @@ def test_max_duration_defaults_to_unbounded_and_is_in_header() -> None:
     assert build_header(parse_args(["--scenario", "n"]))["max_duration_s"] is None
     args = parse_args(["--scenario", "s", "--max-duration", "240"])
     assert build_header(args)["max_duration_s"] == 240.0
+
+
+def test_ground_truth_is_off_when_asked_and_flagged_in_the_header() -> None:
+    args = parse_args(["--scenario", "n", "--no-ground-truth"])
+    assert args.ground_truth is False and build_header(args)["ground_truth"] is False

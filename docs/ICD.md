@@ -27,7 +27,7 @@ dataclass field names; enums are their string values.
 | created_s | float | |
 | expires_s | float | after this it cannot be approved |
 | reason | ReasonCode | the NavTrust reason that triggered it |
-| command | HOLD, RTL, or null | the vehicle command to execute if approved |
+| command | HOLD, RTL, LAND, or null | the vehicle command to execute if approved (LAND is recommended for INCONSISTENT_INNOVATION, ADR 0003) |
 | sector_moves | list of {sector_id, to_vehicle} | re-tasking to execute if approved; may be empty |
 | rationale | string | one line for the operator |
 

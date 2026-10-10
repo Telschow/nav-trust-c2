@@ -13,6 +13,7 @@ from navtrust.types import NavTrust, ReasonCode, TrustState
 class Command(StrEnum):
     HOLD = "HOLD"
     RTL = "RTL"
+    LAND = "LAND"
 
 
 class Outcome(StrEnum):

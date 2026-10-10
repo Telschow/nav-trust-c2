@@ -24,6 +24,8 @@ class Executor(Protocol):
 
     async def return_to_launch(self, vehicle_id: str) -> None: ...
 
+    async def land(self, vehicle_id: str) -> None: ...
+
     async def retask(self, assignment: Assignment, vehicles: list[str]) -> None:
         """Apply the new assignment: the listed vehicles' routes changed."""
         ...
@@ -66,6 +68,9 @@ class CommandGate:
             elif rec.command is Command.RTL:
                 await self._executor.return_to_launch(rec.vehicle_id)
                 done.append(f"RTL {rec.vehicle_id}")
+            elif rec.command is Command.LAND:
+                await self._executor.land(rec.vehicle_id)
+                done.append(f"LAND {rec.vehicle_id}")
             if rec.sector_moves:
                 self._fleet.apply_moves([(m.sector_id, m.to_vehicle) for m in rec.sector_moves])
                 moved = True
