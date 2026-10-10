@@ -5,32 +5,32 @@ by hand: CI recomputes it and fails if it differs.
 
 Engine fingerprint (sha256 of the trust engine and recommender code): `a75fcca106aa50977fa478f297ae1364e4579e829b1b854376a26d2d188597b8`
 
-| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour | GREEN while more than 10 m off, s (mean, max) | Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished | Interruptions per run |
-|---|---|---|---|---|---|---|---|---|---|
-| long_outage | 2 | 2 of 2 | 1.3 (1.3 to 1.4) | 0.00 (0 in 0.05 h) | 0.0 (0.0) | 0.6 (0.6) | 100.0% (153) | 0 of 2 | 1.0 |
-| nominal | 4 | - | - | 0.00 (0 in 0.23 h) | 0.0 (0.0) | - | 100.0% (1664) | 4 of 4 | 0.0 |
-| short_outage | 3 | 3 of 3 | 1.2 (1.1 to 1.3) | 0.00 (0 in 0.17 h) | 0.0 (0.0) | 0.3 (0.4) | 100.0% (1168) | 3 of 3 | 0.0 |
-| stuck_position | 3 | 3 of 3 | 3.0 (3.0 to 3.2) | 0.00 (0 in 0.16 h) | 0.0 (0.0) | 0.9 (1.2) | 100.0% (271) | 0 of 3 | 1.0 |
-| wrong_fix | 2 | 2 of 2 | 0.3 (0.1 to 0.4) | 0.00 (0 in 0.12 h) | 0.0 (0.0) | 0.3 (0.3) | 100.0% (784) | 2 of 2 | 0.0 |
+| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour | GREEN while more than 10 m off, s (mean, max) | Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished | Area covered (median) | Interruptions per run |
+|---|---|---|---|---|---|---|---|---|---|---|
+| long_outage | 2 | 2 of 2 | 1.3 (1.3 to 1.4) | 0.00 (0 in 0.05 h) | 0.0 (0.0) | 0.6 (0.6) | 100.0% (153) | 0 of 2 | 26% | 1.0 |
+| nominal | 4 | - | - | 0.00 (0 in 0.23 h) | 0.0 (0.0) | - | 100.0% (1664) | 4 of 4 | 100% | 0.0 |
+| short_outage | 3 | 3 of 3 | 1.2 (1.1 to 1.3) | 0.00 (0 in 0.17 h) | 0.0 (0.0) | 0.3 (0.4) | 100.0% (1168) | 3 of 3 | 100% | 0.0 |
+| stuck_position | 3 | 3 of 3 | 3.0 (3.0 to 3.2) | 0.00 (0 in 0.16 h) | 0.0 (0.0) | 0.9 (1.2) | 100.0% (271) | 0 of 3 | 48% | 1.0 |
+| wrong_fix | 2 | 2 of 2 | 0.3 (0.1 to 0.4) | 0.00 (0 in 0.12 h) | 0.0 (0.0) | 0.3 (0.3) | 100.0% (784) | 2 of 2 | 100% | 0.0 |
 
 ## Per run
 
-| Recording | Started, s | Fault at, s | TTD, s | Worst state | RED after, s | False alerts | GREEN while off, s | Max error while GREEN, m | Error at alert, m | Waypoints reached | Landed |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| long_outage-1 | 5.5 | 42.2 | 1.3 | RED | 6.3 | 0 | 0.0 | 1.0 | 0.5 | 25% | no |
-| long_outage-2 | 5.0 | 42.1 | 1.4 | RED | 6.4 | 0 | 0.0 | 1.1 | 0.6 | 25% | no |
-| nominal-1 | 5.5 | - | - | GREEN | - | 0 | 0.0 | 2.9 | - | 100% | yes |
-| nominal-2 | 6.0 | - | - | GREEN | - | 0 | 0.0 | 2.8 | - | 100% | yes |
-| nominal-3 | 6.0 | - | - | GREEN | - | 0 | 0.0 | 2.9 | - | 100% | yes |
-| nominal-4 | 5.0 | - | - | GREEN | - | 0 | 0.0 | 2.8 | - | 100% | yes |
-| short_outage-1 | 6.5 | 53.3 | 1.2 | AMBER | - | 0 | 0.0 | 2.8 | 0.2 | 100% | yes |
-| short_outage-2 | 6.0 | 54.4 | 1.1 | AMBER | - | 0 | 0.0 | 2.9 | 0.3 | 100% | yes |
-| short_outage-3 | 5.0 | 52.7 | 1.3 | AMBER | - | 0 | 0.0 | 2.9 | 0.4 | 100% | yes |
-| stuck_position-1 | 5.5 | 47.5 | 3.0 | RED | 3.0 | 0 | 0.0 | 1.0 | 0.5 | 25% | no |
-| stuck_position-2 | 6.0 | 48.0 | 3.0 | RED | 3.0 | 0 | 0.0 | 1.1 | 1.2 | 25% | no |
-| stuck_position-3 | 5.5 | 47.8 | 3.2 | RED | 3.2 | 0 | 0.0 | 1.0 | 0.9 | 25% | no |
-| wrong_fix-1 | 4.5 | 52.1 | 0.4 | AMBER | - | 0 | 0.0 | 2.8 | 0.3 | 100% | yes |
-| wrong_fix-2 | 4.5 | 51.4 | 0.1 | AMBER | - | 0 | 0.0 | 2.8 | 0.3 | 100% | yes |
+| Recording | Started, s | Fault at, s | TTD, s | Worst state | RED after, s | False alerts | GREEN while off, s | Max error while GREEN, m | Error at alert, m | Waypoints reached | Area covered | Landed |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| long_outage-1 | 5.5 | 42.2 | 1.3 | RED | 6.3 | 0 | 0.0 | 1.0 | 0.5 | 25% | 26% | no |
+| long_outage-2 | 5.0 | 42.1 | 1.4 | RED | 6.4 | 0 | 0.0 | 1.1 | 0.6 | 25% | 26% | no |
+| nominal-1 | 5.5 | - | - | GREEN | - | 0 | 0.0 | 2.9 | - | 100% | 100% | yes |
+| nominal-2 | 6.0 | - | - | GREEN | - | 0 | 0.0 | 2.8 | - | 100% | 100% | yes |
+| nominal-3 | 6.0 | - | - | GREEN | - | 0 | 0.0 | 2.9 | - | 100% | 100% | yes |
+| nominal-4 | 5.0 | - | - | GREEN | - | 0 | 0.0 | 2.8 | - | 100% | 100% | yes |
+| short_outage-1 | 6.5 | 53.3 | 1.2 | AMBER | - | 0 | 0.0 | 2.8 | 0.2 | 100% | 100% | yes |
+| short_outage-2 | 6.0 | 54.4 | 1.1 | AMBER | - | 0 | 0.0 | 2.9 | 0.3 | 100% | 100% | yes |
+| short_outage-3 | 5.0 | 52.7 | 1.3 | AMBER | - | 0 | 0.0 | 2.9 | 0.4 | 100% | 100% | yes |
+| stuck_position-1 | 5.5 | 47.5 | 3.0 | RED | 3.0 | 0 | 0.0 | 1.0 | 0.5 | 25% | 47% | no |
+| stuck_position-2 | 6.0 | 48.0 | 3.0 | RED | 3.0 | 0 | 0.0 | 1.1 | 1.2 | 25% | 48% | no |
+| stuck_position-3 | 5.5 | 47.8 | 3.2 | RED | 3.2 | 0 | 0.0 | 1.0 | 0.9 | 25% | 64% | no |
+| wrong_fix-1 | 4.5 | 52.1 | 0.4 | AMBER | - | 0 | 0.0 | 2.8 | 0.3 | 100% | 100% | yes |
+| wrong_fix-2 | 4.5 | 51.4 | 0.1 | AMBER | - | 0 | 0.0 | 2.8 | 0.3 | 100% | 100% | yes |
 
 The displayed bound held in 100.00% of 4040 GREEN reports over all runs (NT-03 asks for at least 95%; the claim is 99%, bound 3 m). So 0.00% of GREEN reports were misleading in the spec's sense (true error above the displayed bound).
 
@@ -53,6 +53,9 @@ rate is zero: with no events the 95% upper bound on the rate is about 4.1 per ho
   bound the console displays (navtrust/calibration.py). The estimator's own accuracy figure
   (about 0.15 m) was not a valid bound; even nominal flights are a few metres off at survey
   speed, and a time shift does not explain it.
+- **Area covered**: share of the survey rectangle within half the lane spacing of the vehicle's
+  true track while airborne (ground truth; `eval/coverage.py`). The swath is a proposal, not a
+  sensor model.
 - **Interruptions per run**: recommendations the recommender raises, assuming two other healthy
   vehicles; recommendations are not repeated.
 
