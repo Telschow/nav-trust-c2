@@ -1,0 +1,12 @@
+name: wrong_fix_fast
+class: wrong_fix
+description: >
+  A degraded fix type (2D) with the position untouched, inside a 50 m zone at 12 m/s.
+expected_px4: >
+  PX4 flies through; the mission completes.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 40, speed_m_s: 12}
+fault:
+  mode: wrong
+  zone: {west: 380, south: -50, east: 430, north: 150}
+runs: 2
+max_duration_s: 400

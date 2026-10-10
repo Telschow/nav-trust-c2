@@ -1,0 +1,13 @@
+name: short_outage_slow
+class: short_outage
+description: >
+  GNSS off inside a 20 m zone at 5 m/s (about 4 s), on the return lane only (the zone does not
+  reach the first lane).
+expected_px4: >
+  PX4 flies through on dead-reckoning; no failsafe; the mission completes.
+survey: {width_m: 300, height_m: 100, spacing_m: 100, altitude_m: 20, speed_m_s: 5}
+fault:
+  mode: "off"
+  zone: {west: 100, south: 50, east: 120, north: 150}
+runs: 2
+max_duration_s: 500

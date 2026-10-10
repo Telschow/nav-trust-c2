@@ -51,6 +51,8 @@ class RunMetrics:
     misleading_s: float | None  # None without ground truth
     max_error_green_m: float | None
     error_at_detection_m: float | None
+    worst_state: str  # the worst state reported after startup: GREEN, AMBER or RED
+    red_after_fault_s: float | None  # fault start to the first RED report; None if never RED
     mission_finished: bool
     waypoints_reached: float | None  # fraction of the mission's waypoints
     landed: bool
@@ -163,6 +165,18 @@ def run_metrics(name: str, rec: Recording, cfg: EvalConfig) -> RunMetrics:
         )
         ttd = None if first is None else first - fault_start
 
+    rank = {TrustState.GREEN: 0, TrustState.AMBER: 1, TrustState.RED: 2}
+    after_start = [r for r in reports if r.stamp_s >= started]
+    worst = max((r.state for r in after_start), key=rank.__getitem__, default=TrustState.GREEN)
+    first_red = next(
+        (
+            r.stamp_s
+            for r in reports
+            if fault_start is not None and r.stamp_s >= fault_start and r.state is TrustState.RED
+        ),
+        None,
+    )
+
     eps = episodes(reports, started, cfg.step_s)
     false_eps = [(s, d) for s, d in eps if not any(a <= s <= b for a, b in windows)]
 
@@ -202,6 +216,10 @@ def run_metrics(name: str, rec: Recording, cfg: EvalConfig) -> RunMetrics:
         misleading_s=misleading,
         max_error_green_m=max_green,
         error_at_detection_m=err_at_detection,
+        worst_state=worst.value,
+        red_after_fault_s=None
+        if first_red is None or fault_start is None
+        else first_red - fault_start,
         mission_finished=rec.first("mission_finished") is not None,
         waypoints_reached=reached,
         landed=rec.first("landed") is not None,
