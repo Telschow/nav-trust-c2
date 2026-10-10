@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatBound, formatDuration, actionsOf, titleOf, reasonText } from "./language";
+import { formatBound, formatDuration, actionsOf, titleOf, reasonText, urgencyNote } from "./language";
 import { decidedRecommendations, initialState, openRecommendations, reducer, serverNow } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
@@ -100,5 +100,15 @@ describe("language", () => {
     expect(titleOf(rec)).toBe("Hold and re-task uav2");
     expect(titleOf({ ...rec, command: null })).toBe("Re-task uav2");
     expect(actionsOf({ ...rec, command: "RTL", sector_moves: [] })).toEqual(["Send uav2 back to its launch point"]);
+    expect(actionsOf({ ...rec, command: "LAND", sector_moves: [] })).toEqual(["Land uav2 where it is"]);
+    expect(titleOf({ ...rec, command: "LAND" })).toBe("Land and re-task uav2");
+  });
+});
+
+describe("urgency", () => {
+  it("warns only when a frozen-position vehicle is to be landed", () => {
+    expect(urgencyNote({ ...rec, command: "LAND" })).toContain("flying away");
+    expect(urgencyNote({ ...rec, command: "HOLD" })).toBeNull();
+    expect(urgencyNote({ ...rec, command: "LAND", reason: "GNSS_LOSS" })).toBeNull();
   });
 });

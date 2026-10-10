@@ -6,10 +6,11 @@
     RED, INCONSISTENT_INNOVATION           LAND, plus re-task its unfinished sectors
 
 LAND, not HOLD or RTL, for INCONSISTENT_INNOVATION. In simulation with ground truth a vehicle
-whose GPS position is frozen does not stall: it keeps flying away, accelerating (about 5.3 to
-5.9 km off in 150 s in two runs) and no PX4 failsafe fires. In single clean runs only LAND ended
-the flight in a controlled stop; HOLD and RTL ended in fast, uncontrolled descents hundreds of
-metres from where the vehicle believed it was (tests/replay/test_stuck_action_evidence.py).
+whose GPS position is frozen does not stall: it keeps flying away, accelerating (5.3 km
+away by the end of a 220 s run; an earlier run reached 5.9 km) and no PX4 failsafe fires.
+In single clean runs only LAND ended the flight in a controlled stop; HOLD and RTL ended in
+fast, uncontrolled descents hundreds of metres from where the vehicle believed it was
+(tests/replay/test_stuck_action_evidence.py).
 
 Only GREEN vehicles may take over work. If there is none, there is nothing to recommend for a
 GNSS_LOSS/STALE vehicle (a recommendation needs a command or a move); the alert itself still

@@ -37,6 +37,7 @@ export function actionsOf(rec: Recommendation): string[] {
   const out: string[] = [];
   if (rec.command === "HOLD") out.push(`Hold ${rec.vehicle_id} in place`);
   if (rec.command === "RTL") out.push(`Send ${rec.vehicle_id} back to its launch point`);
+  if (rec.command === "LAND") out.push(`Land ${rec.vehicle_id} where it is`);
   for (const m of rec.sector_moves) {
     out.push(`Move sector ${m.sector_id} from ${rec.vehicle_id} to ${m.to_vehicle}`);
   }
@@ -47,6 +48,7 @@ export function titleOf(rec: Recommendation): string {
   const parts: string[] = [];
   if (rec.command === "HOLD") parts.push("Hold");
   if (rec.command === "RTL") parts.push("Return");
+  if (rec.command === "LAND") parts.push("Land");
   if (rec.sector_moves.length > 0) parts.push("re-task");
   const text = parts.join(" and ");
   return `${text.charAt(0).toUpperCase()}${text.slice(1)} ${rec.vehicle_id}`;
@@ -58,3 +60,11 @@ export const ERROR_TEXT: Record<number, string> = {
   410: "This recommendation expired before it was decided.",
   422: "The backend rejected the decision.",
 };
+
+/** Extra warning when waiting is itself dangerous. */
+export function urgencyNote(rec: Recommendation): string | null {
+  if (rec.command === "LAND" && rec.reason === "INCONSISTENT_INNOVATION") {
+    return "This vehicle may be flying away from where it thinks it is, and nothing else will stop it.";
+  }
+  return null;
+}

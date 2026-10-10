@@ -21,7 +21,7 @@ export interface Recommendation {
   created_s: number;
   expires_s: number;
   reason: Reason;
-  command: "HOLD" | "RTL" | null;
+  command: "HOLD" | "RTL" | "LAND" | null;
   sector_moves: SectorMove[];
   rationale: string;
 }
