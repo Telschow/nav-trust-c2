@@ -64,7 +64,7 @@ def test_red_vehicle_produces_a_recommendation_and_nothing_executes_yet(system) 
     c.post("/navtrust", json=trust("uav2", "RED", "INCONSISTENT_INNOVATION"))
     [rid] = open_ids(c)
     rec = c.get("/state").json()["open_recommendations"][0]
-    assert rec["command"] == "HOLD" and rec["sector_moves"][0]["sector_id"] == "S2"
+    assert rec["command"] == "LAND" and rec["sector_moves"][0]["sector_id"] == "S2"
     assert executor.log == []  # C2-01: a recommendation alone commands nothing
     assert hub.audit.events("command_executed") == [] and rid.startswith("rec-uav2")
 
@@ -78,8 +78,8 @@ def test_approval_executes_exactly_what_was_recommended(system) -> None:  # type
     )
     body = r.json()
     assert r.status_code == 200 and body["execution"]["executed"] is True
-    assert body["execution"]["actions"][0] == "HOLD uav2"
-    assert executor.log[0] == "hold uav2" and executor.log[1].startswith("retask")
+    assert body["execution"]["actions"][0] == "LAND uav2"
+    assert executor.log[0] == "land uav2" and executor.log[1].startswith("retask")
     assert fleet.assignment["uav2"] == []
     kinds = [e.kind for e in hub.audit.events()]
     assert kinds.index("decision") < kinds.index("command_executed")
@@ -114,3 +114,18 @@ def test_fleet_endpoint_shows_the_assignment(system) -> None:  # type: ignore[no
     fleet = c.get("/fleet").json()["assignment"]
     assert [s["id"] for s in fleet["uav2"]] == ["S2"]
     assert fleet["uav1"][0]["north"] == pytest.approx(300.0)
+
+
+def test_an_expired_recommendation_is_replaced_by_a_new_one_while_still_red(system) -> None:  # type: ignore[no-untyped-def]
+    c, executor, hub, clock, _ = system
+    c.post("/navtrust", json=trust("uav2", "RED", "INCONSISTENT_INNOVATION"))
+    [first] = open_ids(c)
+    clock.t += 120.0
+    c.get("/state")  # the sweep marks it EXPIRED
+    c.post("/navtrust", json=trust("uav2", "RED", "INCONSISTENT_INNOVATION"))
+    [second] = open_ids(c)
+    assert second != first and executor.log == []
+    r = c.post(
+        "/decisions", json={"recommendation_id": second, "outcome": "APPROVED", "operator": "d"}
+    )
+    assert r.json()["execution"]["actions"][0] == "LAND uav2"

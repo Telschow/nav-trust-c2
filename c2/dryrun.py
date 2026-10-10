@@ -16,5 +16,8 @@ class DryRunExecutor:
     async def return_to_launch(self, vehicle_id: str) -> None:
         self.log.append(f"rtl {vehicle_id}")
 
+    async def land(self, vehicle_id: str) -> None:
+        self.log.append(f"land {vehicle_id}")
+
     async def retask(self, assignment: Assignment, vehicles: list[str]) -> None:
         self.log.append(f"retask {vehicles}")
