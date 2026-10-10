@@ -66,6 +66,7 @@ def navtrust_to_dict(msg: NavTrust) -> dict[str, Any]:
         if math.isinf(msg.horizontal_bound_m)
         else msg.horizontal_bound_m,
         "confidence": msg.confidence,
+        "headroom": msg.headroom,
     }
 
 
@@ -78,6 +79,7 @@ def navtrust_from_dict(d: dict[str, Any]) -> NavTrust:
         reason=ReasonCode(d["reason"]) if d["reason"] else None,
         horizontal_bound_m=math.inf if bound is None else float(bound),
         confidence=float(d["confidence"]),
+        headroom=float(d.get("headroom", 0.0)),
     )
 
 

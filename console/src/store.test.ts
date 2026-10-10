@@ -1,11 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { formatBound, formatDuration, actionsOf, titleOf, reasonText, urgencyNote } from "./language";
+import {
+  actionsOf,
+  calibrationText,
+  formatBound,
+  formatDuration,
+  formatPercent,
+  headroomLevel,
+  reasonText,
+  titleOf,
+  urgencyNote,
+} from "./language";
 import { decidedRecommendations, initialState, openRecommendations, reducer, serverNow } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
 const trust = (v: string, state: NavTrust["state"], reason: NavTrust["reason"] = null): NavTrust => ({
-  vehicle_id: v, stamp_s: 1, state, reason, horizontal_bound_m: state === "GREEN" ? 0.15 : null, confidence: 1,
+  vehicle_id: v, stamp_s: 1, state, reason, horizontal_bound_m: state === "GREEN" ? 3 : null, confidence: state === "GREEN" ? 0.99 : 0, headroom: state === "GREEN" ? 0.9 : 0,
 });
 const rec: Recommendation = {
   id: "r1", vehicle_id: "uav2", created_s: 100, expires_s: 160, reason: "INCONSISTENT_INNOVATION",
@@ -86,8 +96,13 @@ describe("reducer", () => {
 describe("language", () => {
   it("formats bounds, durations and reasons", () => {
     expect(formatBound(null)).toBe("unknown");
-    expect(formatBound(0.151)).toBe("±0.15 m");
-    expect(formatBound(42.4)).toBe("±42 m");
+    expect(formatBound(3)).toBe("within 3 m");
+    expect(formatBound(2.46)).toBe("within 2.5 m");
+    expect(formatPercent(0.99)).toBe("99%");
+    expect(formatPercent(0.9972, 1)).toBe("99.7%");
+    expect(headroomLevel(0.9)).toBe("ample");
+    expect(headroomLevel(0.4)).toBe("shrinking");
+    expect(headroomLevel(0.1)).toBe("low");
     expect(formatDuration(75)).toBe("1:15");
     expect(formatDuration(3725)).toBe("1:02:05");
     expect(formatDuration(-3)).toBe("0:00");
@@ -130,5 +145,18 @@ describe("queue order", () => {
       s = apply(s, ev({ type: "recommendation", data: r }));
     }
     expect(openRecommendations(s).map((r) => r.id)).toEqual(["urgent", "rtl", "routine", "routine2"]);
+  });
+});
+
+describe("calibration text", () => {
+  it("states the coverage, both data sets and that it is simulation only", () => {
+    const text = calibrationText({
+      bound_m: 3, coverage: 0.99, development_reports: 4040, development_coverage: 1,
+      heldout_reports: 5308, heldout_coverage: 0.9972, source: "PX4 SITL in Gazebo",
+    });
+    expect(text).toContain("within 3 m");
+    expect(text).toContain("100.0% of 4,040");
+    expect(text).toContain("99.7% of 5,308");
+    expect(text).toContain("Simulation only");
   });
 });
