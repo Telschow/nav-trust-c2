@@ -5,39 +5,39 @@ by hand: CI recomputes it and fails if it differs.
 
 Engine fingerprint (sha256 of the trust engine and recommender code): `a75fcca106aa50977fa478f297ae1364e4579e829b1b854376a26d2d188597b8`
 
-| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour | GREEN while more than 10 m off, s (mean, max) | Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished | Interruptions per run |
-|---|---|---|---|---|---|---|---|---|---|
-| long_outage_fast | 2 | 2 of 2 | 1.2 (1.2 to 1.2) | 0.00 (0 in 0.07 h) | 0.0 (0.0) | 0.8 (0.9) | 100.0% (140) | 0 of 2 | 1.0 |
-| nominal_fast | 3 | - | - | 0.00 (0 in 0.17 h) | 0.0 (0.0) | - | 99.4% (1213) | 3 of 3 | 0.0 |
-| nominal_slow | 2 | - | - | 0.00 (0 in 0.12 h) | 0.0 (0.0) | - | 100.0% (865) | 2 of 2 | 0.0 |
-| short_outage_fast | 3 | 3 of 3 | 1.0 (1.0 to 1.2) | 0.00 (0 in 0.16 h) | 0.0 (0.0) | 0.1 (0.1) | 99.6% (1118) | 3 of 3 | 0.0 |
-| short_outage_slow | 2 | 2 of 2 | 1.3 (1.2 to 1.3) | 0.00 (0 in 0.12 h) | 0.0 (0.0) | 0.8 (0.9) | 100.0% (841) | 2 of 2 | 0.0 |
-| stuck_position_fast | 2 | 2 of 2 | 3.6 (3.5 to 3.7) | 0.00 (0 in 0.11 h) | 0.0 (0.0) | 0.3 (0.4) | 100.0% (200) | 0 of 2 | 1.0 |
-| stuck_position_slow | 2 | 2 of 2 | 4.4 (4.4 to 4.5) | 0.00 (0 in 0.14 h) | 0.0 (0.0) | 3.4 (3.6) | 99.3% (152) | 0 of 2 | 1.0 |
-| wrong_fix_fast | 2 | 2 of 2 | 0.5 (0.4 to 0.5) | 8.53 (1 in 0.12 h) | 0.0 (0.0) | 0.0 (0.0) | 99.6% (779) | 2 of 2 | 0.0 |
+| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour | GREEN while more than 10 m off, s (mean, max) | Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished | Area covered (median) | Interruptions per run |
+|---|---|---|---|---|---|---|---|---|---|---|
+| long_outage_fast | 2 | 2 of 2 | 1.2 (1.2 to 1.2) | 0.00 (0 in 0.07 h) | 0.0 (0.0) | 0.8 (0.9) | 100.0% (140) | 0 of 2 | 25% | 1.0 |
+| nominal_fast | 3 | - | - | 0.00 (0 in 0.17 h) | 0.0 (0.0) | - | 99.4% (1213) | 3 of 3 | 100% | 0.0 |
+| nominal_slow | 2 | - | - | 0.00 (0 in 0.12 h) | 0.0 (0.0) | - | 100.0% (865) | 2 of 2 | 100% | 0.0 |
+| short_outage_fast | 3 | 3 of 3 | 1.0 (1.0 to 1.2) | 0.00 (0 in 0.16 h) | 0.0 (0.0) | 0.1 (0.1) | 99.6% (1118) | 3 of 3 | 100% | 0.0 |
+| short_outage_slow | 2 | 2 of 2 | 1.3 (1.2 to 1.3) | 0.00 (0 in 0.12 h) | 0.0 (0.0) | 0.8 (0.9) | 100.0% (841) | 2 of 2 | 100% | 0.0 |
+| stuck_position_fast | 2 | 2 of 2 | 3.6 (3.5 to 3.7) | 0.00 (0 in 0.11 h) | 0.0 (0.0) | 0.3 (0.4) | 100.0% (200) | 0 of 2 | 44% | 1.0 |
+| stuck_position_slow | 2 | 2 of 2 | 4.4 (4.4 to 4.5) | 0.00 (0 in 0.14 h) | 0.0 (0.0) | 3.4 (3.6) | 99.3% (152) | 0 of 2 | 40% | 1.0 |
+| wrong_fix_fast | 2 | 2 of 2 | 0.5 (0.4 to 0.5) | 8.53 (1 in 0.12 h) | 0.0 (0.0) | 0.0 (0.0) | 99.6% (779) | 2 of 2 | 100% | 0.0 |
 
 ## Per run
 
-| Recording | Started, s | Fault at, s | TTD, s | Worst state | RED after, s | False alerts | GREEN while off, s | Max error while GREEN, m | Error at alert, m | Waypoints reached | Landed |
-|---|---|---|---|---|---|---|---|---|---|---|---|
-| long_outage_fast-1 | 5.0 | 38.8 | 1.2 | RED | 6.2 | 0 | 0.0 | 1.1 | 0.9 | 25% | no |
-| long_outage_fast-2 | 4.5 | 38.3 | 1.2 | RED | 6.2 | 0 | 0.0 | 1.1 | 0.7 | 25% | no |
-| nominal_fast-1 | 4.5 | - | - | GREEN | - | 0 | 0.0 | 3.1 | - | 100% | yes |
-| nominal_fast-2 | 5.0 | - | - | GREEN | - | 0 | 0.0 | 3.0 | - | 100% | yes |
-| nominal_fast-3 | 4.5 | - | - | GREEN | - | 0 | 0.0 | 3.0 | - | 100% | yes |
-| nominal_slow-1 | 5.0 | - | - | GREEN | - | 0 | 0.0 | 1.4 | - | 100% | yes |
-| nominal_slow-2 | 5.0 | - | - | GREEN | - | 0 | 0.0 | 1.5 | - | 100% | yes |
-| short_outage_fast-1 | 4.5 | 62.0 | 1.0 | AMBER | - | 0 | 0.0 | 3.1 | 0.1 | 100% | yes |
-| short_outage_fast-2 | 4.5 | 62.0 | 1.0 | AMBER | - | 0 | 0.0 | 3.0 | 0.1 | 100% | yes |
-| short_outage_fast-3 | 4.5 | 61.8 | 1.2 | AMBER | - | 0 | 0.0 | 3.0 | 0.0 | 100% | yes |
-| short_outage_slow-1 | 6.5 | 144.2 | 1.3 | AMBER | - | 0 | 0.0 | 1.4 | 0.8 | 100% | yes |
-| short_outage_slow-2 | 5.0 | 142.3 | 1.2 | AMBER | - | 0 | 0.0 | 1.4 | 0.9 | 100% | yes |
-| stuck_position_fast-1 | 6.5 | 53.0 | 3.5 | RED | 3.5 | 0 | 0.0 | 1.3 | 0.2 | 25% | no |
-| stuck_position_fast-2 | 4.5 | 50.8 | 3.7 | RED | 3.7 | 0 | 0.0 | 1.3 | 0.4 | 25% | no |
-| stuck_position_slow-1 | 4.5 | 38.0 | 4.5 | RED | 4.5 | 0 | 0.0 | 2.8 | 3.1 | 25% | no |
-| stuck_position_slow-2 | 4.5 | 38.1 | 4.4 | RED | 4.4 | 0 | 0.0 | 3.1 | 3.6 | 25% | no |
-| wrong_fix_fast-1 | 4.5 | 68.0 | 0.5 | AMBER | - | 1 | 0.0 | 3.0 | 0.0 | 100% | yes |
-| wrong_fix_fast-2 | 6.5 | 63.1 | 0.4 | AMBER | - | 0 | 0.0 | 3.0 | 0.0 | 100% | yes |
+| Recording | Started, s | Fault at, s | TTD, s | Worst state | RED after, s | False alerts | GREEN while off, s | Max error while GREEN, m | Error at alert, m | Waypoints reached | Area covered | Landed |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| long_outage_fast-1 | 5.0 | 38.8 | 1.2 | RED | 6.2 | 0 | 0.0 | 1.1 | 0.9 | 25% | 25% | no |
+| long_outage_fast-2 | 4.5 | 38.3 | 1.2 | RED | 6.2 | 0 | 0.0 | 1.1 | 0.7 | 25% | 25% | no |
+| nominal_fast-1 | 4.5 | - | - | GREEN | - | 0 | 0.0 | 3.1 | - | 100% | 100% | yes |
+| nominal_fast-2 | 5.0 | - | - | GREEN | - | 0 | 0.0 | 3.0 | - | 100% | 100% | yes |
+| nominal_fast-3 | 4.5 | - | - | GREEN | - | 0 | 0.0 | 3.0 | - | 100% | 100% | yes |
+| nominal_slow-1 | 5.0 | - | - | GREEN | - | 0 | 0.0 | 1.4 | - | 100% | 100% | yes |
+| nominal_slow-2 | 5.0 | - | - | GREEN | - | 0 | 0.0 | 1.5 | - | 100% | 100% | yes |
+| short_outage_fast-1 | 4.5 | 62.0 | 1.0 | AMBER | - | 0 | 0.0 | 3.1 | 0.1 | 100% | 100% | yes |
+| short_outage_fast-2 | 4.5 | 62.0 | 1.0 | AMBER | - | 0 | 0.0 | 3.0 | 0.1 | 100% | 100% | yes |
+| short_outage_fast-3 | 4.5 | 61.8 | 1.2 | AMBER | - | 0 | 0.0 | 3.0 | 0.0 | 100% | 100% | yes |
+| short_outage_slow-1 | 6.5 | 144.2 | 1.3 | AMBER | - | 0 | 0.0 | 1.4 | 0.8 | 100% | 100% | yes |
+| short_outage_slow-2 | 5.0 | 142.3 | 1.2 | AMBER | - | 0 | 0.0 | 1.4 | 0.9 | 100% | 100% | yes |
+| stuck_position_fast-1 | 6.5 | 53.0 | 3.5 | RED | 3.5 | 0 | 0.0 | 1.3 | 0.2 | 25% | 48% | no |
+| stuck_position_fast-2 | 4.5 | 50.8 | 3.7 | RED | 3.7 | 0 | 0.0 | 1.3 | 0.4 | 25% | 41% | no |
+| stuck_position_slow-1 | 4.5 | 38.0 | 4.5 | RED | 4.5 | 0 | 0.0 | 2.8 | 3.1 | 25% | 45% | no |
+| stuck_position_slow-2 | 4.5 | 38.1 | 4.4 | RED | 4.4 | 0 | 0.0 | 3.1 | 3.6 | 25% | 34% | no |
+| wrong_fix_fast-1 | 4.5 | 68.0 | 0.5 | AMBER | - | 1 | 0.0 | 3.0 | 0.0 | 100% | 100% | yes |
+| wrong_fix_fast-2 | 6.5 | 63.1 | 0.4 | AMBER | - | 0 | 0.0 | 3.0 | 0.0 | 100% | 100% | yes |
 
 ## Pre-declared expectations
 
@@ -73,6 +73,9 @@ The displayed bound held in 99.72% of 5308 GREEN reports over all runs (NT-03 as
   bound the console displays (navtrust/calibration.py). The estimator's own accuracy figure
   (about 0.15 m) was not a valid bound; even nominal flights are a few metres off at survey
   speed, and a time shift does not explain it.
+- **Area covered**: share of the survey rectangle within half the lane spacing of the vehicle's
+  true track while airborne (ground truth; `eval/coverage.py`). The swath is a proposal, not a
+  sensor model.
 - **Interruptions per run**: recommendations the recommender raises, assuming two other healthy
   vehicles; recommendations are not repeated.
 

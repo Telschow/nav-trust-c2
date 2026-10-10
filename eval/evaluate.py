@@ -47,6 +47,7 @@ def aggregate(scenario: Scenario, runs: list[RunMetrics]) -> dict[str, Any]:
     false_eps = sum(m.false_alert_episodes for m in runs)
     mis = [m.misleading_s for m in runs if m.misleading_s is not None]
     greens = [m.max_error_green_m for m in runs if m.max_error_green_m is not None]
+    areas = [m.area_covered for m in runs if m.area_covered is not None]
     at_det = [m.error_at_detection_m for m in runs if m.error_at_detection_m is not None]
     return {
         "class": scenario.scenario_class,
@@ -71,6 +72,7 @@ def aggregate(scenario: Scenario, runs: list[RunMetrics]) -> dict[str, Any]:
         "max_error_while_green_m": _r(max(greens)) if greens else None,
         "error_at_detection_median_m": _r(statistics.median(at_det)) if at_det else None,
         "error_at_detection_max_m": _r(max(at_det)) if at_det else None,
+        "area_covered_median": _r4(statistics.median(areas)) if areas else None,
         "missions_finished": sum(1 for m in runs if m.mission_finished),
         "interruptions_mean": _r(statistics.mean(m.interruptions for m in runs)) if runs else None,
     }
@@ -139,8 +141,8 @@ def render_markdown(
         "| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour |"
         f" GREEN while more than {cfg['misleading_error_m']:g} m off, s (mean, max) |"
         " Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished |"
-        " Interruptions per run |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        " Area covered (median) | Interruptions per run |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for name, data in result["scenarios"].items():
         a = data["aggregate"]
@@ -169,15 +171,16 @@ def render_markdown(
             f"| {name} | {runs} | {det} | {ttd} | {_cell(a['false_alerts_per_hour'], '{:.2f}')}"
             f" ({a['false_alert_episodes']} in {_cell(a['flight_hours'], '{:.2f}')} h) | {mis} | {err}"
             f" | {_cell(a['bound_coverage'], '{:.1%}')} ({a['green_reports']})"
-            f" | {a['missions_finished']} of {a['runs']} | {_cell(a['interruptions_mean'], '{:.1f}')} |"
+            f" | {a['missions_finished']} of {a['runs']} | {_cell(a['area_covered_median'], '{:.0%}')}"
+            f" | {_cell(a['interruptions_mean'], '{:.1f}')} |"
         )
     lines += [
         "",
         "## Per run",
         "",
         "| Recording | Started, s | Fault at, s | TTD, s | Worst state | RED after, s | False alerts |"
-        " GREEN while off, s | Max error while GREEN, m | Error at alert, m | Waypoints reached | Landed |",
-        "|---|---|---|---|---|---|---|---|---|---|---|---|",
+        " GREEN while off, s | Max error while GREEN, m | Error at alert, m | Waypoints reached | Area covered | Landed |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for data in result["scenarios"].values():
         for m in data["runs"]:
@@ -187,7 +190,7 @@ def render_markdown(
                 f" {_cell(m['ttd_s'], '{:.1f}')} | {m['worst_state']} | {_cell(m['red_after_fault_s'], '{:.1f}')} |"
                 f" {m['false_alert_episodes']} |"
                 f" {_cell(m['misleading_s'], '{:.1f}')} | {_cell(m['max_error_green_m'], '{:.1f}')} |"
-                f" {_cell(m['error_at_detection_m'], '{:.1f}')} | {reached} | {'yes' if m['landed'] else 'no'} |"
+                f" {_cell(m['error_at_detection_m'], '{:.1f}')} | {reached} | {_cell(m['area_covered'], '{:.0%}')} | {'yes' if m['landed'] else 'no'} |"
             )
     if expectations:
         lines += [
@@ -238,7 +241,7 @@ def render_markdown(
         "  bound the console displays (navtrust/calibration.py). The estimator's own accuracy figure",
         "  (about 0.15 m) was not a valid bound; even nominal flights are a few metres off at survey",
         "  speed, and a time shift does not explain it.",
-        "- **Interruptions per run**: recommendations the recommender raises, assuming two other healthy",
+        "- **Area covered**: share of the survey rectangle within half the lane spacing of the vehicle's\n  true track while airborne (ground truth; `eval/coverage.py`). The swath is a proposal, not a\n  sensor model.\n- **Interruptions per run**: recommendations the recommender raises, assuming two other healthy",
         "  vehicles; recommendations are not repeated.",
         "",
         "## Limits",
