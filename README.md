@@ -68,6 +68,11 @@ recorded simulator runs with ground truth: [eval/results.md](eval/results.md). C
 and fails if it differs. The scenarios are in [scenarios/](scenarios/); `make record-all`
 re-records them (simulator needed, about 1.5 hours) and `make eval` regenerates the table.
 
+Fleet-level mission completion (three vehicles, one lost, a scripted operator) is in
+[eval/fleet/results.md](eval/fleet/results.md): in simulation the re-task brought the area covered
+from 87% to 100%. `make record-fleet` re-records it (about 80 minutes) and `make eval-fleet`
+regenerates the table.
+
 ## How this was built
 
 This project (including its code, tests and documentation) was supported by different local and cloud-hosted LLMs. Every design & architecture decision, the scope and goals of the project and its requirements and limitations was defined by me (aka the mantainer). You can find further information in 

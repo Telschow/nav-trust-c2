@@ -73,8 +73,8 @@ report says so.
 failure model and a handful of runs per scenario. The scope is search-and-rescue and area survey; it
 has no weapons, targeting or effector logic and is not designed for any.
 
-**What would you do next?** Track which parts of a sector are already flown, so a re-task does not
-start over; measure mission completion with an operator in the loop; run it with real operators; add
-link loss; test against real receivers.
+**What would you do next?** Measure mission completion with a real operator in the loop (the fleet
+measurement uses a scripted one); try more loss patterns than one lost vehicle; run it with real
+operators; add link loss; test against real receivers.
 
 **How was it built?** `docs/how-this-was-built.md`.
