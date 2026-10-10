@@ -61,7 +61,7 @@ def test_land_ends_the_flight_quickly_and_the_vehicle_stops() -> None:
     assert event is not None
     action = event["t_s"]
     on_ground = next(t for t, _, _, alt in truth(rec) if t > action and alt < 0.5)
-    assert on_ground - action < 25  # measured about 15 s
+    assert on_ground - action < 25  # measured 9 s
     assert farthest_from_start(rec) < 600
     assert speed_at(rec, on_ground + 30) < 0.5
 
