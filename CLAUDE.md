@@ -2,7 +2,7 @@
 
 ## Project
 nav-trust-c2: human-on-the-loop mission control for a small team of simulated drones (PX4 SITL,
-Gazebo, ROS 2, MAVSDK). Detects GNSS degradation, shows per-vehicle navigation trust
+Gazebo, MAVSDK). Detects GNSS degradation, shows per-vehicle navigation trust
 (GREEN/AMBER/RED + reason + position bound), recommends hold / RTL / re-task. Nothing executes
 without operator approval. Search-and-rescue / area-survey framing.
 
