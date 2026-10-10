@@ -1,8 +1,6 @@
 # Concept of operations (unclassified, simulation only)
 
-DRAFT written by Claude on 2026-10-10 at the maintainer's request, from the spec (section 1.4) and
-the evidence in this repository. It deliberately differs from the spec's first idea where the
-evidence did; see the last section. `[you decide]` marks judgements that are yours.
+This version deliberately differs from the spec's first idea where the evidence did; see the last section.
 
 ## Setting
 
