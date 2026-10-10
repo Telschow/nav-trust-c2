@@ -37,7 +37,7 @@ hole in the data, not a judgement by the engine:
 I do not know why the simulation stalled. I was running tests on the same machine while that run
 was in progress, which is a plausible cause, but I did not test it. Per the protocol the run is
 **not** removed, repeated or excluded, and the engine and thresholds were not changed. The result
-stands as: one false alert in 0.73 flight hours, caused by a data gap.
+stands as: one false alert in 1.00 flight hours, caused by a data gap.
 
 ## Margins worth knowing
 
@@ -59,7 +59,7 @@ It shows that, inside this simulator, the engine's behaviour held up across spee
 It does not show anything about real receivers or real jamming or spoofing, other vehicles or
 estimators, or faults that grow slowly; the fault model is PX4's, the same one used in development.
 It has 18 runs and two to three per scenario, so it gives no rates. The false-alert exposure is
-0.73 flight hours in this set.
+1.00 flight hours in this set (0.73 in the development set, with none).
 
 ## What is used up
 
