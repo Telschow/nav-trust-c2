@@ -20,6 +20,8 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
 - All checks without the sim: `make check` (ruff, ruff format, mypy strict, pytest)
 - Unit tests only: `pytest`
 - Bag replay tests (from M1b): `pytest tests/replay`
+- Console (React, TypeScript, Vite, MapLibre; Node 22+): `make console` builds it, `make demo` runs backend +
+  console + replayed demo data with no simulator, `cd console && npm test` for its tests
 - Sim: `make sim-build`, `make sim-up`, `make fly`, `make sim-down`
 - Scenarios and eval (from M1a / M3): `make scenario NAME=jamming_zone`, `make eval`; CI checks
   that the generated table matches the committed one.
