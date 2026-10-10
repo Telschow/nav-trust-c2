@@ -1,0 +1,15 @@
+name: stuck_position
+class: stuck_position
+description: >
+  The GNSS receiver keeps reporting a good fix but its position freezes from the moment the
+  vehicle enters an 80 m wide zone, and stays frozen (latched). No operator action is taken.
+expected_px4: >
+  No failsafe fires. The vehicle believes it has not moved and accelerates away from its route
+  (ADR 0003: 5.3 km after 220 s in the recorded experiment).
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+fault:
+  mode: stuck
+  zone: {west: 200, south: -50, east: 280, north: 150}
+  latch: true
+runs: 3
+max_duration_s: 200

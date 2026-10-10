@@ -1,0 +1,13 @@
+name: short_outage
+class: short_outage
+description: >
+  GNSS is switched off while the vehicle is inside a 40 m wide zone, so each crossing lasts
+  about 4 s. The zone covers both survey lanes: two crossings per run.
+expected_px4: >
+  PX4 flies through each crossing on dead-reckoning; no failsafe; the mission completes.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+fault:
+  mode: "off"
+  zone: {west: 250, south: -50, east: 290, north: 150}
+runs: 3
+max_duration_s: 400

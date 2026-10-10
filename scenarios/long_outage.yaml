@@ -1,0 +1,14 @@
+name: long_outage
+class: long_outage
+description: >
+  GNSS is switched off inside a 300 m wide zone, about 30 s at survey speed, longer than the
+  estimator's no-aiding timeout.
+expected_px4: >
+  PX4 raises its blind-land failsafe and lands the vehicle inside the zone; the mission does not
+  complete (ADR 0002).
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+fault:
+  mode: "off"
+  zone: {west: 150, south: -50, east: 450, north: 150}
+runs: 2
+max_duration_s: 150
