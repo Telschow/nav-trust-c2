@@ -7,7 +7,21 @@ export interface NavTrust {
   state: TrustState;
   reason: Reason | null;
   horizontal_bound_m: number | null; // null = unknown
-  confidence: number; // ordinal placeholder in the ICD, deliberately not displayed
+  /** share of calibration reports in which the true error stayed within the bound; 0 if unknown */
+  confidence: number;
+  /** 0..1, how far a GREEN vehicle is from an alert; 0 outside GREEN */
+  headroom: number;
+}
+
+/** How the displayed position bound was obtained (GET /calibration). */
+export interface Calibration {
+  bound_m: number;
+  coverage: number;
+  development_reports: number;
+  development_coverage: number;
+  heldout_reports: number;
+  heldout_coverage: number;
+  source: string;
 }
 
 export interface SectorMove {

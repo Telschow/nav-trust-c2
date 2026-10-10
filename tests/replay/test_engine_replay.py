@@ -11,6 +11,7 @@ from pathlib import Path
 
 import pytest
 
+from navtrust.calibration import GREEN_BOUND
 from navtrust.engine import TrustEngine
 from navtrust.recording import Recording, load_recording
 from navtrust.replay import replay_engine
@@ -45,7 +46,7 @@ def test_nt01_total_gnss_loss_is_amber_with_a_loss_reason_within_two_seconds() -
         assert t is not None and t - enter["t_s"] <= 2.0  # measured 1.02 to 1.24 s
         at = next(o for o in out if o.stamp_s == t)
         assert (at.state, at.reason) == (TrustState.AMBER, ReasonCode.GNSS_LOSS)
-        assert at.confidence == 0.5
+        assert at.confidence == 0.0 and at.headroom == 0.0  # no claim outside GREEN
 
 
 def test_long_loss_escalates_to_red_and_short_loss_does_not() -> None:
@@ -92,6 +93,8 @@ def test_bound_is_only_given_in_green() -> None:
         _, out = run(name)
         for o in out:
             if o.state is TrustState.GREEN:
-                assert o.horizontal_bound_m < 1.0
+                assert o.horizontal_bound_m == GREEN_BOUND.bound_m
+                assert o.confidence == GREEN_BOUND.coverage
             else:
                 assert o.horizontal_bound_m == float("inf")
+                assert o.confidence == 0.0 and o.headroom == 0.0

@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useState } from "react";
-import { connectEvents, fetchFleet } from "./api";
+import { connectEvents, fetchCalibration, fetchFleet } from "./api";
 import { initialState, reducer, serverNow } from "./store";
 import type { ConsoleState } from "./store";
 
@@ -16,6 +16,12 @@ export function useConsole() {
       ),
     [],
   );
+
+  useEffect(() => {
+    fetchCalibration()
+      .then((calibration) => dispatch({ type: "calibration", calibration }))
+      .catch(() => undefined); // the bound is still shown; only its explanation is missing
+  }, []);
 
   // The sector assignment changes only when an approved re-task runs, so polling is enough.
   useEffect(() => {

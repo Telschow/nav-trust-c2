@@ -49,6 +49,8 @@ class RunMetrics:
     false_alert_episodes: int
     false_alert_s: float
     misleading_s: float | None  # None without ground truth
+    green_reports: int  # GREEN reports with a ground-truth error
+    green_within_bound: int  # of those, how many had a true error within the displayed bound
     max_error_green_m: float | None
     error_at_detection_m: float | None
     worst_state: str  # the worst state reported after startup: GREEN, AMBER or RED
@@ -100,6 +102,21 @@ def error_at(errors: list[tuple[float, float]], t_s: float) -> float | None:
         return None
     t, e = min(errors, key=lambda x: abs(x[0] - t_s))
     return e if abs(t - t_s) <= 1.0 else None
+
+
+def green_samples(
+    reports: list[NavTrust], started_s: float, errors: list[tuple[float, float]]
+) -> list[tuple[float, float]]:
+    """(true horizontal error, displayed bound) for every GREEN report after startup that has a
+    ground-truth error. The basis of the bound's coverage (NT-03) and of its calibration."""
+    out: list[tuple[float, float]] = []
+    for r in reports:
+        if r.stamp_s < started_s or r.state is not TrustState.GREEN:
+            continue
+        e = error_at(errors, r.stamp_s)
+        if e is not None:
+            out.append((e, r.horizontal_bound_m))
+    return out
 
 
 def fault_windows(rec: Recording, end_s: float, margin_s: float) -> list[tuple[float, float]]:
@@ -195,6 +212,7 @@ def run_metrics(name: str, rec: Recording, cfg: EvalConfig) -> RunMetrics:
             max_green = max(max_green, e)
             if e > cfg.misleading_error_m:
                 misleading += cfg.step_s
+    samples = green_samples(reports, started, errors)
     err_at_detection = (
         error_at(errors, fault_start + ttd) if fault_start is not None and ttd is not None else None
     )
@@ -214,6 +232,8 @@ def run_metrics(name: str, rec: Recording, cfg: EvalConfig) -> RunMetrics:
         false_alert_episodes=len(false_eps),
         false_alert_s=sum(d for _, d in false_eps),
         misleading_s=misleading,
+        green_reports=len(samples),
+        green_within_bound=sum(1 for e, b in samples if e <= b),
         max_error_green_m=max_green,
         error_at_detection_m=err_at_detection,
         worst_state=worst.value,

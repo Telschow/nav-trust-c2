@@ -109,6 +109,7 @@ export function App() {
               now={now}
               sectors={state.fleet[id] ?? []}
               history={state.history[id] ?? []}
+              calibration={state.calibration}
               onFocus={() => setFocus((f) => ({ vehicleId: id, n: (f?.n ?? 0) + 1 }))}
             />
           ))}
