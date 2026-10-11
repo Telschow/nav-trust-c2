@@ -3,7 +3,7 @@
 # Why not px4io/px4-dev: per the PX4 docs it is the NuttX build image and has no Gazebo;
 # a px4-sim image is announced there but not published, so we install Gazebo through
 # PX4's own Tools/setup/ubuntu.sh at a pinned PX4 commit.
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 
 # PX4 main commit, not a release: GPS failure injection for Gazebo (gz) exists only on main
 # (v1.17.0 and v1.18.0-rc1 do not handle it, the command times out). Move to the first
