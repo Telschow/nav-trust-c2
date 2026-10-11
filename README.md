@@ -64,7 +64,10 @@ how much margin they have before an alert.
 Try it without the simulator: `make demo`, then open http://127.0.0.1:8000. That replays
 **recorded** trust data with **synthetic** positions, and the console says `REPLAY DEMO` in the
 header whenever the data is not live. Map tiles are OpenStreetMap (internet needed; attribution
-is shown on the map).
+is shown on the map). The tiles come from OpenStreetMap's public server, whose
+[tile usage policy](https://operations.osmfoundation.org/policies/tiles/) allows light use such
+as this demo and not bulk or production use. For anything heavier, point the map style in
+`console/src/components/MapView.tsx` at your own tile source.
 
 ## Results
 
