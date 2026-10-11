@@ -31,7 +31,7 @@ One point each, from the participant's own words, without prompting:
 3. They name where sector S2 is now and who flies it (Q2). In the demo this is `uav1` after an
    approval; check the screen at that moment rather than trusting this note.
 4. They say `uav2`'s position still cannot be trusted and point to why (Q3): the red state, "unknown"
-   bound, or the reason text.
+   position error, or the reason text.
 
 Score 0 to 4. A participant who lets the card expire can still score all four; the rubric asks
 whether they understood what happened, not whether they approved.
