@@ -7,8 +7,8 @@ These are **hypotheses**, not research: no operator has been interviewed. The us
 - **Goal.** Finish the survey safely and cover the area.
 - **Pain.** Cannot see how good each vehicle's navigation is. Alarms arrive without reasons. When a
   vehicle's position is wrong, nothing on the screen says so.
-- **What the console gives them.** A card per vehicle with a trust state shown as colour, icon and
-  words; the reason in plain language; how far the position can be off (3 m, calibrated in
+- **What the console gives them.** A row per vehicle with a trust state shown as colour, shape and
+  words, and a red band across the top while a decision waits; the reason in plain language; how far the position can be off (3 m, calibrated in
   simulation) and how close the vehicle is to being flagged; a decision queue that says what
   approving will do and when it expires; an activity log.
 - **How we would know it helps.** Time to notice and time to decision, whether they understand

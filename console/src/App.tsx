@@ -97,6 +97,9 @@ export function App() {
 
   return (
     <div className="flex h-full flex-col">
+      <a href="#decisions" className="skip-link">
+        Skip to decisions
+      </a>
       <Header connected={state.connected} source={state.source} counts={counts} now={now} />
       <DecisionBanner open={open} now={now} onReview={review} />
 
@@ -135,7 +138,7 @@ export function App() {
         </section>
 
         {/* decisions */}
-        <section className="flex min-h-0 flex-col gap-5 overflow-y-auto border-l border-line bg-panel p-4" aria-label="Decisions">
+        <section id="decisions" tabIndex={-1} className="flex min-h-0 flex-col gap-5 overflow-y-auto border-l border-line bg-panel p-4 focus:outline-none" aria-label="Decisions">
           <div>
             <h2 className="label flex items-center gap-2">
               Decisions
