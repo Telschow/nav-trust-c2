@@ -181,7 +181,7 @@ export function MapView({ state, focus }: Props) {
       <button
         type="button"
         onClick={fit}
-        className="absolute right-[10px] top-[82px] grid size-[29px] place-items-center rounded-md border border-line bg-panel/90 text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-accent"
+        className="absolute right-[10px] top-[82px] grid size-[29px] place-items-center rounded-[3px] border border-line bg-panel/95 text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-accent"
         aria-label="Fit survey area"
         title="Fit survey area"
       >
@@ -189,7 +189,7 @@ export function MapView({ state, focus }: Props) {
       </button>
       <Legend />
       {!state.origin && (
-        <div className="absolute inset-x-0 top-4 mx-auto w-fit rounded-full border border-line bg-panel/90 px-4 py-1.5 text-xs text-muted">
+        <div className="absolute inset-x-0 top-4 mx-auto w-fit rounded-[3px] border border-line bg-panel/95 px-4 py-1.5 text-xs text-muted">
           Waiting for the survey area origin from the backend...
         </div>
       )}
@@ -200,12 +200,12 @@ export function MapView({ state, focus }: Props) {
 function Legend() {
   const [open, setOpen] = useState(false);
   return (
-    <div className="absolute left-3 top-3 rounded-xl border border-line bg-panel/90 text-[11px] text-muted backdrop-blur">
+    <div className="absolute left-3 top-3 rounded-[3px] border border-line bg-panel/95 text-[11px] text-muted backdrop-blur">
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
-        className="flex w-full items-center gap-2 px-3 py-2 font-semibold uppercase tracking-wider text-faint hover:text-text focus-visible:outline-2 focus-visible:outline-accent"
+        className="flex w-full items-center gap-2 px-3 py-2 font-medium uppercase tracking-[0.08em] text-faint hover:text-text focus-visible:outline-2 focus-visible:outline-accent"
       >
         <Info className="size-3.5" aria-hidden /> Map key
       </button>

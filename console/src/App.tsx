@@ -1,12 +1,13 @@
-import { CheckCircle2, ListChecks, Satellite, WifiOff } from "lucide-react";
-import { useCallback, useMemo, useState } from "react";
+import { WifiOff } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DecisionError, postDecision } from "./api";
 import { ActivityLog } from "./components/ActivityLog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
+import { DecisionBanner } from "./components/DecisionBanner";
 import { Header } from "./components/Header";
 import { MapView } from "./components/MapView";
 import { DecidedRow, RecommendationCard } from "./components/RecommendationCard";
-import { VehicleCard } from "./components/VehicleCard";
+import { VehicleRow } from "./components/VehicleRow";
 import { useConsole, useServerNow } from "./hooks";
 import { decidedRecommendations, openRecommendations } from "./store";
 import type { Recommendation, TrustState } from "./types";
@@ -81,27 +82,39 @@ export function App() {
     [dispatch, operator],
   );
 
+  // a decision waiting is visible in the tab title too, for when the console is behind another window
+  useEffect(() => {
+    document.title = open.length > 0 ? `(${open.length}) Decision required | Navigation Trust` : "Navigation Trust";
+  }, [open.length]);
+
+  const review = () => {
+    const first = open[0];
+    if (!first) return;
+    const card = document.getElementById(`rec-${first.id}`);
+    card?.scrollIntoView({ block: "nearest" });
+    card?.querySelector<HTMLButtonElement>("button:not(:disabled)")?.focus();
+  };
+
   return (
-    <div className="flex h-full flex-col bg-[radial-gradient(1200px_600px_at_70%_-10%,#13203d,transparent)]">
+    <div className="flex h-full flex-col">
       <Header connected={state.connected} source={state.source} counts={counts} now={now} />
+      <DecisionBanner open={open} now={now} onReview={review} />
 
       {!state.connected && (
-        <div role="alert" className="mx-5 mb-2 flex items-center gap-2 rounded-lg border border-bad/40 bg-bad/10 px-4 py-2 text-sm text-bad">
+        <div role="alert" className="flex items-center gap-2 border-b border-bad/50 bg-bad/10 px-4 py-2 text-sm text-bad">
           <WifiOff className="size-4" aria-hidden /> Connection to the backend was lost. Showing the last known state and retrying...
         </div>
       )}
 
-      <main className="grid min-h-0 flex-1 gap-4 px-5 pb-5 xl:grid-cols-[360px_minmax(0,1fr)_400px]">
+      <main className="grid min-h-0 flex-1 xl:grid-cols-[380px_minmax(0,1fr)_400px]">
         {/* fleet */}
-        <section className="flex min-h-0 flex-col gap-3 overflow-y-auto" aria-label="Fleet">
-          <div className="label flex items-center gap-2 px-1">
-            <Satellite className="size-3.5" aria-hidden /> Fleet
-          </div>
+        <section className="flex min-h-0 flex-col overflow-y-auto border-r border-line bg-panel" aria-label="Fleet">
+          <h2 className="label sticky top-0 z-10 border-b border-line bg-panel px-4 py-2.5">Fleet</h2>
           {vehicleIds.length === 0 && (
-            <div className="panel p-5 text-sm text-muted">Waiting for vehicles to report their navigation trust...</div>
+            <div className="px-4 py-5 text-sm text-muted">Waiting for vehicles to report their navigation trust...</div>
           )}
           {vehicleIds.map((id) => (
-            <VehicleCard
+            <VehicleRow
               key={id}
               vehicleId={id}
               trust={state.vehicles[id]!}
@@ -117,52 +130,53 @@ export function App() {
         </section>
 
         {/* map */}
-        <section className="min-h-[420px]" aria-label="Map">
+        <section className="min-h-[420px] p-3" aria-label="Map">
           <MapView state={state} focus={focus} />
         </section>
 
         {/* decisions */}
-        <section className="flex min-h-0 flex-col gap-3 overflow-y-auto" aria-label="Decisions">
-          <div className="label flex items-center gap-2 px-1">
-            <ListChecks className="size-3.5" aria-hidden /> Decisions
-            {open.length > 0 && (
-              <span className="rounded-full bg-bad px-1.5 py-px text-[10px] font-bold text-[#1a0606]">{open.length}</span>
-            )}
-          </div>
+        <section className="flex min-h-0 flex-col gap-5 overflow-y-auto border-l border-line bg-panel p-4" aria-label="Decisions">
+          <div>
+            <h2 className="label flex items-center gap-2">
+              Decisions
+              {open.length > 0 && (
+                <span className="rounded-[2px] bg-bad px-1.5 py-px font-mono text-[11px] font-semibold text-[#1c0808]">{open.length}</span>
+              )}
+            </h2>
 
-          {open.length === 0 && (
-            <div className="panel flex items-center gap-3 p-4 text-sm text-muted">
-              <CheckCircle2 className="size-5 shrink-0 text-ok" aria-hidden />
-              No action needs your decision.
+            {open.length === 0 && (
+              <p className="mt-3 border border-line-soft px-3 py-3 text-sm text-muted">No action needs your decision.</p>
+            )}
+            <div aria-live="polite" className="mt-3 flex flex-col gap-3">
+              {open.map((rec) => (
+                <RecommendationCard
+                  key={rec.id}
+                  rec={rec}
+                  now={now}
+                  disabled={busy}
+                  onApprove={() => setConfirming(rec)}
+                  onDeny={() => void decide(rec, "DENIED")}
+                />
+              ))}
             </div>
-          )}
-          <div aria-live="polite" className="flex flex-col gap-3">
-            {open.map((rec) => (
-              <RecommendationCard
-                key={rec.id}
-                rec={rec}
-                now={now}
-                disabled={busy}
-                onApprove={() => setConfirming(rec)}
-                onDeny={() => void decide(rec, "DENIED")}
-              />
-            ))}
           </div>
 
           {decided.length > 0 && (
-            <>
-              <div className="label mt-2 px-1">Recently decided</div>
-              <ul className="space-y-2">
+            <div>
+              <h2 className="label">Recently decided</h2>
+              <ul className="mt-2">
                 {decided.map(({ rec, decision }) => (
                   <DecidedRow key={rec.id} rec={rec} decision={decision} />
                 ))}
               </ul>
-            </>
+            </div>
           )}
 
-          <div className="label mt-2 px-1">Activity</div>
-          <div className="panel p-4">
-            <ActivityLog entries={state.log} />
+          <div>
+            <h2 className="label">Activity</h2>
+            <div className="mt-2">
+              <ActivityLog entries={state.log} />
+            </div>
           </div>
         </section>
       </main>
@@ -182,8 +196,8 @@ export function App() {
       {toast && (
         <div
           role="status"
-          className={`fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-xl border px-5 py-3 text-sm shadow-xl shadow-black/50 ${
-            toast.tone === "good" ? "border-ok/40 bg-[#0c2a22] text-ok" : "border-bad/40 bg-[#2a1010] text-bad"
+          className={`fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-[3px] border px-5 py-3 text-sm ${
+            toast.tone === "good" ? "border-ok/50 bg-[#10231b] text-ok" : "border-bad/50 bg-[#2a1214] text-bad"
           }`}
         >
           {toast.text}
