@@ -1,5 +1,9 @@
 # Usability session: facilitator script
 
+Protocol v2 (2026-10-11). v1 (sessions P1 and P2) told participants only to "keep an eye on the
+drones" and to give no instruction in Phase 2; neither participant understood that a decision was
+theirs to make. v2 gives a role and a goal. Report v1 and v2 sessions separately.
+
 Session length: about 35 minutes per participant. Plan for 2 to 3 participants, one at a time.
 You observe and record; you do not teach, defend or explain the console during the session.
 
@@ -21,7 +25,11 @@ what each person did, say N, and do not average.
 4. Print the observation sheet (`session-sheet.md`) and the questionnaire page, one each per
    participant. Decide who will hold the stopwatch if you are not alone; otherwise use the screen
    recording and the console's `T+` clock instead (below).
-5. Decide whether to screen-record (with sound, for the think-aloud). Only with consent.
+5. Screen-record with sound (QuickTime: File, New Screen Recording, with the microphone on), with
+   consent. This is required, not optional: without it you cannot recover `T+` times, hints or
+   what the participant looked at (v1 had no screen recording, so no timeline). The header `T+`
+   clock must be inside the recording. If someone declines recording, ask a second person to take
+   notes with the `T+` times.
 6. Read the metrics definitions in `metrics.md` once, so you know what you are listening for.
 
 ## Setting up each session (5 minutes before)
@@ -95,11 +103,14 @@ ethics process or a signed form for studies with people, follow that instead.)
 Give the briefing, exactly once. Do not add detail if asked ("that is part of what I am looking
 at").
 
-> Imagine you supervise three drones that are searching an area. This screen tells you how far you
-> can trust each drone's position. The system can recommend actions. A drone only does something
-> when you approve it; if you do nothing, nothing happens except what the drone does on its own.
-> Please keep thinking aloud. For the next few minutes your job is just to keep an eye on the
-> drones. I will not tell you when anything happens.
+> Imagine you are the supervisor on duty for three drones that are searching an area. You are the
+> only person who can decide anything about them. This screen tells you how far you can trust each
+> drone's position, and the system can recommend actions. A drone only does something when you
+> approve it; if you do nothing, nothing happens except what the drone does on its own.
+>
+> Your job is to watch the drones and, whenever the system needs a decision from you, to make it:
+> approve or deny. Please do not wait for me. Think aloud, including what you are deciding and
+> why. I will not tell you when anything happens.
 
 Then start the feed in terminal B and start your session notes. Write down the `T+` shown in the
 header at that moment: the alert comes about 15 to 20 seconds later.
@@ -143,6 +154,11 @@ Hint levels (use the lowest that unblocks them, log each one):
 
 Stop this phase when they have approved or denied, or after 5 minutes.
 
+If the participant mentions the alert (the red drone, "crash") but does not reach for the card,
+do not point at it. After 60 seconds from that remark use hint level 1, then level 2. Write the
+exact `T+` of every hint. A decision made after a level 3 hint is "failed without help", not a
+success; say so in the findings.
+
 ## Phase 3: what happened? (3 minutes)
 
 Ask these in order. Do not confirm or correct the answers; just thank them. Write the answers
@@ -162,7 +178,9 @@ to fill it in: six workload scales, then three short ratings. Say only:
 > Please answer for the whole time you were supervising the drones, from the first minute until
 > your decision.
 
-Do not look over their shoulder, and do not discuss the answers until they hand it back.
+Do not look over their shoulder, and do not discuss the answers until they hand it back. They mark
+a cross on each line (0 to 100); if they write a number or a digit from 1 to 5 instead, ask them to
+mark the line, and write down what they did. Do not convert scales afterwards.
 
 ## Phase 5: debrief (5 minutes)
 
