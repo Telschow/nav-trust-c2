@@ -2,9 +2,11 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { DecisionBanner } from "./DecisionBanner";
+import { titleOf } from "../language";
 import { RecommendationCard } from "./RecommendationCard";
 import { StateChip } from "./StateChip";
-import { VehicleCard } from "./VehicleCard";
+import { VehicleRow } from "./VehicleRow";
 import type { Recommendation } from "../types";
 
 afterEach(cleanup);
@@ -78,7 +80,7 @@ describe("StateChip", () => {
   });
 });
 
-describe("VehicleCard", () => {
+describe("VehicleRow", () => {
   const green = {
     vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
     horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
@@ -86,7 +88,7 @@ describe("VehicleCard", () => {
   const props = { vehicleId: "uav1", since: 0, now: 10, sectors: [], doneSectors: [], history: [], calibration: null, onFocus: vi.fn() };
 
   it("shows the calibrated bound with its coverage, and the margin to alert", () => {
-    render(<VehicleCard {...props} trust={green} />);
+    render(<VehicleRow {...props} trust={green} />);
     expect(screen.getByText("within 3 m")).toBeTruthy();
     expect(screen.getByText("99% of reports")).toBeTruthy();
     expect(screen.getByText(/Comfortable \(90%\)/)).toBeTruthy();
@@ -94,13 +96,13 @@ describe("VehicleCard", () => {
   });
 
   it("warns in words when the margin is nearly gone", () => {
-    render(<VehicleCard {...props} trust={{ ...green, headroom: 0.1 }} />);
+    render(<VehicleRow {...props} trust={{ ...green, headroom: 0.1 }} />);
     expect(screen.getByText(/Close to an alert \(10%\)/)).toBeTruthy();
   });
 
   it("claims no bound and no margin outside GREEN", () => {
     const red = { ...green, state: "RED" as const, reason: "STALE" as const, horizontal_bound_m: null, confidence: 0, headroom: 0 };
-    render(<VehicleCard {...props} trust={red} />);
+    render(<VehicleRow {...props} trust={red} />);
     expect(screen.getByText("unknown")).toBeTruthy();
     expect(screen.getByText(/none, already flagged/)).toBeTruthy();
     expect(screen.queryByRole("meter")).toBeNull();
@@ -108,7 +110,7 @@ describe("VehicleCard", () => {
   });
 });
 
-describe("VehicleCard sectors", () => {
+describe("VehicleRow sectors", () => {
   const green = {
     vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
     horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
@@ -117,7 +119,25 @@ describe("VehicleCard sectors", () => {
   const base = { vehicleId: "uav1", since: 0, now: 10, history: [], calibration: null, onFocus: vi.fn(), trust: green };
 
   it("marks a flown sector with a check and leaves the others plain", () => {
-    render(<VehicleCard {...base} sectors={[sector("S1"), sector("S2")]} doneSectors={["S1"]} />);
+    render(<VehicleRow {...base} sectors={[sector("S1"), sector("S2")]} doneSectors={["S1"]} />);
     expect(screen.getByText("S1 ✓ S2")).toBeTruthy();
+  });
+});
+
+describe("DecisionBanner (a waiting decision must not be missable)", () => {
+  it("renders nothing when no decision waits", () => {
+    const { container } = render(<DecisionBanner open={[]} now={10} onReview={vi.fn()} />);
+    expect(container.textContent).toBe("");
+  });
+
+  it("names the most urgent decision, the time left and how many more wait", () => {
+    const onReview = vi.fn();
+    render(<DecisionBanner open={[rec, { ...rec, id: "r2" }]} now={130} onReview={onReview} />);
+    expect(screen.getByRole("alert").textContent).toContain("Decision required");
+    expect(screen.getByRole("alert").textContent).toContain(titleOf(rec));
+    expect(screen.getByText(/1 more waiting/)).toBeTruthy();
+    expect(screen.getByText("expires in 0:30")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Review" }));
+    expect(onReview).toHaveBeenCalledTimes(1);
   });
 });
