@@ -25,16 +25,12 @@ export function TrustStrip({ history, now }: { history: HistoryPoint[]; now: num
   });
   return (
     <div>
-      <div className="flex h-2 gap-[2px]" role="img" aria-label="Trust state over the last two minutes">
+      <div className="flex h-1.5 gap-px" role="img" aria-label="Trust state over the last two minutes">
         {filled.map((c, i) => (
-          <span
-            key={i}
-            className="h-full flex-1 rounded-[2px]"
-            style={{ background: c ? TONE[c].hex : "#1b2540", opacity: c ? 0.9 : 1 }}
-          />
+          <span key={i} className="h-full flex-1" style={{ background: c ? TONE[c].hex : "#1f2832", opacity: c ? 0.85 : 1 }} />
         ))}
       </div>
-      <div className="mt-1 flex justify-between text-[10px] text-faint">
+      <div className="mt-1 flex justify-between font-mono text-[10px] text-faint">
         <span>2 min ago</span>
         <span>now</span>
       </div>

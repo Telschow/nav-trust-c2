@@ -194,8 +194,10 @@ Ask, and listen. Write down exact words.
    "99%" as a promise about the current position, which it is not.)
 4. "Did you notice the label in the top right, next to the clock?" If yes: "What does it say?
    What did you take it to mean?" (Tests whether the replay marker is understood.)
-5. "If you could change one thing first, what would it be?"
-6. "Would you want this screen if you really had to supervise drones? Why or why not?"
+5. "Did you notice the red bar across the top of the screen? What did you take it to mean?"
+   (Tests the decision banner added after P1 and P2.)
+6. "If you could change one thing first, what would it be?"
+7. "Would you want this screen if you really had to supervise drones? Why or why not?"
 
 Close: thank them, say what happens next (a short write-up with no names), and delete or hand
 over anything they asked about. Do not tell them what the "right" answer was unless they ask; if
