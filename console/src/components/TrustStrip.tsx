@@ -30,7 +30,7 @@ export function TrustStrip({ history, now }: { history: HistoryPoint[]; now: num
           <span key={i} className="h-full flex-1" style={{ background: c ? TONE[c].hex : "#1f2832", opacity: c ? 0.85 : 1 }} />
         ))}
       </div>
-      <div className="mt-1 flex justify-between font-mono text-[10px] text-faint">
+      <div className="mt-1 flex justify-between font-mono text-[11px] text-faint">
         <span>2 min ago</span>
         <span>now</span>
       </div>

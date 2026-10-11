@@ -22,13 +22,13 @@ vehicles' own PX4 failsafes act on their own and are not commands from the conso
 
 ## Normal flight
 
-All vehicles GREEN. Each card shows "within 3 m" (the calibrated bound) and a margin to alert. The
+All vehicles GREEN. Each vehicle row shows "within 3 m" (the calibrated bound) and a margin to alert. The
 operator has nothing to decide.
 
 ## Vignette A: a long GNSS outage on one vehicle
 
 1. Vehicle 3 flies into an interference zone and its receiver loses the fix.
-2. The card goes AMBER about 1.2 s later ("GNSS signal lost or degraded"), then RED about 6.3 s
+2. The row goes AMBER about 1.2 s later ("GNSS signal lost or degraded"), then RED about 6.3 s
    after the loss. The position bound becomes "unknown".
 3. PX4 lets the vehicle dead-reckon, then raises its own blind-land failsafe and lands it inside
    the zone (it does so several seconds after the loss; the timing was not measured exactly).
@@ -43,7 +43,7 @@ operator has nothing to decide.
 2. The vehicle believes it has not moved, so it keeps pushing toward its next waypoint and
    accelerates. **No PX4 failsafe fires** and nothing in its own estimate shows it.
 3. The consistency detector flags it 3.0 to 4.5 s after the freeze, while the vehicle is still
-   within a few metres of where it thinks it is. The card goes RED, "GNSS position disagrees with
+   within a few metres of where it thinks it is. The row goes RED, "GNSS position disagrees with
    the vehicle's own sensors", with an urgent warning.
 4. The recommendation is **LAND**, plus moving the vehicle's sector. Without an action the vehicle
    was about 1.4 km from its start 60 s after the fault and 5.3 km after 220 s, in the recorded

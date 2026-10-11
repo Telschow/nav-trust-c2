@@ -55,12 +55,51 @@ body {
   border-radius: 3px;
 }
 
+/* quiet section and field labels: sentence case. Capitals are kept for the two alarm texts only. */
 .label {
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.01em;
   color: var(--color-faint);
   font-weight: 500;
+}
+
+p,
+li,
+h1,
+h2,
+h3 {
+  text-wrap: pretty;
+}
+h3 {
+  text-wrap: balance;
+}
+
+button:not(:disabled):active {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+.skip-link {
+  position: absolute;
+  left: 8px;
+  top: -48px;
+  z-index: 60;
+  padding: 6px 10px;
+  background: var(--color-text);
+  color: var(--color-ink);
+  border-radius: 3px;
+  font-weight: 500;
+}
+.skip-link:focus {
+  top: 8px;
 }
 
 /* vehicle markers on the map: a flat ring and dot, a hard halo for contrast, no glow */

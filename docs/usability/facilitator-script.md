@@ -69,8 +69,8 @@ uav2", with the red warning), then the routine re-task, whatever order they arri
 one the participant takes first and write it down.
 
 What will happen, so you are not surprised: once the feed starts, the three drones appear. About 15
-to 20 seconds later drone `uav2` turns "Not trusted" and a card appears on the right: "Land and
-re-task uav2", with a 60 second countdown. If nobody answers, it expires and the same
+to 20 seconds later drone `uav2` turns "Not trusted", a red "Decision required" band appears across the top, and a card
+appears on the right: "Land and re-task uav2", with a 60 second countdown. If nobody answers, it expires and the same
 recommendation appears again. Approving it moves sector S2 from `uav2` to `uav1` on the map.
 
 ## Phase 0: welcome and consent (3 minutes)

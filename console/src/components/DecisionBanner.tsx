@@ -15,12 +15,15 @@ export function DecisionBanner({ open, now, onReview }: Props) {
   const remaining = now === null ? null : Math.max(0, first.expires_s - now);
   const rest = open.length - 1;
   return (
-    <div role="alert" className="flex shrink-0 items-center gap-4 bg-bad px-4 py-2 text-[#1c0808]">
-      <span className="font-semibold uppercase tracking-[0.08em]">Decision required</span>
-      <span className="min-w-0 flex-1 truncate">
-        <span className="font-semibold">{titleOf(first)}</span>
-        {urgencyNote(first) && <span className="hidden lg:inline"> · {urgencyNote(first)}</span>}
-        {rest > 0 && <span> · {rest} more waiting</span>}
+    <div className="flex shrink-0 items-center gap-4 bg-bad px-4 py-2 text-[#1c0808]">
+      {/* only this part is announced; the countdown changes twice a second and would be read out each time */}
+      <span role="alert" className="flex min-w-0 flex-1 items-center gap-4">
+        <span className="font-semibold uppercase tracking-[0.08em]">Decision required</span>
+        <span className="min-w-0 flex-1 truncate">
+          <span className="font-semibold">{titleOf(first)}</span>
+          {urgencyNote(first) && <span className="hidden lg:inline"> · {urgencyNote(first)}</span>}
+          {rest > 0 && <span> · {rest} more waiting</span>}
+        </span>
       </span>
       {remaining !== null && <span className="font-mono text-[13px] font-medium">expires in {formatDuration(remaining)}</span>}
       <button

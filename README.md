@@ -48,20 +48,24 @@ failure injection for Gazebo does not exist in v1.17.0. All recordings were made
 
 ## Operator console
 
-![Operator console at 1080p, live run: uav2 lost trust, decision waiting](docs/screenshots/console-1080p.jpg)
+![Operator console at 1080p, replay demo: uav2 lost trust, decision waiting](docs/screenshots/console-1080p.jpg)
 
-A dark operations-room console: a card per vehicle (trust state, plain-language reason, position
-bound, time in state, assigned sectors, a two-minute trust strip), a map with the survey sectors
-coloured by the vehicle that owns them, and a decision queue where each recommendation lists
-exactly what approving will do and counts down to its expiry.
+A dark operations console: a row per vehicle (trust state as a shape, a word and a colour,
+plain-language reason, position error, time in state, assigned and flown sectors, margin to alert,
+a two-minute trust strip), a map with the survey sectors coloured by the vehicle that owns them,
+and a decision queue where each recommendation lists exactly what approving will do and counts
+down to its expiry. While any decision waits, a red band across the top names the most urgent one
+and the time left.
 
-The screenshot is a **live run** of three simulated PX4 vehicles: a frozen-GPS-position fault was
-injected on uav2, its trust turned RED, and the console recommends landing it and moving its sector
-to uav3. Nothing has been sent yet: the decision waits for the operator. The healthy vehicles show
-"within 3 m" (a bound that held in 99% of reports, measured against simulator ground truth) and
-how much margin they have before an alert.
+The screenshot is the **replay demo** (`make demo`: recorded trust data from a simulated frozen
+GPS position, synthetic positions, labelled `REPLAY DEMO` in the header). uav2 turned RED, a red
+band across the top says a decision is required, and the console recommends landing uav2 and
+moving its sector to uav1. Nothing has been sent: the decision waits for the operator. The
+healthy vehicles show "within 3 m" (a bound that held in 99% of reports, measured against
+simulator ground truth) and their margin before an alert. The three-vehicle runs with live PX4
+vehicles are in [eval/fleet/results.md](eval/fleet/results.md).
 
-Try it without the simulator: `make demo`, then open http://127.0.0.1:8000. That replays
+Run the same thing yourself without the simulator: `make demo`, then open http://127.0.0.1:8000. That replays
 **recorded** trust data with **synthetic** positions, and the console says `REPLAY DEMO` in the
 header whenever the data is not live. Map tiles are OpenStreetMap (internet needed; attribution
 is shown on the map). The tiles come from OpenStreetMap's public server, whose
