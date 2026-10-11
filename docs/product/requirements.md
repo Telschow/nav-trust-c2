@@ -17,7 +17,7 @@ PX4's own GPS failure model). Nothing in it says anything about real receivers o
 | C2-01 | No vehicle command shall execute without a recorded operator approval, except PX4's own failsafes | unit tests on the gate and the audit log | met | The gate is the only path to a command, an AST test enforces that, and every outcome is audited |
 | C2-02 | On RED the system shall propose re-assignment of the vehicle's remaining sectors within 2 s | integration test | partial | The recommender runs on the report that turns RED, which is tested. End-to-end latency in a live system was not measured. For a frozen position the proposal is LAND plus re-assignment |
 | C2-03 | Every alert shall show a reason code an operator can act on | UI test, review checklist | partial | The console shows a plain-language reason and the exact actions, covered by component tests. The review checklist has not been done |
-| UX-01 | The operator can see all vehicles' trust states without scrolling at 1080p | manual check, screenshot | partial | Measured at 1920 x 1080 with 3 vehicles: the lowest card ends at 889 of 1080 px, nothing scrolls. The spec says an operator controls 3 to 5 vehicles; five of these cards would need scrolling |
+| UX-01 | The operator can see all vehicles' trust states without scrolling at 1080p | manual check, screenshot | partial | Measured at 1920 x 1080 with 3 vehicles after the redesign: the lowest row ends at 789 of 1080 px and each row is 230 px, so 4 fit and nothing scrolls. The spec says an operator controls 3 to 5 vehicles; a fifth row would need scrolling |
 
 ## Success metrics (spec section 1.5)
 

@@ -1,5 +1,4 @@
 import clsx from "clsx";
-import { Clock, Crosshair, Layers } from "lucide-react";
 import {
   calibrationText,
   formatBound,
@@ -9,7 +8,7 @@ import {
   reasonText,
 } from "../language";
 import type { HistoryPoint } from "../store";
-import { TONE, vehicleColor } from "../tone";
+import { vehicleColor } from "../tone";
 import type { Calibration, NavTrust, Sector } from "../types";
 import { StateChip } from "./StateChip";
 import { TrustStrip } from "./TrustStrip";
@@ -26,7 +25,7 @@ interface Props {
   onFocus: () => void;
 }
 
-export function VehicleCard({
+export function VehicleRow({
   vehicleId,
   trust,
   since,
@@ -37,57 +36,55 @@ export function VehicleCard({
   calibration,
   onFocus,
 }: Props) {
-  const tone = TONE[trust.state];
   const inState = since !== undefined && now !== null ? formatDuration(now - since) : "-";
   return (
     <button
       type="button"
       onClick={onFocus}
       className={clsx(
-        "panel group relative w-full overflow-hidden p-4 text-left transition",
-        "hover:border-[#2c3b61] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+        "block w-full border-b border-line-soft px-4 py-3.5 text-left hover:bg-panel-2",
+        "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
+        trust.state === "RED" && "bg-bad/10 hover:bg-bad/14",
       )}
       aria-label={`${vehicleId}, ${trust.state}. Show on map`}
     >
-      <span className="absolute inset-y-0 left-0 w-1" style={{ background: tone.hex }} aria-hidden />
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2.5">
+        <span className="flex items-center gap-2.5">
           <span
-            className="size-3 rounded-full ring-2 ring-white/10"
+            className="size-2.5 rounded-[1px]"
             style={{ background: vehicleColor(vehicleId) }}
             aria-hidden
           />
-          <span className="text-base font-semibold tracking-tight">{vehicleId}</span>
-        </div>
+          <span className="font-mono text-[15px] font-medium">{vehicleId}</span>
+        </span>
         <StateChip state={trust.state} />
       </div>
 
-      <p className={clsx("mt-3 text-sm leading-snug", trust.state === "GREEN" ? "text-muted" : "text-text")}>
+      <p className={clsx("mt-1.5 text-[13px] leading-snug", trust.state === "GREEN" ? "text-muted" : "text-text")}>
         {reasonText(trust.reason)}
       </p>
 
-      <dl className="mt-3.5 grid grid-cols-3 gap-2 text-xs">
+      <dl className="mt-3 grid grid-cols-[1.25fr_0.75fr_1fr] divide-x divide-line-soft border-y border-line-soft text-xs">
         <Metric
-          icon={<Crosshair className="size-3" />}
           label="Position error"
           value={formatBound(trust.horizontal_bound_m)}
           note={trust.horizontal_bound_m === null ? undefined : `${formatPercent(trust.confidence)} of reports`}
           title={calibration ? calibrationText(calibration) : undefined}
+          first
         />
-        <Metric icon={<Clock className="size-3" />} label="In state" value={inState} />
+        <Metric label="In state" value={inState} />
         <Metric
-          icon={<Layers className="size-3" />}
           label="Sectors"
           value={sectors.length ? sectors.map((s) => (doneSectors.includes(s.id) ? `${s.id} ✓` : s.id)).join(" ") : "none"}
           title={doneSectors.length ? "A check mark means the sector has been flown" : undefined}
         />
       </dl>
 
-      <div className="mt-3.5">
+      <div className="mt-3">
         <Headroom trust={trust} />
       </div>
 
-      <div className="mt-3.5">
+      <div className="mt-3">
         <TrustStrip history={history} now={now} />
       </div>
     </button>
@@ -95,24 +92,21 @@ export function VehicleCard({
 }
 
 function Metric({
-  icon,
   label,
   value,
   note,
   title,
+  first = false,
 }: {
-  icon: React.ReactNode;
   label: string;
   value: string;
   note?: string | undefined;
   title?: string | undefined;
+  first?: boolean;
 }) {
   return (
-    <div className="rounded-lg bg-black/20 px-2.5 py-2" title={title}>
-      <dt className="flex items-center gap-1 text-[10px] uppercase tracking-wider text-faint">
-        {icon}
-        {label}
-      </dt>
+    <div className={clsx("py-2", first ? "pr-3" : "px-3")} title={title}>
+      <dt className="label text-[10px]">{label}</dt>
       <dd className="mt-1 truncate font-mono text-[13px] text-text">{value}</dd>
       {note && <dd className="truncate text-[10px] text-faint">{note}</dd>}
     </div>
@@ -120,9 +114,9 @@ function Metric({
 }
 
 const HEADROOM_STYLE = {
-  ample: { bar: "#34d399", text: "text-ok", word: "Comfortable" },
-  shrinking: { bar: "#fbbf24", text: "text-warn", word: "Shrinking" },
-  low: { bar: "#f87171", text: "text-bad", word: "Close to an alert" },
+  ample: { bar: "#52c28a", text: "text-ok", word: "Comfortable" },
+  shrinking: { bar: "#e3b341", text: "text-warn", word: "Shrinking" },
+  low: { bar: "#f06262", text: "text-bad", word: "Close to an alert" },
 } as const;
 
 /** How far a GREEN vehicle is from being flagged. Outside GREEN there is nothing left to measure. */
@@ -141,17 +135,14 @@ function Headroom({ trust }: { trust: NavTrust }) {
         </span>
       </div>
       <div
-        className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/8"
+        className="mt-1.5 h-1 bg-line-soft"
         role="meter"
         aria-label="Margin to alert"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={Math.round(trust.headroom * 100)}
       >
-        <div
-          className="h-full rounded-full transition-[width] duration-500"
-          style={{ width: `${trust.headroom * 100}%`, background: style.bar }}
-        />
+        <div className="h-full transition-[width] duration-500" style={{ width: `${trust.headroom * 100}%`, background: style.bar }} />
       </div>
     </div>
   );
