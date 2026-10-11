@@ -88,8 +88,16 @@ regenerates the table.
 
 ## How this was built
 
-This project (including its code, tests and documentation) was supported by different local and cloud-hosted LLMs. Every design & architecture decision, the scope and goals of the project and its requirements and limitations was defined by me (aka the mantainer). You can find further information in 
+This project (including its code, tests and documentation) was supported by different local and cloud-hosted LLMs. Every design & architecture decision, the scope and goals of the project and its requirements and limitations was defined by me (aka the maintainer). You can find further information in 
 [docs/how-this-was-built.md](docs/how-this-was-built.md).
+
+## Acknowledgements
+
+Built on [PX4](https://px4.io) (BSD-3), [Gazebo](https://gazebosim.org), [MAVSDK](https://mavsdk.mavlink.io),
+[MapLibre GL JS](https://maplibre.org) (BSD-3), map data from
+[OpenStreetMap contributors](https://www.openstreetmap.org/copyright) (ODbL) and the IBM Plex
+fonts (SIL Open Font License 1.1). `console/DESIGN.md` is adapted from
+[VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md) (MIT).
 
 ## Layout
 

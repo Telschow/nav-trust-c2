@@ -65,8 +65,7 @@ operator has nothing to decide.
 ## What the operator decides, and what they cannot
 
 They decide whether to land a vehicle and whether to hand its sector to another. They cannot make
-a vehicle fly somewhere, change a mission by hand, or bypass the gate. `[you decide]` whether v1
-should offer HOLD or RTL as alternatives for the frozen case; the evidence says they are worse.
+a vehicle fly somewhere, change a mission by hand, or bypass the gate. v1 does not offer HOLD or RTL as alternatives for the frozen case; the evidence says they are worse.
 
 ## Assumptions and limits
 

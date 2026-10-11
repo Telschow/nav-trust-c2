@@ -44,4 +44,7 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
   failsafe). Zones in tests must be short, or the scenario must expect the landing.
 - No em dashes. Lean docs. Weekly status file written by the maintainer.
 - Maintainer writes docs/product/*, requirements and ADR decisions. Agents may review them.
+- Console UI work follows `console/DESIGN.md` (IBM/Carbon, from VoltAgent/awesome-design-md, MIT).
+  It is a marketing-site extraction: keep the tokens, but trust state colours and operator
+  density come first.
 - Ask before adding heavy dependencies or changing the ICD.
