@@ -87,7 +87,7 @@ eval-heldout:
 
 # Fleet mission completion (M-04): three vehicles, one lost, scripted operator. About 80 minutes.
 record-fleet:
-	sim/record_fleet_all.sh
+	sim/record_fleet_all.sh   # OPERATOR_DELAY=<s> sets the scripted operator delay (default 15)
 
 eval-fleet:
 	python -m eval.fleet

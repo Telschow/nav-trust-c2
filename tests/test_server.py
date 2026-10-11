@@ -209,3 +209,5 @@ def test_positions_complete_sectors_only_while_trusted() -> None:
     fly(100.0)
     assert fleet.done_sector_ids == {"S1"}
     assert fleet.positions["uav1"][1] == pytest.approx(100.0, abs=1.0)
+    done = client.get("/fleet").json()["done"]
+    assert done == ["S1"]

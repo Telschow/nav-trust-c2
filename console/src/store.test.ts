@@ -160,3 +160,11 @@ describe("calibration text", () => {
     expect(text).toContain("Simulation only");
   });
 });
+
+describe("fleet action", () => {
+  it("keeps the assignment and which sectors are done", () => {
+    const next = reducer(initialState, { type: "fleet", fleet: { uav1: [] }, done: ["S1"] });
+    expect(next.doneSectors).toEqual(["S1"]);
+    expect(next.fleet).toEqual({ uav1: [] });
+  });
+});

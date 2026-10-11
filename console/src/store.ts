@@ -41,6 +41,7 @@ export interface ConsoleState {
   recommendations: Record<string, Recommendation>;
   decisions: Record<string, Decision>;
   fleet: Fleet;
+  doneSectors: string[]; // ids of sectors the backend says have been flown
   calibration: Calibration | null;
   log: LogEntry[];
   nextLogId: number;
@@ -59,6 +60,7 @@ export const initialState: ConsoleState = {
   recommendations: {},
   decisions: {},
   fleet: {},
+  doneSectors: [],
   calibration: null,
   log: [],
   nextLogId: 1,
@@ -67,7 +69,7 @@ export const initialState: ConsoleState = {
 export type Action =
   | { type: "connection"; connected: boolean }
   | { type: "server"; event: ServerEvent; clientNow: number }
-  | { type: "fleet"; fleet: Fleet }
+  | { type: "fleet"; fleet: Fleet; done: string[] }
   | { type: "calibration"; calibration: Calibration }
   | { type: "decided"; decision: Decision };
 
@@ -121,7 +123,7 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
     case "connection":
       return { ...s, connected: action.connected };
     case "fleet":
-      return { ...s, fleet: action.fleet };
+      return { ...s, fleet: action.fleet, doneSectors: action.done };
     case "calibration":
       return { ...s, calibration: action.calibration };
     case "decided":
