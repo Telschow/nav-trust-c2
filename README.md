@@ -21,12 +21,18 @@ encryption modelling, any targeting or effector logic.
 
 ## Quick start
 
-Checks (no simulator needed):
+Checks (no simulator needed). Python 3.12; Node 22 or newer only for the console:
 
 ```
-pip install -e ".[dev,sim]"
+python -m venv .venv && source .venv/bin/activate
+pip install -e ".[dev,sim,c2]"
 make check
 ```
+
+The console demo (no simulator, no Docker): `make demo`, then open http://127.0.0.1:8000. About 15
+seconds after it starts, uav2 turns RED and a decision appears. Other scenarios:
+`make demo-run DEMO_SCENARIO=outage` (a vehicle loses GNSS and PX4 lands it) or `both` (two
+alerts at once). Stop it with Ctrl-C. Details under "Operator console" below.
 
 Simulator (Docker; the first image build compiles PX4, needs about 8 GiB for the Docker VM and 20 GB of disk):
 
@@ -37,8 +43,8 @@ make fly           # lawnmower survey over 1 x 1 km, telemetry to logs/*.jsonl
 make sim-down
 ```
 
-Caveat: the Docker image and the survey flight were written against the PX4 v1.17.0 sources but
-have not yet been run end to end. M0 is not done until they have.
+The image pins PX4 to a `main` commit (see `sim/docker/Dockerfile`), not a release, because GPS
+failure injection for Gazebo does not exist in v1.17.0. All recordings were made with it.
 
 ## Operator console
 
