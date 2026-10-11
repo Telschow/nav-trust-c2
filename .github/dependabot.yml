@@ -12,3 +12,7 @@ updates:
   - package-ecosystem: docker
     directory: "/sim/docker"
     schedule: { interval: weekly }
+    # the PX4 toolchain and every recording were built on Ubuntu 24.04; moving needs a rebuild
+    # of the simulator image and a re-check by hand, which CI cannot do (it has no Gazebo)
+    ignore:
+      - dependency-name: "ubuntu"
