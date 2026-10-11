@@ -106,9 +106,9 @@ function Metric({
 }) {
   return (
     <div className={clsx("py-2", first ? "pr-3" : "px-3")} title={title}>
-      <dt className="label text-[10px]">{label}</dt>
+      <dt className="label">{label}</dt>
       <dd className="mt-1 truncate font-mono text-[13px] text-text">{value}</dd>
-      {note && <dd className="truncate text-[10px] text-faint">{note}</dd>}
+      {note && <dd className="truncate text-[11px] text-faint">{note}</dd>}
     </div>
   );
 }
