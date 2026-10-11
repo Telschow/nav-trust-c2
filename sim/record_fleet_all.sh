@@ -4,11 +4,13 @@
 #
 #   sim/record_fleet_all.sh                 all runs below
 #   sim/record_fleet_all.sh loss_denied 2   one run
+#   OPERATOR_DELAY=40 sim/record_fleet_all.sh   another operator delay (replaces the recordings)
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 IMAGE="${IMAGE:-nav-trust-c2-sim}"
 OUT_DIR="${OUT_DIR:-eval/fleet/recordings}"
+OPERATOR_DELAY="${OPERATOR_DELAY:-15}"  # seconds the scripted operator waits before answering
 ONLY="${1:-}"
 ONLY_RUN="${2:-}"
 
@@ -27,7 +29,7 @@ while read -r name operator runs; do
         sleep 100
         if ! docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
             python -m sim.record_fleet --name "${name}" --run "${run}" \
-            --operator "${operator}" --out-dir "${OUT_DIR}"; then
+            --operator "${operator}" --operator-delay "${OPERATOR_DELAY}" --out-dir "${OUT_DIR}"; then
             echo "!!! ${name} run ${run} failed"
             failures+=("${name}-${run}")
         fi

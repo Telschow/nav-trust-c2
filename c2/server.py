@@ -171,9 +171,10 @@ def create_app(
     @app.get("/fleet")
     async def get_fleet() -> dict[str, Any]:
         if fleet is None:
-            return {"origin": hub.origin, "assignment": {}}
+            return {"origin": hub.origin, "assignment": {}, "done": []}
         return {
             "origin": hub.origin,
+            "done": sorted(fleet.done_sector_ids),
             "assignment": {
                 v: [
                     {"id": s.id, "west": s.west, "south": s.south, "east": s.east, "north": s.north}

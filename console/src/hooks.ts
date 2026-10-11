@@ -23,12 +23,13 @@ export function useConsole() {
       .catch(() => undefined); // the bound is still shown; only its explanation is missing
   }, []);
 
-  // The sector assignment changes only when an approved re-task runs, so polling is enough.
+  // The sector assignment changes only when an approved re-task runs and sectors are finished
+  // slowly (minutes), so polling is enough.
   useEffect(() => {
     let alive = true;
     const poll = () =>
       fetchFleet()
-        .then(({ fleet }) => alive && dispatch({ type: "fleet", fleet }))
+        .then(({ fleet, done }) => alive && dispatch({ type: "fleet", fleet, done }))
         .catch(() => undefined);
     poll();
     const id = window.setInterval(poll, 2000);

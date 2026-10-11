@@ -83,7 +83,7 @@ describe("VehicleCard", () => {
     vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
     horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
   };
-  const props = { vehicleId: "uav1", since: 0, now: 10, sectors: [], history: [], calibration: null, onFocus: vi.fn() };
+  const props = { vehicleId: "uav1", since: 0, now: 10, sectors: [], doneSectors: [], history: [], calibration: null, onFocus: vi.fn() };
 
   it("shows the calibrated bound with its coverage, and the margin to alert", () => {
     render(<VehicleCard {...props} trust={green} />);
@@ -105,5 +105,19 @@ describe("VehicleCard", () => {
     expect(screen.getByText(/none, already flagged/)).toBeTruthy();
     expect(screen.queryByRole("meter")).toBeNull();
     expect(screen.queryByText(/of reports/)).toBeNull();
+  });
+});
+
+describe("VehicleCard sectors", () => {
+  const green = {
+    vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
+    horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
+  };
+  const sector = (id: string) => ({ id, west: 0, south: 0, east: 1, north: 1 });
+  const base = { vehicleId: "uav1", since: 0, now: 10, history: [], calibration: null, onFocus: vi.fn(), trust: green };
+
+  it("marks a flown sector with a check and leaves the others plain", () => {
+    render(<VehicleCard {...base} sectors={[sector("S1"), sector("S2")]} doneSectors={["S1"]} />);
+    expect(screen.getByText("S1 ✓ S2")).toBeTruthy();
   });
 });
