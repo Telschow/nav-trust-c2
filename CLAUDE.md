@@ -30,6 +30,8 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
   ground truth into `eval/recordings` (simulator, about 1.5 h); `make eval` regenerates
   `eval/results.json` and `eval/results.md`; CI fails if the committed table differs from the
   recordings. Ground truth is evaluation-only: the trust engine never sees it.
+- Fleet mission completion (M-04): `make record-fleet` (three vehicles, one lost, scripted
+  operator; simulator, about 80 min), `make eval-fleet` writes `eval/fleet/results.md`; CI checks it.
 
 ## Rules
 - CI must not need Gazebo: replay recorded bags.

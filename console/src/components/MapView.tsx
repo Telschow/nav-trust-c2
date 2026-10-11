@@ -61,8 +61,8 @@ export function MapView({ state, focus }: Props) {
     map.on("load", () => {
       map.addSource("sectors", { type: "geojson", data: EMPTY });
       map.addSource("trails", { type: "geojson", data: EMPTY });
-      map.addLayer({ id: "sectors-fill", type: "fill", source: "sectors", paint: { "fill-color": ["get", "color"], "fill-opacity": 0.13 } });
-      map.addLayer({ id: "sectors-line", type: "line", source: "sectors", paint: { "line-color": ["get", "color"], "line-width": 1.6, "line-opacity": 0.85 } });
+      map.addLayer({ id: "sectors-fill", type: "fill", source: "sectors", paint: { "fill-color": ["get", "color"], "fill-opacity": ["case", ["get", "done"], 0.04, 0.13] } });
+      map.addLayer({ id: "sectors-line", type: "line", source: "sectors", paint: { "line-color": ["get", "color"], "line-width": 1.6, "line-opacity": ["case", ["get", "done"], 0.4, 0.85] } });
       map.addLayer({ id: "trails", type: "line", source: "trails", layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": ["get", "color"], "line-width": 2.4, "line-opacity": 0.8 } });
       setReady(true);
     });
@@ -94,7 +94,7 @@ export function MapView({ state, focus }: Props) {
       type: "FeatureCollection",
       features: sectorFeatures.map(({ vehicleId, sector, origin }) => ({
         type: "Feature",
-        properties: { color: vehicleColor(vehicleId), id: sector.id },
+        properties: { color: vehicleColor(vehicleId), id: sector.id, done: state.doneSectors.includes(sector.id) },
         geometry: { type: "Polygon", coordinates: [sectorRing(origin, sector)] },
       })),
     });
@@ -103,7 +103,7 @@ export function MapView({ state, focus }: Props) {
       const el = document.createElement("div");
       el.className = "sector-tag";
       el.style.setProperty("--tone", vehicleColor(vehicleId));
-      el.textContent = `${sector.id} · ${vehicleId}`;
+      el.textContent = `${sector.id} · ${vehicleId}${state.doneSectors.includes(sector.id) ? " · done" : ""}`;
       const [lon, lat] = localToLonLat(origin, (sector.west + sector.east) / 2, sector.north - 40);
       return new maplibregl.Marker({ element: el }).setLngLat([lon, lat]).addTo(map);
     });
@@ -113,7 +113,7 @@ export function MapView({ state, focus }: Props) {
       map.fitBounds(b, { padding: 70, duration: 0, maxZoom: 16 });
       fitted.current = true;
     }
-  }, [sectorFeatures, ready]);
+  }, [sectorFeatures, state.doneSectors, ready]);
 
   // trails
   useEffect(() => {
@@ -222,6 +222,7 @@ function Legend() {
             Dashed ring: do not rely on this position
           </span>
           <span className="text-faint">Sector colour = vehicle assigned</span>
+          <span className="text-faint">Faded sector, "done" = already flown</span>
         </div>
       )}
     </div>

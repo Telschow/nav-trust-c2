@@ -1,7 +1,7 @@
 # Programme plan
 
-DRAFT written by Claude on 2026-10-10 at the maintainer's request from the spec's plan (section 4),
-the GitHub milestones and the repository history. The maintainer owns it.
+Written by Claude on 2026-10-10 at the maintainer's request from the spec's plan (section 4),
+the GitHub milestones and the repository history.
 
 ## Plan and actuals
 
@@ -36,5 +36,5 @@ Scope changes made on the way, with reasons:
 ## Next
 
 Maintainer: product docs, risk log and weekly status, usability sessions, "How this was built".
-Agent: sector-completion tracking and a fleet-level mission-completion measurement (the one
-success metric with no data), then the video support and README after the sessions.
+Agent: the video support and README after the sessions. Sector-completion tracking and the
+fleet-level mission-completion measurement are done (`eval/fleet/results.md`).

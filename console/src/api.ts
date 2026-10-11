@@ -46,11 +46,11 @@ export function connectEvents(
   };
 }
 
-export async function fetchFleet(): Promise<{ fleet: Fleet }> {
+export async function fetchFleet(): Promise<{ fleet: Fleet; done: string[] }> {
   const r = await fetch("/fleet");
   if (!r.ok) throw new Error(`fleet ${r.status}`);
-  const body = (await r.json()) as { assignment: Fleet };
-  return { fleet: body.assignment };
+  const body = (await r.json()) as { assignment: Fleet; done?: string[] };
+  return { fleet: body.assignment, done: body.done ?? [] };
 }
 
 export class DecisionError extends Error {
