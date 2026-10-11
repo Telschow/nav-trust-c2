@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   actionsOf,
   calibrationText,
+  contextNote,
   formatBound,
   formatDuration,
   formatPercent,
@@ -166,5 +167,42 @@ describe("fleet action", () => {
     const next = reducer(initialState, { type: "fleet", fleet: { uav1: [] }, done: ["S1"] });
     expect(next.doneSectors).toEqual(["S1"]);
     expect(next.fleet).toEqual({ uav1: [] });
+  });
+});
+
+describe("C2-03: every recommendation the recommender can make is readable and actionable", () => {
+  // the combinations c2/recommender.py produces (ADR 0002 and 0003)
+  const make = (reason: Recommendation["reason"], command: Recommendation["command"]): Recommendation => ({
+    id: "r", vehicle_id: "uav2", created_s: 0, expires_s: 60, reason, command,
+    sector_moves: [{ sector_id: "S2", to_vehicle: "uav1" }], rationale: "",
+  });
+  const combos = [
+    make("GNSS_LOSS", null),
+    make("STALE", null),
+    make("INCONSISTENT_INNOVATION", "LAND"),
+  ];
+
+  it("names the vehicle in the title and in every action, and shows no internal code", () => {
+    for (const rec of combos) {
+      expect(titleOf(rec)).toContain("uav2");
+      expect(actionsOf(rec).length).toBeGreaterThan(0);
+      for (const a of actionsOf(rec)) expect(a).toMatch(/uav\d/);
+      for (const text of [reasonText(rec.reason), titleOf(rec), ...actionsOf(rec)]) {
+        expect(text).not.toMatch(/[A-Z]+_[A-Z_]+/);
+      }
+    }
+  });
+
+  it("gives each reason its own wording", () => {
+    const texts = combos.map((r) => reasonText(r.reason));
+    expect(new Set(texts).size).toBe(texts.length);
+  });
+
+  it("says that nothing is sent to the vehicle when there is no command, and warns when landing is urgent", () => {
+    expect(contextNote(combos[0]!)).toContain("failsafe");
+    expect(contextNote(combos[1]!)).toContain("stopped reporting");
+    expect(contextNote(combos[2]!)).toBeNull();
+    expect(urgencyNote(combos[2]!)).not.toBeNull();
+    expect(urgencyNote(combos[0]!)).toBeNull();
   });
 });

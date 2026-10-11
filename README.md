@@ -132,6 +132,13 @@ Built on [PX4](https://px4.io) (BSD-3), [Gazebo](https://gazebosim.org), [MAVSDK
 fonts (SIL Open Font License 1.1). `console/DESIGN.md` is adapted from
 [VoltAgent/awesome-design-md](https://github.com/VoltAgent/awesome-design-md) (MIT).
 
+## Related work
+
+[contested-nav](https://github.com/Telschow/contested-nav) is a separate project by the same
+author: an error-state Kalman filter and a calibration harness that checks whether a filter is
+right about how wrong it is. It found a filter that is accurate but confidently wrong, the same
+failure this repository's first position bound had. The two share no code.
+
 ## Layout
 
 See `CLAUDE.md`.

@@ -5,16 +5,16 @@ by hand: CI recomputes it and fails if it differs.
 
 Engine fingerprint (sha256 of the trust engine and recommender code): `a75fcca106aa50977fa478f297ae1364e4579e829b1b854376a26d2d188597b8`
 
-| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour | GREEN while more than 10 m off, s (mean, max) | Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished | Area covered (median) | Interruptions per run |
-|---|---|---|---|---|---|---|---|---|---|---|
-| long_outage_fast | 2 | 2 of 2 | 1.2 (1.2 to 1.2) | 0.00 (0 in 0.07 h) | 0.0 (0.0) | 0.8 (0.9) | 100.0% (140) | 0 of 2 | 25% | 1.0 |
-| nominal_fast | 3 | - | - | 0.00 (0 in 0.17 h) | 0.0 (0.0) | - | 99.4% (1213) | 3 of 3 | 100% | 0.0 |
-| nominal_slow | 2 | - | - | 0.00 (0 in 0.12 h) | 0.0 (0.0) | - | 100.0% (865) | 2 of 2 | 100% | 0.0 |
-| short_outage_fast | 3 | 3 of 3 | 1.0 (1.0 to 1.2) | 0.00 (0 in 0.16 h) | 0.0 (0.0) | 0.1 (0.1) | 99.6% (1118) | 3 of 3 | 100% | 0.0 |
-| short_outage_slow | 2 | 2 of 2 | 1.3 (1.2 to 1.3) | 0.00 (0 in 0.12 h) | 0.0 (0.0) | 0.8 (0.9) | 100.0% (841) | 2 of 2 | 100% | 0.0 |
-| stuck_position_fast | 2 | 2 of 2 | 3.6 (3.5 to 3.7) | 0.00 (0 in 0.11 h) | 0.0 (0.0) | 0.3 (0.4) | 100.0% (200) | 0 of 2 | 44% | 1.0 |
-| stuck_position_slow | 2 | 2 of 2 | 4.4 (4.4 to 4.5) | 0.00 (0 in 0.14 h) | 0.0 (0.0) | 3.4 (3.6) | 99.3% (152) | 0 of 2 | 40% | 1.0 |
-| wrong_fix_fast | 2 | 2 of 2 | 0.5 (0.4 to 0.5) | 8.53 (1 in 0.12 h) | 0.0 (0.0) | 0.0 (0.0) | 99.6% (779) | 2 of 2 | 100% | 0.0 |
+| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour | GREEN while more than 10 m off, s (mean, max) | Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished | Area covered (median) | Interruptions per run | Interruptions per 10 min |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| long_outage_fast | 2 | 2 of 2 | 1.2 (1.2 to 1.2) | 0.00 (0 in 0.07 h) | 0.0 (0.0) | 0.8 (0.9) | 100.0% (140) | 0 of 2 | 25% | 1.0 | 4.92 |
+| nominal_fast | 3 | - | - | 0.00 (0 in 0.17 h) | 0.0 (0.0) | - | 99.4% (1213) | 3 of 3 | 100% | 0.0 | 0.00 |
+| nominal_slow | 2 | - | - | 0.00 (0 in 0.12 h) | 0.0 (0.0) | - | 100.0% (865) | 2 of 2 | 100% | 0.0 | 0.00 |
+| short_outage_fast | 3 | 3 of 3 | 1.0 (1.0 to 1.2) | 0.00 (0 in 0.16 h) | 0.0 (0.0) | 0.1 (0.1) | 99.6% (1118) | 3 of 3 | 100% | 0.0 | 0.00 |
+| short_outage_slow | 2 | 2 of 2 | 1.3 (1.2 to 1.3) | 0.00 (0 in 0.12 h) | 0.0 (0.0) | 0.8 (0.9) | 100.0% (841) | 2 of 2 | 100% | 0.0 | 0.00 |
+| stuck_position_fast | 2 | 2 of 2 | 3.6 (3.5 to 3.7) | 0.00 (0 in 0.11 h) | 0.0 (0.0) | 0.3 (0.4) | 100.0% (200) | 0 of 2 | 44% | 1.0 | 3.07 |
+| stuck_position_slow | 2 | 2 of 2 | 4.4 (4.4 to 4.5) | 0.00 (0 in 0.14 h) | 0.0 (0.0) | 3.4 (3.6) | 99.3% (152) | 0 of 2 | 40% | 1.0 | 2.43 |
+| wrong_fix_fast | 2 | 2 of 2 | 0.5 (0.4 to 0.5) | 8.53 (1 in 0.12 h) | 0.0 (0.0) | 0.0 (0.0) | 99.6% (779) | 2 of 2 | 100% | 0.0 | 0.00 |
 
 ## Per run
 
@@ -76,6 +76,8 @@ The displayed bound held in 99.72% of 5308 GREEN reports over all runs (NT-03 as
 - **Area covered**: share of the survey rectangle within half the lane spacing of the vehicle's
   true track while airborne (ground truth; `eval/coverage.py`). The swath is a proposal, not a
   sensor model.
+- **Interruptions per 10 min**: the same count divided by the flight time of the scenario's runs.
+  Every fault run in these sets has a fault, so the rate is a worst-case mix, not a typical hour.
 - **Interruptions per run**: recommendations the recommender raises, assuming two other healthy
   vehicles; recommendations are not repeated.
 

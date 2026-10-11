@@ -89,6 +89,15 @@ export function urgencyRank(rec: Recommendation): number {
   return rec.command !== null ? 1 : 2;
 }
 
+/** A re-task with no vehicle command: say so, and why, so the operator is not left asking what
+ * happens to the vehicle itself. */
+export function contextNote(rec: Recommendation): string | null {
+  if (rec.command !== null || rec.sector_moves.length === 0) return null;
+  if (rec.reason === "GNSS_LOSS") return `No command is sent to ${rec.vehicle_id}: its own failsafe is acting.`;
+  if (rec.reason === "STALE") return `No command is sent to ${rec.vehicle_id}: it has stopped reporting.`;
+  return null;
+}
+
 /** Extra warning when waiting is itself dangerous. */
 export function urgencyNote(rec: Recommendation): string | null {
   if (rec.command === "LAND" && rec.reason === "INCONSISTENT_INNOVATION") {

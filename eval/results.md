@@ -5,13 +5,13 @@ by hand: CI recomputes it and fails if it differs.
 
 Engine fingerprint (sha256 of the trust engine and recommender code): `a75fcca106aa50977fa478f297ae1364e4579e829b1b854376a26d2d188597b8`
 
-| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour | GREEN while more than 10 m off, s (mean, max) | Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished | Area covered (median) | Interruptions per run |
-|---|---|---|---|---|---|---|---|---|---|---|
-| long_outage | 2 | 2 of 2 | 1.3 (1.3 to 1.4) | 0.00 (0 in 0.05 h) | 0.0 (0.0) | 0.6 (0.6) | 100.0% (153) | 0 of 2 | 26% | 1.0 |
-| nominal | 4 | - | - | 0.00 (0 in 0.23 h) | 0.0 (0.0) | - | 100.0% (1664) | 4 of 4 | 100% | 0.0 |
-| short_outage | 3 | 3 of 3 | 1.2 (1.1 to 1.3) | 0.00 (0 in 0.17 h) | 0.0 (0.0) | 0.3 (0.4) | 100.0% (1168) | 3 of 3 | 100% | 0.0 |
-| stuck_position | 3 | 3 of 3 | 3.0 (3.0 to 3.2) | 0.00 (0 in 0.16 h) | 0.0 (0.0) | 0.9 (1.2) | 100.0% (271) | 0 of 3 | 48% | 1.0 |
-| wrong_fix | 2 | 2 of 2 | 0.3 (0.1 to 0.4) | 0.00 (0 in 0.12 h) | 0.0 (0.0) | 0.3 (0.3) | 100.0% (784) | 2 of 2 | 100% | 0.0 |
+| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour | GREEN while more than 10 m off, s (mean, max) | Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished | Area covered (median) | Interruptions per run | Interruptions per 10 min |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| long_outage | 2 | 2 of 2 | 1.3 (1.3 to 1.4) | 0.00 (0 in 0.05 h) | 0.0 (0.0) | 0.6 (0.6) | 100.0% (153) | 0 of 2 | 26% | 1.0 | 6.91 |
+| nominal | 4 | - | - | 0.00 (0 in 0.23 h) | 0.0 (0.0) | - | 100.0% (1664) | 4 of 4 | 100% | 0.0 | 0.00 |
+| short_outage | 3 | 3 of 3 | 1.2 (1.1 to 1.3) | 0.00 (0 in 0.17 h) | 0.0 (0.0) | 0.3 (0.4) | 100.0% (1168) | 3 of 3 | 100% | 0.0 | 0.00 |
+| stuck_position | 3 | 3 of 3 | 3.0 (3.0 to 3.2) | 0.00 (0 in 0.16 h) | 0.0 (0.0) | 0.9 (1.2) | 100.0% (271) | 0 of 3 | 48% | 1.0 | 3.07 |
+| wrong_fix | 2 | 2 of 2 | 0.3 (0.1 to 0.4) | 0.00 (0 in 0.12 h) | 0.0 (0.0) | 0.3 (0.3) | 100.0% (784) | 2 of 2 | 100% | 0.0 | 0.00 |
 
 ## Per run
 
@@ -56,6 +56,8 @@ rate is zero: with no events the 95% upper bound on the rate is about 4.1 per ho
 - **Area covered**: share of the survey rectangle within half the lane spacing of the vehicle's
   true track while airborne (ground truth; `eval/coverage.py`). The swath is a proposal, not a
   sensor model.
+- **Interruptions per 10 min**: the same count divided by the flight time of the scenario's runs.
+  Every fault run in these sets has a fault, so the rate is a worst-case mix, not a typical hour.
 - **Interruptions per run**: recommendations the recommender raises, assuming two other healthy
   vehicles; recommendations are not repeated.
 
