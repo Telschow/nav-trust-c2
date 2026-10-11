@@ -38,8 +38,10 @@ from c2.messages import (
     recommendation_from_dict,
     recommendation_to_dict,
 )
+from c2.progress import SectorProgress, geo_to_local
 from c2.recommender import Recommender
 from navtrust.calibration import GREEN_BOUND
+from navtrust.types import TrustState
 
 _STATUS = {
     UnknownRecommendation: 404,
@@ -56,9 +58,11 @@ def create_app(
     fleet: FleetState | None = None,
     recommender: Recommender | None = None,
     gate: CommandGate | None = None,
+    progress: SectorProgress | None = None,
     console_dir: str | Path | None = None,
 ) -> FastAPI:
-    """recommender needs fleet; gate (command execution) needs an approved decision."""
+    """recommender needs fleet; gate (command execution) needs an approved decision; progress
+    (which sectors are flown) needs fleet and the area origin."""
     app = FastAPI(title="nav-trust-c2 backend")
 
     if recommender is not None:
@@ -106,6 +110,17 @@ def create_app(
             )
         except (KeyError, ValueError, TypeError) as err:
             raise bad_request(err) from err
+        origin = hub.origin
+        if fleet is not None and origin is not None:
+            vehicle = str(body["vehicle_id"])
+            local = geo_to_local(
+                origin["lat_deg"], origin["lon_deg"], float(body["lat_deg"]), float(body["lon_deg"])
+            )
+            fleet.positions[vehicle] = local
+            if progress is not None:
+                latest = hub.latest_trust(vehicle)
+                trusted = latest is not None and latest.state is TrustState.GREEN
+                fleet.done_sector_ids |= progress.observe(local, float(body["alt_m"]), trusted)
 
     @app.post("/origin", status_code=204)
     async def post_origin(body: dict[str, Any] = Body(...)) -> None:  # noqa: B008
@@ -156,9 +171,10 @@ def create_app(
     @app.get("/fleet")
     async def get_fleet() -> dict[str, Any]:
         if fleet is None:
-            return {"origin": hub.origin, "assignment": {}}
+            return {"origin": hub.origin, "assignment": {}, "done": []}
         return {
             "origin": hub.origin,
+            "done": sorted(fleet.done_sector_ids),
             "assignment": {
                 v: [
                     {"id": s.id, "west": s.west, "south": s.south, "east": s.east, "north": s.north}
@@ -234,8 +250,16 @@ def main() -> None:
         help="label for where the data comes from, e.g. 'REPLAY DEMO' (default: live)",
     )
     p.add_argument("--vehicles", type=int, default=3)
+    p.add_argument("--spacing", type=float, default=100.0, help="survey lane spacing, m")
     p.add_argument("--width", type=float, default=1000.0)
     p.add_argument("--height", type=float, default=1000.0)
+    p.add_argument(
+        "--origin",
+        nargs=2,
+        type=float,
+        metavar=("LAT", "LON"),
+        help="home of vehicle 1 (default: ask the simulator; use this when fly_fleet is running)",
+    )
     p.add_argument(
         "--executor",
         choices=["dryrun", "mavsdk"],
@@ -249,16 +273,24 @@ def main() -> None:
     if args.source:
         hub.set_source(args.source)
     ids = [f"uav{i}" for i in range(1, args.vehicles + 1)]
+    sectors = split_area(args.width, args.height, args.vehicles)
     fleet = FleetState(
-        assign(split_area(args.width, args.height, args.vehicles), ids),
+        assign(sectors, ids),
         positions={v: (0.0, 5.0 * i) for i, v in enumerate(ids)},  # spawn spacing of run_sitl.sh
     )
     if args.executor == "mavsdk":
         from sim.executor import MavsdkExecutor
         from sim.fly_fleet import home_of
+        from sim.survey import GeoPoint
 
-        origin = asyncio.run(home_of(1))
-        executor: Any = MavsdkExecutor(origin, spacing_m=100.0, altitude_m=30.0, speed_m_s=10.0)
+        origin = GeoPoint(*args.origin) if args.origin else asyncio.run(home_of(1))
+        executor: Any = MavsdkExecutor(
+            origin,
+            spacing_m=args.spacing,
+            altitude_m=30.0,
+            speed_m_s=10.0,
+            initial={v: list(secs) for v, secs in fleet.assignment.items()},
+        )
     else:
         executor = DryRunExecutor()
     app = create_app(
@@ -266,6 +298,7 @@ def main() -> None:
         fleet=fleet,
         recommender=Recommender(clock),
         gate=CommandGate(hub, fleet, executor),
+        progress=SectorProgress(sectors, swath_half_width_m=args.spacing / 2),
         console_dir=args.console,
     )
     uvicorn.run(app, host=args.host, port=args.port)

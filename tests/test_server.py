@@ -179,3 +179,35 @@ def test_source_label_defaults_to_live_and_can_be_marked_as_a_replay(
     assert c.post("/source", json={"label": "REPLAY DEMO"}).status_code == 204
     assert c.get("/state").json()["source"] == "REPLAY DEMO"
     assert c.post("/source", json={"label": "  "}).status_code == 422
+
+
+def test_positions_complete_sectors_only_while_trusted() -> None:
+    from c2.allocator import assign, split_area
+    from c2.fleet import FleetState
+    from c2.progress import SectorProgress
+    from sim.survey import GeoPoint, LocalPoint, local_to_geo
+
+    sectors = split_area(600.0, 300.0, 3)
+    fleet = FleetState(assign(sectors, ["uav1", "uav2", "uav3"]))
+    hub = Hub(AuditLog(":memory:"), Clock())
+    client = TestClient(create_app(hub, fleet=fleet, progress=SectorProgress(sectors)))
+    origin = GeoPoint(47.397971, 8.546164)
+    client.post("/origin", json={"lat_deg": origin.lat_deg, "lon_deg": origin.lon_deg})
+    green = {**NAVTRUST, "vehicle_id": "uav1", "state": "GREEN", "reason": None}
+
+    def fly(north: float) -> None:
+        for east in range(0, 601, 10):
+            g = local_to_geo(origin, LocalPoint(float(east), north))
+            body = {"vehicle_id": "uav1", "lat_deg": g.lat_deg, "lon_deg": g.lon_deg, "alt_m": 30.0}
+            assert client.post("/positions", json=body).status_code == 204
+
+    fly(0.0)  # no trust report yet: nothing counts
+    fly(100.0)
+    assert fleet.done_sector_ids == set()
+    client.post("/navtrust", json=green)
+    fly(0.0)
+    fly(100.0)
+    assert fleet.done_sector_ids == {"S1"}
+    assert fleet.positions["uav1"][1] == pytest.approx(100.0, abs=1.0)
+    done = client.get("/fleet").json()["done"]
+    assert done == ["S1"]

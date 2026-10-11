@@ -20,6 +20,7 @@ interface Props {
   since: number | undefined;
   now: number | null;
   sectors: Sector[];
+  doneSectors: string[];
   history: HistoryPoint[];
   calibration: Calibration | null;
   onFocus: () => void;
@@ -31,6 +32,7 @@ export function VehicleCard({
   since,
   now,
   sectors,
+  doneSectors,
   history,
   calibration,
   onFocus,
@@ -76,7 +78,8 @@ export function VehicleCard({
         <Metric
           icon={<Layers className="size-3" />}
           label="Sectors"
-          value={sectors.length ? sectors.map((s) => s.id).join(" ") : "none"}
+          value={sectors.length ? sectors.map((s) => (doneSectors.includes(s.id) ? `${s.id} ✓` : s.id)).join(" ") : "none"}
+          title={doneSectors.length ? "A check mark means the sector has been flown" : undefined}
         />
       </dl>
 

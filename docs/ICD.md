@@ -57,6 +57,14 @@ carry `server_s`, the backend clock, for client-side expiry countdowns. `POST /s
 `{label}` names where the data comes from (`live` by default); a replay or demo feeder must set
 it so the console cannot present replayed data as a live flight.
 
+## Fleet (`GET /fleet`)
+`{origin, assignment, done}`. `assignment` maps each vehicle to its sectors
+(`{id, west, south, east, north}`, metres from the origin). `done` lists the ids of sectors that
+have been flown: the backend marks a sector done when at least 95% of it has been passed within
+half the lane spacing by a vehicle that was airborne and GREEN at the time (`c2/progress.py`;
+proposals). It is derived from the positions the vehicles report, not from ground truth, and it is
+not audited. The console polls it.
+
 ## Audit log
 Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendation`,
 `decision`, `rejected_decision`), `vehicle_id`, JSON `payload`. Trust is logged on state or

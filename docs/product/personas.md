@@ -22,7 +22,8 @@ These are **hypotheses**, not research: no operator has been interviewed. The us
 - **What the console gives them.** A fleet summary in the header (how many vehicles are trusted,
   degraded or not trusted) and a map with the survey sectors coloured by the vehicle that owns them.
 - **What it does not give them.** A coverage figure in the console, or a mission-level risk view. Area covered is
-  measured offline per run, but not for a fleet after a re-task (`docs/product/requirements.md`, M-04). **Partly supported.**
+  measured offline, per run and for the fleet after a re-task (`eval/fleet/results.md`, M-04), but
+  not shown in the console. **Partly supported.**
 
 ## 3. Maintainer and test engineer
 

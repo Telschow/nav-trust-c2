@@ -1,8 +1,8 @@
 # Risks, assumptions, issues, dependencies (RAID)
 
-DRAFT prepared by Claude on 2026-10-10 from the repository history and measurements. The
-maintainer owns this log: rewrite, re-rate and delete freely. Ratings (H, M, L) are my suggestion,
-not a measurement. Each row points at the evidence.
+Prepared by Claude on 2026-10-10 from the repository history and measurements, at the
+maintainer's request. Ratings (H, M, L) are a suggestion, not a measurement. Each row points at
+the evidence.
 
 ## Risks
 
@@ -11,7 +11,7 @@ not a measurement. Each row points at the evidence.
 | R1 | All results come from one simulator and PX4's own GPS failure model; none says anything about real receivers, jamming or spoofing | H / H | Say so wherever results appear; claim nothing beyond the simulator | `eval/results.md` limits; ADR 0003 limits |
 | R2 | Few runs per scenario (2 to 4); no rates can be estimated | H / M | Report counts and bounds, never rates; more runs if a claim needs one | `eval/results.md`, `eval/heldout/results.md` |
 | R3 | The engine was developed and evaluated on the same kinds of fault; the held-out set is now used up for this version | M / M | Treat any engine change as a new iteration; record a new held-out set under new conditions | `docs/validation/heldout-report.md` |
-| R4 | The displayed position bound is not a valid bound: in GREEN the console shows about 0.15 m but the true error was within it in only 30.8% of 4,040 simulated reports (median 0.57 m, 95th percentile 2.4 m, max 2.9 m) | H / H | Replace it with a calibrated bound that states its coverage and its data (decision pending) | measurement of 2026-10-10 over `eval/recordings` |
+| R4 | The displayed position bound is not a valid bound: in GREEN the console shows about 0.15 m but the true error was within it in only 30.8% of 4,040 simulated reports (median 0.57 m, 95th percentile 2.4 m, max 2.9 m) | H / H | Mitigated 2026-10-10: replaced by a calibrated 3 m bound with its coverage (99%), held in 100% of 4,040 development and 99.72% of 5,308 held-out GREEN reports | measurement of 2026-10-10 over `eval/recordings` |
 | R5 | The recommendation for a frozen GPS position (LAND) rests on one clean run per action in one simulator | M / H | More runs and other delays before any stronger claim; the console states what it will do and the operator decides | ADR 0003, `tests/replay/data/experiments` |
 | R6 | A frozen position makes the vehicle run away within tens of seconds and nothing else stops it; the operator window is short | M / H | Time to detect is about 3 to 4.5 s; urgent-first queue; re-issue on expiry | ADR 0003 |
 | R7 | Detection can be late for slow flight: the frozen-position case at 5 m/s was detected after 4.4 to 4.5 s against a 5 s limit | M / M | Watch it in any further runs; no tuning on the held-out set | `docs/validation/heldout-report.md` |
@@ -21,7 +21,7 @@ not a measurement. Each row points at the evidence.
 | R11 | Usability evidence will be 2 to 3 people, a convenience sample, on a replay, with the developer as facilitator | H / M | State N; report each person; do not generalise | `docs/usability/metrics.md` |
 | R12 | The backend has no authentication; the operator name is typed by the user | L / M | Bind to localhost only; note it wherever the console is shown | `c2/server.py` |
 | R13 | The map uses OpenStreetMap tiles, whose policy allows light use only | L / L | Fine for a demo; switch provider or self-host before any wider use | `console/src/components/MapView.tsx` |
-| R14 | Re-tasking restarts the receiving vehicle from the first waypoint of every sector it holds (sector completion is not tracked), so approved re-tasks waste flown work | M / M | Track sector completion before claiming anything about mission completion with an operator | `sim/executor.py` |
+| R14 | Re-tasking restarts the receiving vehicle from the first waypoint of every sector it holds (sector completion is not tracked), so approved re-tasks waste flown work | M / M | Mitigated 2026-10-10: the backend tracks sector completion from trusted positions (`c2/progress.py`) and the executor keeps the unflown part of a vehicle's mission (`sim/executor.py`); measured in `eval/fleet/results.md` | `c2/progress.py`; `sim/executor.py` |
 | R15 | The remaining work (usability sessions, video, writing) depends on people's time, not on engineering | H / M | Book participants this week | issues 16, 17 |
 
 ## Assumptions
