@@ -56,9 +56,9 @@ participants and then compare their times. Note that the demo compresses time fi
 `outage` the drone is AMBER for only about a second before it turns RED, so a participant may never
 see AMBER.
 
-In `both`, the urgent card ("Land and re-task uav2", with the red warning) appears second, below
-the routine re-task, because the list is ordered oldest first. Watch which one the participant
-takes first and write it down; that ordering is a known open question, not something to hide.
+In `both`, two cards are open at once. The list puts the most urgent first ("Land and re-task
+uav2", with the red warning), then the routine re-task, whatever order they arrived in. Watch which
+one the participant takes first and write it down.
 
 What will happen, so you are not surprised: once the feed starts, the three drones appear. About 15
 to 20 seconds later drone `uav2` turns "Not trusted" and a card appears on the right: "Land and
@@ -121,7 +121,7 @@ themselves. If they say they have noticed something but ask what to do:
 
 > What would you do if I were not here?
 
-If they ask what a word means ("bound", "re-task"): "What do you think it means?" Record the word.
+If they ask what a word means ("position error", "margin", "re-task"): "What do you think it means?" Record the word.
 
 Record, with `T+`:
 - when they first read the "If you approve" list aloud or point at it;
@@ -170,7 +170,10 @@ Ask, and listen. Write down exact words.
 
 1. "What was the most confusing part?"
 2. "Was anything missing, anything you wanted to know and could not find?"
-3. "What does 'position bound: unknown' mean to you?"
+3. "What does 'Position error: unknown' on a drone's card mean to you?" and, for a trusted drone,
+   "What does 'within 3 m, 99% of reports' mean to you?" and "What does 'Margin to alert' mean?"
+   (Tests the calibrated position error and the margin meter; unscored. Note whether they read
+   "99%" as a promise about the current position, which it is not.)
 4. "Did you notice the label in the top right, next to the clock?" If yes: "What does it say?
    What did you take it to mean?" (Tests whether the replay marker is understood.)
 5. "If you could change one thing first, what would it be?"

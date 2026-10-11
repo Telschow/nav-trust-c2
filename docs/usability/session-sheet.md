@@ -60,7 +60,8 @@ Understanding score (0 to 4): ____
 
 1. Most confusing: ______________________________________________________________
 2. Missing: ______________________________________________________________________
-3. What "position bound: unknown" means to them: _____________________________________
+3. What "Position error: unknown", "within 3 m, 99% of reports" and "Margin to alert" mean to them:
+   ___________________________________________________________________________________
 4. Noticed the label in the top right? What did they take it to mean: ____________________
 5. First thing they would change: __________________________________________________
 6. Would they want it, why: _______________________________________________________
