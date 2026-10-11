@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { actionsOf, formatDuration, reasonText, titleOf, urgencyNote } from "../language";
+import { actionsOf, contextNote, formatDuration, reasonText, titleOf, urgencyNote } from "../language";
 import { TONE, vehicleColor } from "../tone";
 import type { Decision, Recommendation } from "../types";
 
@@ -34,6 +34,8 @@ export function RecommendationCard({ rec, now, disabled, onApprove, onDeny }: Op
         <p className="mt-2 text-sm text-muted">
           <span className="text-text">Why:</span> {reasonText(rec.reason)}.
         </p>
+
+        {contextNote(rec) && <p className="mt-2 text-sm text-muted">{contextNote(rec)}</p>}
 
         {urgencyNote(rec) && (
           <p className="mt-3 border border-bad/60 px-3 py-2 text-sm font-medium text-bad">{urgencyNote(rec)}</p>

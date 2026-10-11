@@ -12,14 +12,14 @@ Target (proposal): at least 90% of the survey area covered after the loss of one
 
 ## Per run
 
-| Recording | Area covered | S1 | S2 | S3 | Lost vehicle | Recommendations | Re-task executed | Alert to decision, s | Decision to re-task, s |
-|---|---|---|---|---|---|---|---|---|---|
-| loss_approved-1 | 100% | 100% | 100% | 100% | uav2 (S2) | 1 | yes | 15.3 | 2.3 |
-| loss_approved-2 | 100% | 100% | 100% | 100% | uav2 (S2) | 1 | yes | 15.5 | 4.7 |
-| loss_approved-3 | 100% | 100% | 100% | 100% | uav2 (S2) | 1 | yes | 15.6 | 2.7 |
-| loss_denied-1 | 87% | 100% | 62% | 100% | uav2 (S2) | 1 | no | 15.2 | - |
-| loss_denied-2 | 87% | 100% | 62% | 100% | uav2 (S2) | 1 | no | 15.4 | - |
-| loss_denied-3 | 87% | 100% | 62% | 100% | uav2 (S2) | 1 | no | 15.2 | - |
+| Recording | Area covered | S1 | S2 | S3 | Lost vehicle | Recommendations | Re-task executed | RED to recommendation, ms | Alert to decision, s | Decision to re-task, s | Alerts plus decisions per 10 min |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| loss_approved-1 | 100% | 100% | 100% | 100% | uav2 (S2) | 1 | yes | 5 | 15.3 | 2.3 | 1.9 |
+| loss_approved-2 | 100% | 100% | 100% | 100% | uav2 (S2) | 1 | yes | 6 | 15.5 | 4.7 | 1.9 |
+| loss_approved-3 | 100% | 100% | 100% | 100% | uav2 (S2) | 1 | yes | 6 | 15.6 | 2.7 | 1.9 |
+| loss_denied-1 | 87% | 100% | 62% | 100% | uav2 (S2) | 1 | no | 5 | 15.2 | - | 2.8 |
+| loss_denied-2 | 87% | 100% | 62% | 100% | uav2 (S2) | 1 | no | 5 | 15.4 | - | 2.8 |
+| loss_denied-3 | 87% | 100% | 62% | 100% | uav2 (S2) | 1 | no | 5 | 15.2 | - | 2.8 |
 
 ## How to read this
 
@@ -29,6 +29,13 @@ Target (proposal): at least 90% of the survey area covered after the loss of one
 - **Scripted operator**: answers every recommendation after a fixed delay. The delay is a
   parameter of the scenario, not a human response time; the usability sessions measure that.
 - **Alert to decision**: from the recommendation to the decision, on the backend's clock.
+- **RED to recommendation**: from the backend ingesting the lost vehicle's RED report to the
+  recommendation existing, on the backend's clock. It excludes the engine's report interval (the
+  engine publishes twice a second, so up to 0.5 s by design, not measured here) and delivery to
+  the console. The proposal target is 2 s (C2-02).
+- **Alerts plus decisions per 10 min**: recommendations raised plus decisions answered (not
+  expired), per 10 minutes from the first to the last airborne sample. The operator is scripted,
+  so this counts the system's demands, not a human's effort.
 
 ## Limits
 

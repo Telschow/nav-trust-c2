@@ -55,6 +55,23 @@ def run_metrics(path: Path) -> dict[str, Any]:
     decided = next((a["payload"]["decided_s"] for a in audit if a["kind"] == "decision"), None)
     executed = next((a["t_s"] for a in audit if a["kind"] == "command_executed"), None)
     stop = rec.first("recording_stopped")
+
+    # backend latency: the lost vehicle's RED report reaches the hub, the recommendation exists
+    reds = [a["t_s"] for a in audit if a["kind"] == "navtrust_change" and a["vehicle_id"] == lost
+            and a["payload"]["state"] == "RED"]  # fmt: skip
+    recs = [a["t_s"] for a in audit if a["kind"] == "recommendation" and a["vehicle_id"] == lost]
+    red_to_rec = None
+    if recs:
+        before = [t for t in reds if t <= recs[0]]
+        red_to_rec = round(recs[0] - max(before), 3) if before else None
+
+    # operator load: recommendations plus decisions per 10 minutes of flight (first to last airborne sample)
+    airborne = [t["t_s"] for t in truth if t["alt_m"] >= 5.0]
+    flight_s = (max(airborne) - min(airborne)) if airborne else None
+    decisions = sum(
+        1 for a in audit if a["kind"] == "decision" and a["payload"]["outcome"] != "EXPIRED"
+    )
+    n_recs = sum(1 for a in audit if a["kind"] == "recommendation")
     return {
         "recording": path.stem,
         "scenario": h["scenario"],
@@ -66,7 +83,13 @@ def run_metrics(path: Path) -> dict[str, Any]:
         "area_covered": _r4(covered_fraction(truth, whole, swath)),
         "sector_covered": {s.id: sector_cover(s) for s in sectors},
         "lost_sector_covered": sector_cover(lost_sector),
-        "recommendations": sum(1 for a in audit if a["kind"] == "recommendation"),
+        "recommendations": n_recs,
+        "decisions": decisions,
+        "red_to_recommendation_s": red_to_rec,
+        "flight_s": None if flight_s is None else round(flight_s, 1),
+        "alerts_plus_decisions_per_10_min": None
+        if not flight_s
+        else round((n_recs + decisions) / flight_s * 600, 2),
         "retask_executed": executed is not None,
         "decision_to_retask_s": None
         if decided is None or executed is None
@@ -101,6 +124,10 @@ def evaluate(recordings: Path = RECORDINGS) -> dict[str, Any]:
     return {"target_proposal": TARGET, "scenarios": scenarios}
 
 
+def _ms(v: float | None) -> str:
+    return "-" if v is None else f"{v * 1000:.0f}"
+
+
 def _cell(v: float | None) -> str:
     return "-" if v is None else f"{v:.1f}"
 
@@ -130,8 +157,8 @@ def render_markdown(result: dict[str, Any]) -> str:
         "## Per run",
         "",
         "| Recording | Area covered | S1 | S2 | S3 | Lost vehicle | Recommendations | Re-task executed |"
-        " Alert to decision, s | Decision to re-task, s |",
-        "|---|---|---|---|---|---|---|---|---|---|",
+        " RED to recommendation, ms | Alert to decision, s | Decision to re-task, s | Alerts plus decisions per 10 min |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for s in result["scenarios"].values():
         for m in s["runs_detail"]:
@@ -139,8 +166,9 @@ def render_markdown(result: dict[str, Any]) -> str:
             lines.append(
                 f"| {m['recording']} | {m['area_covered']:.0%} | {sc['S1']:.0%} | {sc['S2']:.0%} |"
                 f" {sc['S3']:.0%} | {m['lost_vehicle']} ({m['lost_sector']}) | {m['recommendations']} |"
-                f" {'yes' if m['retask_executed'] else 'no'} | {_cell(m['alert_to_decision_s'])} |"
-                f" {_cell(m['decision_to_retask_s'])} |"
+                f" {'yes' if m['retask_executed'] else 'no'} | {_ms(m['red_to_recommendation_s'])} |"
+                f" {_cell(m['alert_to_decision_s'])} | {_cell(m['decision_to_retask_s'])} |"
+                f" {_cell(m['alerts_plus_decisions_per_10_min'])} |"
             )
     lines += [
         "",
@@ -152,6 +180,13 @@ def render_markdown(result: dict[str, Any]) -> str:
         "- **Scripted operator**: answers every recommendation after a fixed delay. The delay is a",
         "  parameter of the scenario, not a human response time; the usability sessions measure that.",
         "- **Alert to decision**: from the recommendation to the decision, on the backend's clock.",
+        "- **RED to recommendation**: from the backend ingesting the lost vehicle's RED report to the",
+        "  recommendation existing, on the backend's clock. It excludes the engine's report interval (the",
+        "  engine publishes twice a second, so up to 0.5 s by design, not measured here) and delivery to",
+        "  the console. The proposal target is 2 s (C2-02).",
+        "- **Alerts plus decisions per 10 min**: recommendations raised plus decisions answered (not",
+        "  expired), per 10 minutes from the first to the last airborne sample. The operator is scripted,",
+        "  so this counts the system's demands, not a human's effort.",
         "",
         "## Limits",
         "",

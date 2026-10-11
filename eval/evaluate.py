@@ -75,6 +75,9 @@ def aggregate(scenario: Scenario, runs: list[RunMetrics]) -> dict[str, Any]:
         "area_covered_median": _r4(statistics.median(areas)) if areas else None,
         "missions_finished": sum(1 for m in runs if m.mission_finished),
         "interruptions_mean": _r(statistics.mean(m.interruptions for m in runs)) if runs else None,
+        "interruptions_per_10_min": _r(sum(m.interruptions for m in runs) / (hours * 6.0))
+        if hours > 0
+        else None,
     }
 
 
@@ -141,8 +144,8 @@ def render_markdown(
         "| Scenario | Runs | Detected | Time to detect, s (median, min to max) | False alerts per flight hour |"
         f" GREEN while more than {cfg['misleading_error_m']:g} m off, s (mean, max) |"
         " Error at alert, m (median, max) | Displayed bound held, GREEN reports | Missions finished |"
-        " Area covered (median) | Interruptions per run |",
-        "|---|---|---|---|---|---|---|---|---|---|---|",
+        " Area covered (median) | Interruptions per run | Interruptions per 10 min |",
+        "|---|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for name, data in result["scenarios"].items():
         a = data["aggregate"]
@@ -172,7 +175,7 @@ def render_markdown(
             f" ({a['false_alert_episodes']} in {_cell(a['flight_hours'], '{:.2f}')} h) | {mis} | {err}"
             f" | {_cell(a['bound_coverage'], '{:.1%}')} ({a['green_reports']})"
             f" | {a['missions_finished']} of {a['runs']} | {_cell(a['area_covered_median'], '{:.0%}')}"
-            f" | {_cell(a['interruptions_mean'], '{:.1f}')} |"
+            f" | {_cell(a['interruptions_mean'], '{:.1f}')} | {_cell(a['interruptions_per_10_min'], '{:.2f}')} |"
         )
     lines += [
         "",
@@ -241,7 +244,7 @@ def render_markdown(
         "  bound the console displays (navtrust/calibration.py). The estimator's own accuracy figure",
         "  (about 0.15 m) was not a valid bound; even nominal flights are a few metres off at survey",
         "  speed, and a time shift does not explain it.",
-        "- **Area covered**: share of the survey rectangle within half the lane spacing of the vehicle's\n  true track while airborne (ground truth; `eval/coverage.py`). The swath is a proposal, not a\n  sensor model.\n- **Interruptions per run**: recommendations the recommender raises, assuming two other healthy",
+        "- **Area covered**: share of the survey rectangle within half the lane spacing of the vehicle's\n  true track while airborne (ground truth; `eval/coverage.py`). The swath is a proposal, not a\n  sensor model.\n- **Interruptions per 10 min**: the same count divided by the flight time of the scenario's runs.\n  Every fault run in these sets has a fault, so the rate is a worst-case mix, not a typical hour.\n- **Interruptions per run**: recommendations the recommender raises, assuming two other healthy",
         "  vehicles; recommendations are not repeated.",
         "",
         "## Limits",
