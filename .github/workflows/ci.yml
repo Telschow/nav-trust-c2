@@ -55,5 +55,5 @@ jobs:
           cache: pip
           cache-dependency-path: pyproject.toml
       - run: pip install -e ".[docs]"
-      - name: Build the documentation site (strict: a broken link fails)
+      - name: Build the documentation site (strict, so a broken link fails)
         run: python -m mkdocs build --strict
