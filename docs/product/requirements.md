@@ -28,7 +28,7 @@ PX4's own GPS failure model). Nothing in it says anything about real receivers o
 | M-03 | Misleading-trust epochs | under 1% | met | 0.00% (development) and 0.28% (held-out) with the calibrated bound. With the old bound most GREEN reports were misleading |
 | M-04 | Mission completion | at least 90% in a single-vehicle-loss scenario | met | Simulation, three vehicles, one lost (a long GNSS outage that makes PX4 land it), scripted operator approving after 15 s: 100% of the area covered in 3 of 3 runs. With the operator denying: 87% in 3 of 3 runs (the lost vehicle's sector 62%), so the re-task is what meets the target. One loss pattern, few runs, scripted operator (`eval/fleet/results.md`) |
 | M-05 | Operator workload proxy | alerts plus approvals per 10 minutes | partial | Interruptions per run are measured (1 for a long outage or a frozen position, 0 otherwise). Per 10 minutes is not computed, and no approvals are simulated |
-| M-06 | Time to decision | report | gap | Pending the usability sessions (issue 16). The extractor `eval/usability.py` exists |
+| M-06 | Time to decision | report | partial | Round 1, protocol v1, N=2 (`docs/usability/findings-2026-10.md`): P1 approved 134.9 s after the first alert and only after a hint; P2 did not decide. Redesign and protocol v2 not yet re-tested |
 
 ## Where the spec disagrees with itself or with what was learned
 
