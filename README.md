@@ -1,11 +1,44 @@
 # nav-trust-c2
 
-Human-on-the-loop mission control console for a small team of simulated drones. It detects GNSS
-degradation, tells the operator how much to trust each vehicle's position, and recommends (never
-executes without approval) re-tasking, hold or return-to-launch.
+[![CI](https://github.com/Telschow/nav-trust-c2/actions/workflows/ci.yml/badge.svg)](https://github.com/Telschow/nav-trust-c2/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/Telschow/nav-trust-c2/actions/workflows/codeql.yml/badge.svg)](https://github.com/Telschow/nav-trust-c2/actions/workflows/codeql.yml)
+[![Docs](https://github.com/Telschow/nav-trust-c2/actions/workflows/pages.yml/badge.svg)](https://telschow.github.io/nav-trust-c2/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Status: milestone M0 (skeleton). No trust engine, no console yet.** Results table, demo video
-and the 60-second summary come with later milestones.
+**Does the operator know which drone's position to trust, and what to do about it?**
+
+<!-- summary-start -->
+## In 60 seconds
+
+**Problem.** A drone that loses GNSS, or whose position has frozen, keeps flying on a position
+that is wrong. A person supervising several drones has to learn which one, how wrong, and what to
+do, and no vehicle may be commanded without that person's approval.
+
+**What it does.** Two independent detectors watch each simulated vehicle (GNSS availability, and
+agreement with the vehicle's own sensors). The console shows per vehicle a trust state (GREEN,
+AMBER, RED), the reason, and a position error with its measured coverage. It recommends landing,
+re-tasking a lost vehicle's sector, and nothing else. Nothing executes without a recorded
+operator approval; one gate is the only path to a command, and a test enforces it.
+
+**Evidence, all in simulation (PX4 SITL and Gazebo, ground truth from the simulator).**
+- GNSS loss was detected in 1.0 to 1.4 s in 12 runs; a frozen position in 3.0 to 4.5 s. No alert
+  in 9 nominal runs.
+- The displayed bound, within 3 m, held in 100% of 4,040 reports on the data it was tuned on and
+  in 99.72% of 5,308 reports on an independent set. The first version, taken from the
+  estimator's own accuracy figure, held in 30.8%.
+- A frozen GPS position does not stall the vehicle, it flies away (5.3 km in one run). Only
+  LAND ended the flight in a controlled stop, so that is what is recommended.
+- With one of three vehicles lost, the area covered was 100% when the operator approved the
+  re-task and 87% when the operator denied it (3 runs each, scripted operator).
+- Held-out validation: 7 of 8 pre-declared expectations met. The one that was not is reported,
+  not excluded: [docs/validation/heldout-report.md](docs/validation/heldout-report.md).
+
+**What is not shown.** Real hardware, real interference, or a usability result: two people did not
+act on the decision unaided, the console was then redesigned, and that has not been re-tested
+([findings](docs/usability/findings-2026-10.md)). Targets in the documents are proposals.
+
+**How it was built, including the mistakes:** [docs/how-this-was-built.md](docs/how-this-was-built.md).
+<!-- summary-end -->
 
 ## Scope and ethics guardrails
 

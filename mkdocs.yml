@@ -1,0 +1,68 @@
+site_name: nav-trust-c2
+site_description: Human-on-the-loop mission control for simulated drones, with measured navigation trust.
+site_url: https://telschow.github.io/nav-trust-c2/
+repo_url: https://github.com/Telschow/nav-trust-c2
+repo_name: Telschow/nav-trust-c2
+edit_uri: edit/main/docs/
+copyright: MIT licensed. Simulation only; all results are from simulated flights.
+
+docs_dir: docs
+site_dir: site
+strict: true
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: blue grey
+      accent: blue
+      toggle: { icon: material/weather-night, name: Switch to dark mode }
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: blue grey
+      accent: blue
+      toggle: { icon: material/weather-sunny, name: Switch to light mode }
+  features:
+    - content.code.copy
+    - navigation.sections
+    - navigation.top
+    - search.suggest
+    - toc.follow
+
+plugins:
+  - search
+  - include-markdown
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc: { permalink: true }
+
+nav:
+  - Overview: index.md
+  - Product:
+      - PR/FAQ: product/PRFAQ.md
+      - Concept of operations: product/CONOPS.md
+      - Personas: product/personas.md
+      - Requirements: product/requirements.md
+  - Decisions:
+      - Interface (ICD): ICD.md
+      - ADR 0001 Separate detectors: adr/0001-separate-loss-and-consistency-detectors.md
+      - ADR 0002 Scenarios follow the failsafe: adr/0002-scenarios-follow-px4-failsafe.md
+      - ADR 0003 LAND for a frozen position: adr/0003-land-for-frozen-position.md
+  - Validation:
+      - Held-out protocol: validation/heldout-protocol.md
+      - Held-out report: validation/heldout-report.md
+  - Usability:
+      - Findings: usability/findings-2026-10.md
+      - Facilitator script: usability/facilitator-script.md
+      - Metrics: usability/metrics.md
+      - Session sheet: usability/session-sheet.md
+  - Programme:
+      - Plan: programme/plan.md
+      - Risks: programme/risks.md
+      - Status W41: programme/status/2026-W41.md
+  - How this was built: how-this-was-built.md
+  - Demo video script: demo-video-script.md
