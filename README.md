@@ -21,6 +21,7 @@ re-tasking a lost vehicle's sector, and nothing else. Nothing executes without a
 operator approval; one gate is the only path to a command, and a test enforces it.
 
 **Evidence, all in simulation (PX4 SITL and Gazebo, ground truth from the simulator).**
+
 - GNSS loss was detected in 1.0 to 1.4 s in 12 runs; a frozen position in 3.0 to 4.5 s. No alert
   in 9 nominal runs.
 - The displayed bound, within 3 m, held in 100% of 4,040 reports on the data it was tuned on and
@@ -37,9 +38,39 @@ operator approval; one gate is the only path to a command, and a test enforces i
 act on the decision unaided, the console was then redesigned, and that has not been re-tested
 ([findings](docs/usability/findings-2026-10.md)). Targets in the documents are proposals.
 
-**Demo video (about 3 minutes):** https://youtu.be/L7DrhOYMQ5A
+**Demo video (about 3 minutes):** https://youtu.be/L7DrhOYMQ5A. A one-minute captioned version is
+on the [project page](https://telschow.github.io/nav-trust-c2/).
 
 **How it was built, including the mistakes:** [docs/how-this-was-built.md](docs/how-this-was-built.md).
+
+## How it works
+
+```mermaid
+flowchart TB
+    V["Survey drones<br/>PX4 SITL and Gazebo"] -- "GNSS fix and estimator status" --> T["Trust engine, one per drone<br/>two separate detectors"]
+    T -- "GREEN / AMBER / RED, reason, position bound" --> H["C2 backend"]
+    H --> R["Recommender: land, or re-task a sector"]
+    R --> C["Operator console"]
+    C -- "approve or deny, name recorded" --> H
+    H --> L[("Append-only audit log")]
+    H --> G{"Policy gate:<br/>the only path to a command"}
+    G -- "approved, once" --> X["Executor"]
+    X -- "MAVSDK command" --> V
+```
+
+1. **Detect.** Each drone's navigation is checked twice a second by two separate detectors
+   ([ADR 0001](docs/adr/0001-separate-loss-and-consistency-detectors.md)): is GNSS available, and
+   does the GNSS position agree with the drone's own sensors.
+2. **Explain.** The console shows a trust state, the reason in plain words and how far off the
+   position may be.
+3. **Recommend, then wait.** The backend proposes one action and lists exactly what approving will
+   do. A person approves or denies; the decision and the name go to an append-only log.
+4. **Execute through one gate.** Only an approved recommendation, and only once, reaches a vehicle.
+   PX4's own failsafes stay outside the C2 and act on their own.
+
+![The decision loop in the replay demo: uav2 is flagged, the operator approves, uav2 lands and uav1 takes over its sector](docs/screenshots/decision-loop.gif)
+
+*Replay demo at double speed; map tiles left out of this recording.*
 <!-- summary-end -->
 
 ## Scope and ethics guardrails

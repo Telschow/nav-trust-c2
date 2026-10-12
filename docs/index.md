@@ -4,7 +4,13 @@ Human-on-the-loop mission control for a small team of simulated drones: navigati
 vehicle (GREEN, AMBER, RED, with a reason and a measured position error) and recommendations that
 wait for an operator's approval.
 
-![Operator console at 1080p, replay demo](screenshots/console-1080p.jpg)
+<video controls preload="metadata" poster="media/overview-poster.jpg" style="width:100%">
+  <source src="media/nav-trust-c2-overview.mp4" type="video/mp4">
+</video>
+
+*One minute, captioned: the replay demo from a trusted fleet to an approved, gated command. Map
+tiles are left out of this recording. The [three-minute demo](https://youtu.be/L7DrhOYMQ5A) shows
+the live map.*
 
 {%
   include-markdown "../README.md"
