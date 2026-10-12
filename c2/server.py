@@ -31,6 +31,7 @@ from c2.hub import (
     ExpiredRecommendation,
     Hub,
     HubError,
+    InvalidOperator,
     InvalidOutcome,
     UnknownRecommendation,
 )
@@ -53,6 +54,7 @@ _STATUS = {
     DuplicateRecommendation: 409,
     ExpiredRecommendation: 410,
     InvalidOutcome: 422,
+    InvalidOperator: 422,
 }
 
 

@@ -99,3 +99,14 @@ def test_websocket_refuses_other_sites(system: tuple[TestClient, DryRunExecutor,
 )
 def test_cross_site_rules(origin: str | None, host: str, allowed: bool) -> None:
     assert (cross_site_reason(origin, host) is None) is allowed
+
+
+def test_blank_operator_is_refused_and_nothing_executes(
+    system: tuple[TestClient, DryRunExecutor, Hub],
+) -> None:
+    client, executor, hub = system
+    assert client.post("/recommendations", json=REC).status_code == 201
+    blank = {**APPROVE, "operator": "  "}
+    response = client.post("/decisions", json=blank)
+    assert response.status_code == 422 and response.json()["detail"] == "invalid_operator"
+    assert executor.log == [] and hub.decision_for("forged-1") is None
