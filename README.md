@@ -37,6 +37,8 @@ operator approval; one gate is the only path to a command, and a test enforces i
 act on the decision unaided, the console was then redesigned, and that has not been re-tested
 ([findings](docs/usability/findings-2026-10.md)). Targets in the documents are proposals.
 
+**Demo video (about 3 minutes):** https://youtu.be/L7DrhOYMQ5A
+
 **How it was built, including the mistakes:** [docs/how-this-was-built.md](docs/how-this-was-built.md).
 <!-- summary-end -->
 
