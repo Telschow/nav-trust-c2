@@ -113,11 +113,12 @@ describe("language", () => {
 
   it("describes exactly what approving will do", () => {
     expect(actionsOf(rec)).toEqual(["Hold uav2 in place", "Move sector S2 from uav2 to uav3"]);
-    expect(titleOf(rec)).toBe("Hold and re-task uav2");
-    expect(titleOf({ ...rec, command: null })).toBe("Re-task uav2");
+    expect(titleOf(rec)).toBe("Hold uav2 and hand over S2");
+    expect(titleOf({ ...rec, command: null })).toBe("Hand over S2 from uav2");
     expect(actionsOf({ ...rec, command: "RTL", sector_moves: [] })).toEqual(["Send uav2 back to its launch point"]);
     expect(actionsOf({ ...rec, command: "LAND", sector_moves: [] })).toEqual(["Land uav2 where it is"]);
-    expect(titleOf({ ...rec, command: "LAND" })).toBe("Land and re-task uav2");
+    expect(titleOf({ ...rec, command: "LAND" })).toBe("Land uav2 and hand over S2");
+    expect(titleOf({ ...rec, sector_moves: [] })).toBe("Hold uav2");
   });
 });
 

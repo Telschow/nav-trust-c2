@@ -78,8 +78,9 @@ visible without scrolling (screenshots taken during the review, not in the parti
 None of these has been re-tested with people.
 
 ## What did not change, and why
-Wording such as "Land and re-task uav2", the 60 s expiry and the card's position are unchanged: the
-sessions gave no evidence about them either way.
+The 60 s expiry and the card's position are unchanged: the sessions gave no evidence about them
+either way. The card title "Land and re-task uav2" was later changed to "Land uav2 and hand over S2"
+as plain wording, without evidence that it matters.
 
 ## Round 2 (planned)
 Two to three new participants with the same background, protocol v2 and the redesigned console.

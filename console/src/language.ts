@@ -66,14 +66,16 @@ export function actionsOf(rec: Recommendation): string[] {
   return out;
 }
 
+/** Plain wording for the card title, for example "Land uav2 and hand over S2". The backend and the
+ * ICD call a sector move a re-task; an operator does not need that word. */
 export function titleOf(rec: Recommendation): string {
-  const parts: string[] = [];
-  if (rec.command === "HOLD") parts.push("Hold");
-  if (rec.command === "RTL") parts.push("Return");
-  if (rec.command === "LAND") parts.push("Land");
-  if (rec.sector_moves.length > 0) parts.push("re-task");
-  const text = parts.join(" and ");
-  return `${text.charAt(0).toUpperCase()}${text.slice(1)} ${rec.vehicle_id}`;
+  const v = rec.vehicle_id;
+  const command =
+    rec.command === "HOLD" ? `Hold ${v}` : rec.command === "RTL" ? `Return ${v} to launch` : rec.command === "LAND" ? `Land ${v}` : null;
+  const sectors = [...new Set(rec.sector_moves.map((m) => m.sector_id))].join(", ");
+  if (command && sectors) return `${command} and hand over ${sectors}`;
+  if (command) return command;
+  return `Hand over ${sectors} from ${v}`;
 }
 
 export const ERROR_TEXT: Record<number, string> = {

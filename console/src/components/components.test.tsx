@@ -141,3 +141,14 @@ describe("DecisionBanner (a waiting decision must not be missable)", () => {
     expect(onReview).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("VehicleRow AMBER", () => {
+  it("says that no action is expected unless it turns RED", () => {
+    const amber = {
+      vehicle_id: "uav1", stamp_s: 1, state: "AMBER" as const, reason: "GNSS_LOSS" as const,
+      horizontal_bound_m: null, confidence: 0, headroom: 0,
+    };
+    render(<VehicleRow vehicleId="uav1" trust={amber} since={0} now={5} sectors={[]} doneSectors={[]} history={[]} calibration={null} onFocus={vi.fn()} />);
+    expect(screen.getByText(/No action is recommended unless it turns RED/)).toBeTruthy();
+  });
+});

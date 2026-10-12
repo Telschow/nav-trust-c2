@@ -112,7 +112,10 @@ export function App() {
       <main className="grid min-h-0 flex-1 xl:grid-cols-[380px_minmax(0,1fr)_400px]">
         {/* fleet */}
         <section className="flex min-h-0 flex-col overflow-y-auto border-r border-line bg-panel" aria-label="Fleet">
-          <h2 className="label sticky top-0 z-10 border-b border-line bg-panel px-4 py-2.5">Fleet</h2>
+          <h2 className="label sticky top-0 z-10 flex items-baseline justify-between border-b border-line bg-panel px-4 py-2.5">
+            Fleet
+            <span className="font-mono text-[11px] font-normal text-faint">strips show the last 2 min</span>
+          </h2>
           {vehicleIds.length === 0 && (
             <div className="px-4 py-5 text-sm text-muted">Waiting for vehicles to report their navigation trust...</div>
           )}

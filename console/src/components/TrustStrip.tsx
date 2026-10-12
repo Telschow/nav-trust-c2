@@ -6,6 +6,7 @@ const WINDOW_S = 120;
 
 /** The last two minutes of a vehicle's trust state as a row of small blocks. */
 export function TrustStrip({ history, now }: { history: HistoryPoint[]; now: number | null }) {
+  // the strip is always the last two minutes; its ends are labelled once in the fleet header
   const end = now ?? history[history.length - 1]?.server_s ?? 0;
   const start = end - WINDOW_S;
   const cells: (keyof typeof TONE | null)[] = Array.from({ length: BUCKETS }, () => null);
@@ -29,10 +30,6 @@ export function TrustStrip({ history, now }: { history: HistoryPoint[]; now: num
         {filled.map((c, i) => (
           <span key={i} className="h-full flex-1" style={{ background: c ? TONE[c].hex : "#1f2832", opacity: c ? 0.85 : 1 }} />
         ))}
-      </div>
-      <div className="mt-1 flex justify-between font-mono text-[11px] text-faint">
-        <span>2 min ago</span>
-        <span>now</span>
       </div>
     </div>
   );

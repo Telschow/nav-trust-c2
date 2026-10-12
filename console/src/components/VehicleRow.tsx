@@ -42,7 +42,7 @@ export function VehicleRow({
       type="button"
       onClick={onFocus}
       className={clsx(
-        "block w-full border-b border-line-soft px-4 py-3.5 text-left hover:bg-panel-2",
+        "block w-full border-b border-line-soft px-4 py-3 text-left hover:bg-panel-2",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
         trust.state === "RED" && "bg-bad/10 hover:bg-bad/14",
       )}
@@ -60,11 +60,11 @@ export function VehicleRow({
         <StateChip state={trust.state} />
       </div>
 
-      <p className={clsx("mt-1.5 text-[13px] leading-snug", trust.state === "GREEN" ? "text-muted" : "text-text")}>
+      <p className={clsx("mt-1 text-[13px] leading-snug", trust.state === "GREEN" ? "text-muted" : "text-text")}>
         {reasonText(trust.reason)}
       </p>
 
-      <dl className="mt-3 grid grid-cols-[1.25fr_0.75fr_1fr] divide-x divide-line-soft border-y border-line-soft text-xs">
+      <dl className="mt-2 grid grid-cols-[1.25fr_0.75fr_1fr] divide-x divide-line-soft border-y border-line-soft text-xs">
         <Metric
           label="Position error"
           value={formatBound(trust.horizontal_bound_m)}
@@ -80,11 +80,11 @@ export function VehicleRow({
         />
       </dl>
 
-      <div className="mt-3">
+      <div className="mt-2">
         <Headroom trust={trust} />
       </div>
 
-      <div className="mt-3">
+      <div className="mt-2">
         <TrustStrip history={history} now={now} />
       </div>
     </button>
@@ -105,9 +105,9 @@ function Metric({
   first?: boolean;
 }) {
   return (
-    <div className={clsx("py-2", first ? "pr-3" : "px-3")} title={title}>
+    <div className={clsx("py-1.5", first ? "pr-3" : "px-3")} title={title}>
       <dt className="label">{label}</dt>
-      <dd className="mt-1 truncate font-mono text-[13px] text-text">{value}</dd>
+      <dd className="mt-0.5 truncate font-mono text-[13px] text-text">{value}</dd>
       {note && <dd className="truncate text-[11px] text-faint">{note}</dd>}
     </div>
   );
@@ -122,7 +122,12 @@ const HEADROOM_STYLE = {
 /** How far a GREEN vehicle is from being flagged. Outside GREEN there is nothing left to measure. */
 function Headroom({ trust }: { trust: NavTrust }) {
   if (trust.state !== "GREEN") {
-    return <p className="text-xs text-faint">Margin to alert: none, already flagged</p>;
+    return (
+      <p className="text-xs text-faint">
+        Margin to alert: none, already flagged.
+        {trust.state === "AMBER" && " No action is recommended unless it turns RED."}
+      </p>
+    );
   }
   const level = headroomLevel(trust.headroom);
   const style = HEADROOM_STYLE[level];

@@ -64,13 +64,13 @@ participants and then compare their times. Note that the demo compresses time fi
 `outage` the drone is AMBER for only about a second before it turns RED, so a participant may never
 see AMBER.
 
-In `both`, two cards are open at once. The list puts the most urgent first ("Land and re-task
-uav2", with the red warning), then the routine re-task, whatever order they arrived in. Watch which
+In `both`, two cards are open at once. The list puts the most urgent first ("Land uav2 and hand
+over S2", with the red warning), then the routine hand-over, whatever order they arrived in. Watch which
 one the participant takes first and write it down.
 
 What will happen, so you are not surprised: once the feed starts, the three drones appear. About 15
 to 20 seconds later drone `uav2` turns "Not trusted", a red "Decision required" band appears across the top, and a card
-appears on the right: "Land and re-task uav2", with a 60 second countdown. If nobody answers, it expires and the same
+appears on the right: "Land uav2 and hand over S2", with a 60 second countdown. (In round 1 the title read "Land and re-task uav2".) If nobody answers, it expires and the same
 recommendation appears again. Approving it moves sector S2 from `uav2` to `uav1` on the map.
 
 ## Phase 0: welcome and consent (3 minutes)
@@ -132,7 +132,7 @@ themselves. If they say they have noticed something but ask what to do:
 
 > What would you do if I were not here?
 
-If they ask what a word means ("position error", "margin", "re-task"): "What do you think it means?" Record the word.
+If they ask what a word means ("position error", "margin", "hand over"): "What do you think it means?" Record the word.
 
 Record, with `T+`:
 - when they first read the "If you approve" list aloud or point at it;
