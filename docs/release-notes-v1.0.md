@@ -2,6 +2,8 @@
 
 Simulation only. Source and results: https://github.com/Telschow/nav-trust-c2
 
+Demo video: https://youtu.be/L7DrhOYMQ5A
+
 ## What it is
 A mission-control console for three simulated PX4 vehicles. Two detectors judge each vehicle's
 navigation. The console shows GREEN, AMBER or RED with a reason and a position error with its
