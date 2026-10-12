@@ -45,6 +45,10 @@ class InvalidOutcome(HubError):
     code = "invalid_outcome"
 
 
+class InvalidOperator(HubError):
+    code = "invalid_operator"
+
+
 class DuplicateRecommendation(HubError):
     code = "duplicate_recommendation"
 
@@ -149,6 +153,9 @@ class Hub:
         try:
             if outcome not in (Outcome.APPROVED, Outcome.DENIED):
                 raise InvalidOutcome(outcome.value)
+            # A decision is only an operator approval if it names the operator (C2-01).
+            if not isinstance(operator, str) or not operator.strip():
+                raise InvalidOperator(repr(operator))
             rec = self._recs.get(recommendation_id)
             if rec is None:
                 raise UnknownRecommendation(recommendation_id)

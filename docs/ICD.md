@@ -45,7 +45,7 @@ A recommendation with neither a command nor sector moves is rejected.
 | recommendation_id | string | |
 | outcome | APPROVED, DENIED | EXPIRED is written by the backend, never sent by a client |
 | decided_s | float | stamped by the backend |
-| operator | string | |
+| operator | string, not blank | a blank name is refused (422 `invalid_operator`) and the attempt is audited |
 | note | string, optional | |
 
 ## Position and origin (for the map; added with the console)

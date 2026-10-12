@@ -64,6 +64,31 @@ describe("ConfirmDialog", () => {
     fireEvent.keyDown(window, { key: "Escape" });
     expect(onCancel).toHaveBeenCalled();
   });
+
+  it("keeps focus in the name field while the console re-renders", () => {
+    // The console re-renders on every keystroke and every live update, with a new onCancel each
+    // time. Focus used to jump back to "Confirm approval" on each render, so the next space or
+    // Enter while typing a name approved the command with a half-typed name.
+    const onConfirm = vi.fn();
+    const { rerender } = render(<ConfirmDialog {...base} demo={false} onConfirm={onConfirm} />);
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Confirm approval" }));
+    const name = screen.getByRole("textbox");
+    name.focus();
+    rerender(<ConfirmDialog {...base} demo={false} operator="d" onCancel={vi.fn()} onConfirm={onConfirm} />);
+    rerender(<ConfirmDialog {...base} demo={false} operator="du" onCancel={vi.fn()} onConfirm={onConfirm} />);
+    expect(document.activeElement).toBe(name);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("Escape cancels with the latest handler after a re-render", () => {
+    const first = vi.fn();
+    const latest = vi.fn();
+    const { rerender } = render(<ConfirmDialog {...base} demo={false} onCancel={first} />);
+    rerender(<ConfirmDialog {...base} demo={false} onCancel={latest} />);
+    fireEvent.keyDown(window, { key: "Escape" });
+    expect(latest).toHaveBeenCalledTimes(1);
+    expect(first).not.toHaveBeenCalled();
+  });
 });
 
 describe("StateChip", () => {

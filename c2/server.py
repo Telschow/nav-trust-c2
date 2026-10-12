@@ -3,19 +3,23 @@
     uvicorn: python -m c2.server --db logs/audit.sqlite --port 8000
 
 There is no authentication: the operator name in a decision is whatever the client sends.
-Bind to localhost only.
+Bind to localhost only. Browsers are held to the same origin (see `cross_site_reason`), so a
+web page the operator happens to open cannot approve a command or read the vehicles.
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import ipaddress
 import time
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
-from fastapi import Body, FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import Body, FastAPI, HTTPException, Request, Response, WebSocket, WebSocketDisconnect
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from c2.audit import AuditLog
@@ -27,6 +31,7 @@ from c2.hub import (
     ExpiredRecommendation,
     Hub,
     HubError,
+    InvalidOperator,
     InvalidOutcome,
     UnknownRecommendation,
 )
@@ -49,7 +54,60 @@ _STATUS = {
     DuplicateRecommendation: 409,
     ExpiredRecommendation: 410,
     InvalidOutcome: 422,
+    InvalidOperator: 422,
 }
+
+
+def _authority(value: str) -> tuple[str, int | None] | None:
+    """(host, port) of a Host header or an origin URL, lower-cased; None if unparsable."""
+    try:
+        parts = urlsplit(value if "://" in value else f"//{value}")
+        host, port = parts.hostname, parts.port
+    except ValueError:
+        return None
+    return (host.rstrip("."), port) if host else None
+
+
+def _is_loopback(host: str) -> bool:
+    if host == "localhost" or host.endswith(".localhost"):
+        return True
+    try:
+        return ipaddress.ip_address(host).is_loopback
+    except ValueError:
+        return False
+
+
+def _cannot_be_rebound(host: str) -> bool:
+    """A web page can point a DNS name it controls at this machine (DNS rebinding), and public
+    names always contain a dot. Loopback names, IP literals and single-label names cannot."""
+    if _is_loopback(host) or "." not in host:
+        return True
+    try:
+        ipaddress.ip_address(host)
+    except ValueError:
+        return False
+    return True
+
+
+def cross_site_reason(origin: str | None, host: str | None) -> str | None:
+    """Why a request must be refused, or None.
+
+    There is no login, so the browser is the risk: a page on another site, or one that rebinds
+    its own DNS name to this machine, could otherwise create and approve a recommendation (the
+    gate would execute it) or read live positions over the WebSocket, which CORS does not cover.
+    Non-browser clients (the replay feed, the scripted operator, curl) send no Origin.
+    """
+    target = _authority(host) if host else None
+    if host is not None and (target is None or not _cannot_be_rebound(target[0])):
+        return "unexpected Host header"
+    if origin is None:
+        return None
+    source = _authority(origin) if origin != "null" else None
+    if source is None:
+        return "cross-origin request"
+    if _is_loopback(source[0]) or source == target:
+        return None
+    return "cross-origin request"
 
 
 def create_app(
@@ -64,6 +122,14 @@ def create_app(
     """recommender needs fleet; gate (command execution) needs an approved decision; progress
     (which sectors are flown) needs fleet and the area origin."""
     app = FastAPI(title="nav-trust-c2 backend")
+
+    @app.middleware("http")
+    async def same_origin_only(request: Request, call_next: Any) -> Response:
+        reason = cross_site_reason(request.headers.get("origin"), request.headers.get("host"))
+        if reason is not None:
+            return JSONResponse({"detail": reason}, status_code=403)
+        response: Response = await call_next(request)
+        return response
 
     if recommender is not None:
 
@@ -209,6 +275,10 @@ def create_app(
 
     @app.websocket("/ws")
     async def ws(websocket: WebSocket) -> None:
+        # the http middleware does not see WebSocket handshakes, and CORS does not apply to them
+        if cross_site_reason(websocket.headers.get("origin"), websocket.headers.get("host")):
+            await websocket.close(code=1008)  # policy violation
+            return
         await websocket.accept()
         queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue()
         unsubscribe = hub.subscribe(queue.put_nowait)  # endpoints run on the event loop

@@ -8,6 +8,7 @@ from c2.hub import (
     DuplicateRecommendation,
     ExpiredRecommendation,
     Hub,
+    InvalidOperator,
     InvalidOutcome,
     UnknownRecommendation,
 )
@@ -163,3 +164,17 @@ def test_trust_messages_close_recommendations_that_expired_unanswered() -> None:
     [decision] = audit.events("decision")
     assert (decision.payload["outcome"], decision.payload["operator"]) == ("EXPIRED", "system")
     assert [e["type"] for e in events][-2:] == ["decision", "navtrust"]
+
+
+@pytest.mark.parametrize("operator", ["", "   ", "\t\n"])
+def test_a_decision_must_name_the_operator(operator: str) -> None:
+    # C2-01: every command needs a recorded operator approval; a blank name records nobody.
+    hub, audit, _, _ = make()
+    hub.add_recommendation(rec())
+    with pytest.raises(InvalidOperator):
+        hub.decide("r1", Outcome.APPROVED, operator)
+    assert hub.decision_for("r1") is None
+    (rejected,) = audit.events("rejected_decision")
+    assert rejected.payload["rejected_because"] == "invalid_operator"
+    # the recommendation stays open for a named operator
+    assert hub.decide("r1", Outcome.APPROVED, "Duty operator").outcome is Outcome.APPROVED

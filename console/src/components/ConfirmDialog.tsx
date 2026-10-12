@@ -15,12 +15,17 @@ interface Props {
 
 export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onCancel, onConfirm }: Props) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const cancelRef = useRef(onCancel);
+  cancelRef.current = onCancel;
+  // Once, when the dialog opens. The console re-renders on every keystroke and live update with a
+  // new onCancel; re-running this on each render pulled focus out of the name field onto
+  // "Confirm approval", so a space typed in a name approved the command.
   useEffect(() => {
     confirmRef.current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && cancelRef.current();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onMouseDown={onCancel}>
