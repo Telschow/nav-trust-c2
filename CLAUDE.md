@@ -33,6 +33,7 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
   ground truth into `eval/recordings` (simulator, about 1.5 h); `make eval` regenerates
   `eval/results.json` and `eval/results.md`; CI fails if the committed table differs from the
   recordings. Ground truth is evaluation-only: the trust engine never sees it.
+- Time from GNSS loss to descent: `python -m eval.blind_land` (reads `eval/recordings`).
 - Fleet mission completion (M-04): `make record-fleet` (three vehicles, one lost, scripted
   operator; simulator, about 80 min), `make eval-fleet` writes `eval/fleet/results.md`; CI checks it.
 
@@ -43,8 +44,10 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
   is a different, native binding.
 - PX4 is pinned to a `main` commit (sim/docker/Dockerfile), not a release: gz GPS failure
   injection (`failure gps off|stuck|wrong`) does not exist in v1.17.0 or v1.18.0-rc1.
-- A GNSS outage longer than a few seconds makes PX4 land the vehicle ("blind land"
-  failsafe). Zones in tests must be short, or the scenario must expect the landing.
+- A GNSS loss that does not end made the simulated vehicle start a controlled descent after
+  about 5 s and land about 45 s after the loss (2 of 2 runs). Six outages of 4 s caused no
+  descent. Zones in tests must be short (4 s worked), or the scenario must expect the landing.
+  See docs/validation/px4-lost-link-parameters.md.
 - No em dashes. Lean docs. Weekly status file written by the maintainer.
 - Maintainer writes docs/product/*, requirements and ADR decisions. Agents may review them.
 - Console UI work follows `console/DESIGN.md` (IBM/Carbon, from VoltAgent/awesome-design-md, MIT).
