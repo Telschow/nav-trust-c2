@@ -18,6 +18,9 @@ PX4's own GPS failure model). Nothing in it says anything about real receivers o
 | C2-02 | On RED the system shall propose re-assignment of the vehicle's remaining sectors within 2 s | integration test | met | Measured in 6 live three-vehicle runs: 5 to 6 ms from the backend receiving the RED report to the recommendation (`eval/fleet/results.md`). The engine's report interval (2 Hz, up to 0.5 s by design) and delivery to the console are not included. For a frozen position the proposal is LAND plus re-assignment |
 | C2-03 | Every alert shall show a reason code an operator can act on | UI test, review checklist | partial | Review done (`docs/validation/c2-03-review.md`) and tested for every recommendation the recommender can make; one gap fixed. Whether an operator acts on it is not shown: round 1 participants did not act unaided; round 2 pending |
 | UX-01 | The operator can see all vehicles' trust states without scrolling at 1080p | manual check, screenshot | met | Measured at 1920 x 1080 with 5 vehicles and the decision band showing: each row is 189 px and the fleet panel does not scroll. The spec says 3 to 5 vehicles |
+| LL-01 | A vehicle whose reports have stopped for longer than the link timeout shall be shown as NO LINK, with its last trust state marked as last known and its age (proposal, M5a, issue 73) | unit tests with a fake clock | gap | Not built. Proposed by Claude on 2026-10-24 for the maintainer to accept or change |
+| LL-02 | With the link down, a vehicle shall act only within a contingency policy the operator approved before the mission, and only with LAND (proposal, M5b, issue 76, pending ADR 0004) | unit tests and the `link_and_frozen` scenario | gap | Not built. Pending ADR 0004. Proposed by Claude on 2026-10-24 |
+| LL-03 | Every vehicle action shall be recorded with the authority it ran under: live approval, contingency or PX4 failsafe (proposal, M5b, issue 75) | audit log check in the eval table | gap | Not built. Proposed by Claude on 2026-10-24 |
 
 ## Success metrics (spec section 1.5)
 
@@ -42,6 +45,14 @@ PX4's own GPS failure model). Nothing in it says anything about real receivers o
   JSON lines and not ROS 2 bags.
 - **NT-01 and NT-02 numbers.** The 3 s figure is a proposal in the spec. It is met with margin in
   simulation; that is not evidence it is the right figure for an operator.
+
+## Proposal: M-01 per fault type
+
+M-01 is a single median under 3 s, which hides a split (see the M-01 row). A proposal for the
+maintainer to accept: state the target per fault type, because a frozen position is inherently
+slower to confirm than a total GNSS loss. For example, GNSS off and wrong fix under 3 s, frozen
+position under 5 s (the limit the held-out protocol already used), each with its run count.
+Tuning the detector is a separate, optional follow-up (issue 78).
 
 ## Checking the table
 
