@@ -9,8 +9,8 @@ import { MapView } from "./components/MapView";
 import { DecidedRow, RecommendationCard } from "./components/RecommendationCard";
 import { VehicleRow } from "./components/VehicleRow";
 import { useConsole, useServerNow } from "./hooks";
-import { decidedRecommendations, openRecommendations } from "./store";
-import type { Recommendation, TrustState } from "./types";
+import { decidedRecommendations, openRecommendations, trustCounts } from "./store";
+import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
 
@@ -41,11 +41,7 @@ export function App() {
   const vehicleIds = Object.keys(state.vehicles).sort();
   const demo = state.source !== "live";
 
-  const counts = useMemo(() => {
-    const c: Record<TrustState, number> = { GREEN: 0, AMBER: 0, RED: 0 };
-    for (const t of Object.values(state.vehicles)) c[t.state] += 1;
-    return c;
-  }, [state.vehicles]);
+  const counts = useMemo(() => trustCounts(state), [state]);
 
   const changeOperator = (name: string) => {
     setOperator(name);

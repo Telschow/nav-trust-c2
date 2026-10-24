@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedRecommendations, initialState, isNoLink, openRecommendations, reducer, serverNow } from "./store";
+import { decidedRecommendations, initialState, isNoLink, openRecommendations, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -223,7 +223,7 @@ describe("link health (issue 73)", () => {
         }),
       }),
     );
-    expect(s.links.uav1).toEqual({ state: "NO_LINK", lastHeard_s: 46 });
+    expect(s.links.uav1).toEqual({ state: "NO_LINK", lastHeardAt_s: 46 });
     expect(s.links.uav2?.state).toBe("LINK_OK");
     expect(isNoLink(s, "uav1")).toBe(true);
     expect(isNoLink(s, "uav2")).toBe(false);
@@ -241,7 +241,7 @@ describe("link health (issue 73)", () => {
       s,
       ev({ type: "link", server_s: 60, data: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 2.5 } }),
     );
-    expect(s.links.uav1).toEqual({ state: "NO_LINK", lastHeard_s: 57.5 });
+    expect(s.links.uav1).toEqual({ state: "NO_LINK", lastHeardAt_s: 57.5 });
     expect(s.log[0]?.tone).toBe("warn");
     expect(s.log[0]?.text).toContain("uav1 has no link");
   });
@@ -260,6 +260,16 @@ describe("link health (issue 73)", () => {
     let s = apply(initialState, ev({ type: "state", server_s: 50, data: snapshot }));
     s = apply(s, ev({ type: "link", server_s: 60, data: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 2.5 } }));
     expect(s.vehicles.uav1?.state).toBe("GREEN");
+  });
+
+  it("counts a vehicle with no link as no link, not as its last known state", () => {
+    const data: StateSnapshot = {
+      ...snapshot,
+      vehicles: { uav1: trust("uav1", "GREEN"), uav2: trust("uav2", "GREEN"), uav3: trust("uav3", "RED", "STALE") },
+      links: { uav2: { vehicle_id: "uav2", state: "NO_LINK", last_report_age_s: 5 } },
+    };
+    const s = apply(initialState, ev({ type: "state", server_s: 50, data }));
+    expect(trustCounts(s)).toEqual({ GREEN: 1, AMBER: 0, RED: 1, noLink: 1 });
   });
 
   it("a fresh snapshot replaces the links", () => {

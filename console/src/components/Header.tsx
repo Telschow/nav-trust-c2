@@ -1,19 +1,19 @@
 import clsx from "clsx";
-import { WifiOff } from "lucide-react";
+import { Unlink, WifiOff } from "lucide-react";
 import { formatDuration } from "../language";
 import { TONE } from "../tone";
-import type { TrustState } from "../types";
+import type { FleetCounts } from "../store";
 
 interface Props {
   connected: boolean;
   source: string;
-  counts: Record<TrustState, number>;
+  counts: FleetCounts;
   now: number | null;
 }
 
 export function Header({ connected, source, counts, now }: Props) {
   const live = source === "live";
-  const total = counts.GREEN + counts.AMBER + counts.RED;
+  const total = counts.GREEN + counts.AMBER + counts.RED + counts.noLink;
   return (
     <header className="flex h-11 shrink-0 items-center justify-between gap-4 border-b border-line bg-panel px-4">
       <div className="flex items-baseline gap-3">
@@ -33,6 +33,12 @@ export function Header({ connected, source, counts, now }: Props) {
                     {counts[s]} {s === "GREEN" ? "trusted" : s === "AMBER" ? "degraded" : "not trusted"}
                   </span>
                 ),
+            )}
+            {counts.noLink > 0 && (
+              <span className="flex items-center gap-1.5 text-accent">
+                <Unlink className="size-3" aria-hidden />
+                {counts.noLink} no link
+              </span>
             )}
           </div>
         )}

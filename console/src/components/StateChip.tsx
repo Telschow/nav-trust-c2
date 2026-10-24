@@ -27,7 +27,7 @@ export function StateChip({
         tone.text,
         state === "GREEN" ? "border-ok/40" : state === "AMBER" ? "border-warn/55" : "border-bad/65 bg-bad/12",
         large ? "px-2.5 py-1 text-sm" : "px-2 py-0.5 text-xs",
-        lastKnown && "border-dashed opacity-80",
+        lastKnown && "border-dashed",
       )}
     >
       {lastKnown && <span className="font-normal text-muted">Last known</span>}

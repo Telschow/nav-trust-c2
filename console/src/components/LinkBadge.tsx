@@ -1,7 +1,7 @@
 import { Unlink } from "lucide-react";
 
-/** The backend is not hearing this vehicle. Its own shape, words and colour (the accent, not a
- * trust colour), so it is never mistaken for a trust state. */
+/** The backend is not hearing this vehicle. Its own icon and words, and the accent colour rather
+ * than a trust colour, so it does not read as a trust state. */
 export function LinkBadge() {
   return (
     <span

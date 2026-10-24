@@ -32,7 +32,7 @@ export interface LogEntry {
 export interface LinkInfo {
   state: LinkState;
   /** server_s of the vehicle's last report, so "last heard" can keep counting on the server clock */
-  lastHeard_s: number;
+  lastHeardAt_s: number;
 }
 
 export interface ConsoleState {
@@ -116,20 +116,20 @@ function applyTrust(s: ConsoleState, msg: NavTrust, server_s: number): ConsoleSt
 }
 
 function applyLink(s: ConsoleState, change: LinkStatus, server_s: number): ConsoleState {
-  const silent = formatDuration(change.last_report_age_s);
+  const duration = formatDuration(change.last_report_age_s);
   const next: ConsoleState = {
     ...s,
     links: {
       ...s.links,
       [change.vehicle_id]: {
         state: change.state,
-        lastHeard_s: change.state === "NO_LINK" ? server_s - change.last_report_age_s : server_s,
+        lastHeardAt_s: change.state === "NO_LINK" ? server_s - change.last_report_age_s : server_s,
       },
     },
   };
   return change.state === "NO_LINK"
-    ? withLog(next, server_s, "warn", `${change.vehicle_id} has no link: last heard ${silent} ago`)
-    : withLog(next, server_s, "good", `${change.vehicle_id} link restored after ${silent}`);
+    ? withLog(next, server_s, "warn", `${change.vehicle_id} has no link: last heard ${duration} ago`)
+    : withLog(next, server_s, "good", `${change.vehicle_id} link restored after ${duration}`);
 }
 
 function applyPosition(s: ConsoleState, pos: Position): ConsoleState {
@@ -171,7 +171,7 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
           }
           const links: Record<string, LinkInfo> = {};
           for (const [v, l] of Object.entries(snap.links ?? {})) {
-            links[v] = { state: l.state, lastHeard_s: snap.server_s - l.last_report_age_s };
+            links[v] = { state: l.state, lastHeardAt_s: snap.server_s - l.last_report_age_s };
           }
           return {
             ...base,
@@ -223,6 +223,21 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
 /** The backend has not heard from this vehicle: its trust state is only the last one known. */
 export function isNoLink(s: ConsoleState, vehicleId: string): boolean {
   return s.links[vehicleId]?.state === "NO_LINK";
+}
+
+export interface FleetCounts extends Record<TrustState, number> {
+  /** vehicles the backend cannot hear: not counted under their last known state */
+  noLink: number;
+}
+
+/** How many vehicles are in each trust state now. A vehicle with no link has no state now. */
+export function trustCounts(s: ConsoleState): FleetCounts {
+  const counts: FleetCounts = { GREEN: 0, AMBER: 0, RED: 0, noLink: 0 };
+  for (const [id, trust] of Object.entries(s.vehicles)) {
+    if (isNoLink(s, id)) counts.noLink += 1;
+    else counts[trust.state] += 1;
+  }
+  return counts;
 }
 
 /** Recommendations still waiting for an answer: most urgent first, then oldest first. */
