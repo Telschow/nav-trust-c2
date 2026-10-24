@@ -1,4 +1,4 @@
-"""Link health: a vehicle that goes silent is NO_LINK, and the next report restores it."""
+"""LL-01, link health: a vehicle that goes silent is NO_LINK, and the next report restores it."""
 
 from typing import Any
 

@@ -208,7 +208,7 @@ describe("C2-03: every recommendation the recommender can make is readable and a
   });
 });
 
-describe("link health (issue 73)", () => {
+describe("link health (LL-01, issue 73)", () => {
   const withLinks = (links: NonNullable<StateSnapshot["links"]>): StateSnapshot => ({ ...snapshot, links });
 
   it("loads each vehicle's link from the snapshot and works out when it was last heard", () => {

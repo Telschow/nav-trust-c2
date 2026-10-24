@@ -1,4 +1,4 @@
-"""The server sweeps the hub on a timer, so a fleet that went completely silent is noticed."""
+"""LL-01: the server sweeps the hub on a timer, so a completely silent fleet is noticed."""
 
 import time
 
