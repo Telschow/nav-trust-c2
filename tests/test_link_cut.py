@@ -51,52 +51,70 @@ def free_port() -> int:
         return int(s.getsockname()[1])
 
 
-def udp_socket(port: int) -> socket.socket:
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.bind((HOST, port))
-    s.setblocking(False)
-    return s
+class Inbox(asyncio.DatagramProtocol):
+    """A UDP endpoint that queues what it receives. Plain asyncio, so it works on uvloop too
+    (which has no `sock_recvfrom`)."""
+
+    def __init__(self) -> None:
+        self.queue: asyncio.Queue[tuple[bytes, tuple[str, int]]] = asyncio.Queue()
+        self.transport: asyncio.DatagramTransport | None = None
+
+    def connection_made(self, transport: asyncio.BaseTransport) -> None:
+        self.transport = transport  # type: ignore[assignment]
+
+    def datagram_received(self, data: bytes, addr: tuple[str, int]) -> None:
+        self.queue.put_nowait((data, addr))
+
+    def send(self, data: bytes, to: tuple[str, int]) -> None:
+        assert self.transport is not None
+        self.transport.sendto(data, to)
+
+    def close(self) -> None:
+        if self.transport is not None:
+            self.transport.close()
 
 
-async def received(
-    sock: socket.socket, wait_s: float = 1.0
-) -> tuple[bytes, tuple[str, int]] | None:
+async def endpoint(port: int) -> Inbox:
+    inbox = Inbox()
+    await asyncio.get_running_loop().create_datagram_endpoint(
+        lambda: inbox, local_addr=(HOST, port)
+    )
+    return inbox
+
+
+async def received(inbox: Inbox, wait_s: float = 1.0) -> tuple[bytes, tuple[str, int]] | None:
     try:
-        data, addr = await asyncio.wait_for(
-            asyncio.get_running_loop().sock_recvfrom(sock, 2048), wait_s
-        )
+        return await asyncio.wait_for(inbox.queue.get(), wait_s)
     except TimeoutError:
         return None
-    return data, addr
 
 
 def test_the_relay_carries_both_directions_drops_both_when_cut_and_resumes() -> None:
     async def scenario() -> list[object]:
         px4_listen, px4_remote, script_port = free_port(), free_port(), free_port()
-        px4 = udp_socket(px4_remote)  # PX4's local port: it sends to px4_listen
-        script = udp_socket(script_port)  # MAVSDK's udpin port
+        px4 = await endpoint(px4_remote)  # PX4's local port: it sends to px4_listen
+        script = await endpoint(script_port)  # MAVSDK's udpin port
         relay = UdpRelay(px4_listen, px4_remote, script_port)
         await relay.start()
-        loop = asyncio.get_running_loop()
         seen: list[object] = []
         try:
             # downlink: PX4 to the script; the script answers the address it saw
-            await loop.sock_sendto(px4, b"telemetry", (HOST, px4_listen))
+            px4.send(b"telemetry", (HOST, px4_listen))
             down = await received(script)
             seen.append(down and down[0])
             assert down is not None
-            await loop.sock_sendto(script, b"command", down[1])
+            script.send(b"command", down[1])
             up = await received(px4)
             seen.append(up and up[0])
 
             relay.cut()
-            await loop.sock_sendto(px4, b"telemetry-2", (HOST, px4_listen))
-            await loop.sock_sendto(script, b"command-2", down[1])
+            px4.send(b"telemetry-2", (HOST, px4_listen))
+            script.send(b"command-2", down[1])
             seen.append(await received(script, 0.3))
             seen.append(await received(px4, 0.3))
 
             relay.restore()
-            await loop.sock_sendto(px4, b"telemetry-3", (HOST, px4_listen))
+            px4.send(b"telemetry-3", (HOST, px4_listen))
             again = await received(script)
             seen.append(again and again[0])
         finally:
@@ -143,26 +161,25 @@ def test_the_driver_cuts_and_restores_the_relay_and_logs_each_once() -> None:
 def test_an_uplink_only_cut_drops_commands_but_the_recorder_still_hears_the_vehicle() -> None:
     async def scenario() -> list[object]:
         px4_listen, px4_remote, script_port = free_port(), free_port(), free_port()
-        px4 = udp_socket(px4_remote)
-        script = udp_socket(script_port)
+        px4 = await endpoint(px4_remote)
+        script = await endpoint(script_port)
         relay = UdpRelay(px4_listen, px4_remote, script_port)
         await relay.start()
-        loop = asyncio.get_running_loop()
         seen: list[object] = []
         try:
-            await loop.sock_sendto(px4, b"telemetry", (HOST, px4_listen))
+            px4.send(b"telemetry", (HOST, px4_listen))
             first = await received(script)
             assert first is not None
 
             relay.cut("uplink")
-            await loop.sock_sendto(px4, b"telemetry-2", (HOST, px4_listen))
+            px4.send(b"telemetry-2", (HOST, px4_listen))
             during = await received(script)  # the failsafe stays visible in the recording
             seen.append(during and during[0])
-            await loop.sock_sendto(script, b"heartbeat", first[1])
+            script.send(b"heartbeat", first[1])
             seen.append(await received(px4, 0.3))  # PX4 hears no ground station
 
             relay.restore()
-            await loop.sock_sendto(script, b"heartbeat-2", first[1])
+            script.send(b"heartbeat-2", first[1])
             after = await received(px4)
             seen.append(after and after[0])
         finally:
