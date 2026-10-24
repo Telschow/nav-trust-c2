@@ -15,8 +15,9 @@ engine), link health (does the backend still hear the vehicle) and operator avai
 decision be made in time). Terms are defined in `GLOSSARY.md`.
 
 The evidence that matters is ADR 0003. With a frozen GNSS position no PX4 failsafe fires, and
-the vehicle runs away: 5320 m from its start with no action, against 450 m with LAND, which
-put it on the ground 9 s after the command. HOLD and RTL ended in fast uncontrolled descents.
+the vehicle runs away: 5320 m from its start (farthest point at the 220 s cut-off) with no
+action, against 450 m with LAND, which put it on the ground 9 s after the command. HOLD and RTL
+reached the ground at 31.7 and 24.6 m/s horizontal speed.
 That is one run per action in one simulator (issue 81 adds more).
 
 The cases, as a contingency matrix (rows are a proposal):

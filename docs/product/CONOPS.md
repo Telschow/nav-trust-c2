@@ -31,7 +31,8 @@ operator has nothing to decide.
 2. The row goes AMBER about 1.2 s later ("GNSS signal lost or degraded"), then RED about 6.3 s
    after the loss. The position bound becomes "unknown".
 3. PX4 lets the vehicle dead-reckon, then raises its own blind-land failsafe and lands it inside
-   the zone (it does so several seconds after the loss; the timing was not measured exactly).
+   the zone (descent began about 5 s after the loss and the vehicle was on the ground about 45 s after it, in 2
+   of 2 runs; see `docs/validation/px4-lost-link-parameters.md`).
 4. The recommender raises one recommendation: move sector 3 to a trusted vehicle. There is no
    vehicle command to recommend, because PX4 is already landing it.
 5. The operator reads what approving will do, approves, and the sector moves. The recommendation
@@ -46,11 +47,11 @@ operator has nothing to decide.
    within a few metres of where it thinks it is. The row goes RED, "GNSS position disagrees with
    the vehicle's own sensors", with an urgent warning.
 4. The recommendation is **LAND**, plus moving the vehicle's sector. Without an action the vehicle
-   was about 1.4 km from its start 60 s after the fault and 5.3 km after 220 s, in the recorded
-   experiment.
-5. Approved 15 s after the fault, LAND put the vehicle on the ground within 9 s, 450 m from its
-   start. HOLD and RTL, tried the same way, ended in fast uncontrolled descents hundreds of metres
-   away (one run each).
+   was about 1.4 km from its start 60 s after the fault and 5.3 km at the 220 s cut-off of the recording
+   (farthest point, one run, a lower bound).
+5. Approved 15 s after the fault, LAND put the vehicle on the ground within 9 s, stopped; the farthest
+   it got from its start was 450 m. HOLD and RTL, tried the same way, reached the ground at 31.7 and
+   24.6 m/s horizontal speed, 614 and 414 m at the farthest (one run each).
 
 ## Vignette C: a frozen position while the link is down (proposed, not built)
 
@@ -87,8 +88,9 @@ a vehicle fly somewhere, change a mission by hand, or bypass the gate. v1 does n
 ## Assumptions and limits
 
 Simulation only (PX4 SITL in Gazebo, one vehicle model, 5 to 12 m/s). The faults are PX4's own
-GPS failure injection. The timings above are from a handful of runs (2 to 4 per scenario). The
-operator is assumed to be present and able to act within about a minute.
+GPS failure injection. The timings above are from a handful of runs (2 to 4 per scenario). With the link up, the
+operator is assumed to be present and able to act within about a minute. With the link down, no
+operator is assumed; only a contingency approved before the mission applies (ADR 0004, not built).
 
 ## What changed from the first CONOPS
 

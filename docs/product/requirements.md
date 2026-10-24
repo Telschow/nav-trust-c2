@@ -19,7 +19,7 @@ PX4's own GPS failure model). Nothing in it says anything about real receivers o
 | C2-03 | Every alert shall show a reason code an operator can act on | UI test, review checklist | partial | Review done (`docs/validation/c2-03-review.md`) and tested for every recommendation the recommender can make; one gap fixed. Whether an operator acts on it is not shown: round 1 participants did not act unaided; round 2 pending |
 | UX-01 | The operator can see all vehicles' trust states without scrolling at 1080p | manual check, screenshot | met | Measured at 1920 x 1080 with 5 vehicles and the decision band showing: each row is 189 px and the fleet panel does not scroll. The spec says 3 to 5 vehicles |
 | LL-01 | A vehicle whose reports have stopped for longer than the link timeout shall be shown as NO LINK, with its last trust state marked as last known and its age (proposal, M5a, issue 73) | unit tests with a fake clock | gap | Not built. Proposed by Claude on 2026-10-24 for the maintainer to accept or change |
-| LL-02 | With the link down, a vehicle shall act only within a contingency policy the operator approved before the mission, and only with LAND (proposal, M5b, issue 76, pending ADR 0004) | unit tests and the `link_and_frozen` scenario | gap | Not built. ADR 0004 accepted 2026-10-24. Proposed by Claude |
+| LL-02 | With the link down, a vehicle shall act only within a contingency policy the operator approved before the mission, and only with LAND (proposal, M5b, issue 76, ADR 0004) | unit tests and the `link_and_frozen` scenario | gap | Not built. ADR 0004 accepted 2026-10-24. Proposed by Claude |
 | LL-03 | Every vehicle action shall be recorded with the authority it ran under: live approval, contingency or PX4 failsafe (proposal, M5b, issue 75) | audit log check in the eval table | gap | Not built. Proposed by Claude on 2026-10-24 |
 
 ## Success metrics (spec section 1.5)
@@ -39,7 +39,7 @@ PX4's own GPS failure model). Nothing in it says anything about real receivers o
   epochs, which is 99%. The calibrated bound is 3.0 m at a claimed 99%, which meets both. A 95% bound
   would be 2.5 m.
 - **The spec's CONOPS recommends "RTL via dead reckoning corridor" for a drifting vehicle.** For a
-  frozen position, ground truth showed that RTL (and HOLD) end in a fast uncontrolled descent and
+  frozen position, ground truth showed that RTL (and HOLD) reached the ground at 24.6 (31.7) m/s horizontal speed and
   only LAND stopped the vehicle safely (ADR 0003, one run each).
 - **ROS 2 and uXRCE-DDS are not used.** The spec allows the fallback to MAVSDK only; recordings are
   JSON lines and not ROS 2 bags.

@@ -15,7 +15,8 @@ When satellite navigation degrades, a drone's own estimator can keep reporting a
 unwarranted confidence, and the operator reacts late or not at all. Nav-Trust C2 watches each
 vehicle's navigation, marks it GREEN, AMBER or RED with a reason in plain language, shows how far the
 position can be off, and recommends what to do. It never acts on its own: every command waits for
-the operator's approval and is written to an audit log.
+the operator's approval and is written to an audit log. A contingency approved in advance for
+the lost-link case is planned (ADR 0004, not built).
 
 In simulation, it raised an alert a median of 1.2 seconds after satellite navigation was switched
 off, with no false alerts in nine fault-free runs. For one dangerous failure, a receiver that keeps
@@ -23,8 +24,6 @@ reporting a good fix while its position freezes, the vehicle accelerates away an
 Nav-Trust C2 flagged it within 3 to 4.5 seconds, while the vehicle was still within a few metres of
 where it believed it was, and recommended landing it, the only action that stopped the vehicle
 safely in the tests.
-
-"I honstely could not believe the results..."
 
 The position it displays is not the estimator's own figure, which was wrong far more often than it
 claimed. It is a bound measured against the simulator's ground truth: within 3 metres in 99% of
@@ -39,7 +38,7 @@ simulator, on recorded data, and labels it as a replay.
 
 **Who is it for?** An operator supervising three to five small survey drones, a commander who wants
 the fleet picture, and an engineer who needs to reproduce incidents. These are hypotheses; no
-operator has been interviewed yet.
+operator has been interviewed yet. The two round-1 usability participants were not operators.
 
 **Does it fly the drones?** No. The drones fly their missions and run their own failsafes. The
 console recommends; the operator approves; only then does a command go out. A test enforces that
@@ -58,8 +57,8 @@ held-out set). It holds for this simulator, this vehicle and 5 to 12 m/s. It say
 again while the vehicle is still RED. The vehicle's own failsafes act regardless.
 
 **Why recommend landing, not returning home?** Because it was tested. With a frozen position the
-vehicle does not know where it is, so return-to-launch and hold ended in fast, uncontrolled
-descents hundreds of metres off; landing stopped it. One run per action, so this shows what is
+vehicle does not know where it is, so return-to-launch and hold reached the ground at 24.6 and
+31.7 m/s horizontal speed, 414 and 614 m from the start; landing stopped it (2.9 m/s). One run per action, so this shows what is
 possible, not how often.
 
 **What did you test, and what did you not?** 32 simulated runs across five kinds of scenario (one
