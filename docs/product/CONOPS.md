@@ -52,14 +52,31 @@ operator has nothing to decide.
    start. HOLD and RTL, tried the same way, ended in fast uncontrolled descents hundreds of metres
    away (one run each).
 
+## Vignette C: a frozen position while the link is down (proposed, not built)
+
+Proposed for M5 and pending ADR 0004. Nothing here has been measured.
+
+1. Before the mission the operator approves a contingency policy: if a vehicle's position is
+   inconsistent and the link has been down for longer than the policy's wait time, it lands.
+   The approval is recorded in the audit log.
+2. A vehicle's receiver freezes while its link to the backend is down. No PX4 failsafe fires for
+   the frozen position, and the backend cannot recommend anything because it cannot reach the
+   vehicle.
+3. The console shows the vehicle as NO LINK with its last trust state marked as last known.
+4. The vehicle's onboard trust monitor sees the position inconsistency and, because it matches
+   the approved policy, lands the vehicle.
+5. When the link returns, the vehicle reports what it did and under which approval, and the
+   console shows it. No decision made before the outage is replayed.
+
 ## What happens when things go wrong
 
 | Situation | Behaviour |
 |---|---|
 | Operator does not answer | The recommendation expires after 60 s and is raised again while the vehicle stays RED. PX4's failsafes still act. |
 | Data stops arriving | The vehicle goes AMBER (stale) after 3 s and RED after 5 more |
+| Link lost, vehicle still reporting nothing (proposed, M5) | NO LINK after the link timeout, last trust state shown as last known with its age; no command is proposed to that vehicle, but its sector can be re-assigned |
 | Backend down | The console shows DISCONNECTED and the last known state. Vehicles keep flying on their own. Not tested beyond that |
-| Link between console and vehicle lost | **Not modelled** (a stretch goal) |
+| Link between console and vehicle lost | **Not modelled in v1.** Proposed for M5, see vignette C |
 | Approved command fails | The failure is audited, the sector assignment is restored, the approval is spent |
 
 ## What the operator decides, and what they cannot
