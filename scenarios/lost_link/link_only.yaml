@@ -1,0 +1,14 @@
+name: link_only
+class: link_loss
+description: >
+  The survey flown with healthy GNSS. The MAVLink link between the vehicle and the ground
+  station is cut 40 s after the mission starts, in both directions, and never returns.
+  Baseline for the lost-link work (issue 74). Not part of the main eval set.
+expected_px4: >
+  Proposal, to be checked by the recording: PX4's data-link-loss failsafe (NAV_DLL_ACT = Return)
+  enters after COM_DL_LOSS_T (10 s) plus the COM_FAIL_ACT_T hold (5 s), and the vehicle flies
+  home and lands.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+link_cut: {after: mission_start, delay_s: 40}
+runs: 2
+max_duration_s: 300

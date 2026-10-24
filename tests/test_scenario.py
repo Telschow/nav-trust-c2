@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from sim.run_scenario import record_argv
 from sim.scenario import load_all, load_scenario, parse_scenario
 
 SCENARIOS = Path(__file__).parent.parent / "scenarios"
@@ -150,3 +151,103 @@ def test_listing_and_bad_arguments(capsys: pytest.CaptureFixture[str]) -> None:
         main(["nope", "--scenarios", str(SCENARIOS)])
     with pytest.raises(SystemExit):
         main(["nominal", "--run", "9", "--scenarios", str(SCENARIOS)])
+
+
+def link_loss() -> dict[str, object]:
+    return {**base(), "class": "link_loss", "link_cut": {"after": "mission_start", "delay_s": 40}}
+
+
+def test_a_link_cut_after_the_mission_starts_needs_no_gnss_fault() -> None:
+    s = parse_scenario(link_loss())
+    assert s.fault is None
+    assert s.link_cut is not None
+    assert (s.link_cut.after, s.link_cut.delay_s, s.link_cut.duration_s) == (
+        "mission_start",
+        40.0,
+        None,  # the link never comes back
+    )
+
+
+def test_a_link_cut_can_be_timed_from_the_gnss_fault_and_can_end() -> None:
+    fault = {
+        "mode": "stuck",
+        "latch": True,
+        "zone": {"west": 1, "south": -1, "east": 2, "north": 2},
+    }
+    data = {
+        **link_loss(),
+        "fault": fault,
+        "link_cut": {"after": "fault_start", "delay_s": 5, "duration_s": 20},
+    }
+    s = parse_scenario(data)
+    assert s.fault is not None and s.link_cut is not None
+    assert (s.link_cut.after, s.link_cut.delay_s, s.link_cut.duration_s) == (
+        "fault_start",
+        5.0,
+        20.0,
+    )
+
+
+@pytest.mark.parametrize(
+    "bad",
+    [
+        {"after": "tomorrow", "delay_s": 1},
+        {"after": "mission_start", "delay_s": -1},
+        {"after": "mission_start", "delay_s": 1, "duration_s": 0},
+        {"after": "fault_start", "delay_s": 1},  # no GNSS fault to time it from
+    ],
+)
+def test_a_bad_link_cut_is_refused(bad: dict[str, object]) -> None:
+    with pytest.raises(ValueError, match="link_cut"):
+        parse_scenario({**link_loss(), "link_cut": bad})
+
+
+def test_the_link_loss_class_needs_a_link_cut_and_nothing_else_may_have_one() -> None:
+    with pytest.raises(ValueError, match="link_cut"):
+        parse_scenario({**base(), "class": "link_loss"})
+    with pytest.raises(ValueError, match="link_cut"):
+        parse_scenario({**base(), "link_cut": {"after": "mission_start", "delay_s": 1}})
+
+
+def test_a_link_cut_is_passed_on_to_the_recorder() -> None:
+    s = parse_scenario(
+        {**link_loss(), "link_cut": {"after": "mission_start", "delay_s": 40, "duration_s": 20}}
+    )
+    argv = record_argv(s, 1, Path("out"))
+    i = argv.index("--link-cut-after")
+    assert argv[i : i + 6] == [
+        "--link-cut-after",
+        "mission_start",
+        "--link-cut-delay",
+        "40.0",
+        "--link-cut-duration",
+        "20.0",
+    ]
+
+
+def test_a_link_that_never_returns_passes_no_duration() -> None:
+    argv = record_argv(parse_scenario(link_loss()), 1, Path("out"))
+    assert "--link-cut-duration" not in argv
+
+
+def test_a_scenario_without_a_link_cut_passes_no_link_flags() -> None:
+    argv = record_argv(parse_scenario(base()), 1, Path("out"))
+    assert not any(a.startswith("--link-cut") for a in argv)
+
+
+def test_the_two_lost_link_baselines_load_and_stay_out_of_the_main_eval_set() -> None:
+    lost_link = {s.name: s for s in load_all(SCENARIOS / "lost_link")}
+    assert set(lost_link) == {"link_only", "link_and_frozen"}
+    assert {s.name for s in load_all(SCENARIOS)}.isdisjoint(lost_link)  # `make eval` ignores them
+
+    only = lost_link["link_only"]
+    assert (
+        only.fault is None and only.link_cut is not None and only.link_cut.after == "mission_start"
+    )
+
+    frozen = lost_link["link_and_frozen"]
+    assert frozen.fault is not None and frozen.fault.mode == "stuck" and frozen.fault.latch
+    assert frozen.link_cut is not None and frozen.link_cut.after == "fault_start"
+    # the cut comes after the freeze, shortly: the onboard monitor has to beat PX4's RTL
+    assert 0 < frozen.link_cut.delay_s <= 10
+    assert all(s.link_cut and s.link_cut.duration_s is None for s in lost_link.values())
