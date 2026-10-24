@@ -54,7 +54,7 @@ operator has nothing to decide.
 
 ## Vignette C: a frozen position while the link is down (proposed, not built)
 
-Proposed for M5 and pending ADR 0004. Nothing here has been measured.
+Proposed for M5 under ADR 0004 (accepted). Not built; nothing here has been measured.
 
 1. Before the mission the operator approves a contingency policy: if a vehicle's position is
    inconsistent and the link has been down for longer than the policy's wait time, it lands.
