@@ -7,6 +7,7 @@ log; a rejected decision attempt is logged too.
 from __future__ import annotations
 
 from collections.abc import Callable
+from enum import StrEnum
 from typing import Any
 
 from c2.audit import AuditLog
@@ -21,6 +22,13 @@ from c2.messages import (
 from navtrust.types import NavTrust
 
 Event = dict[str, Any]
+
+
+class LinkState(StrEnum):
+    """Whether the backend is hearing a vehicle. Says nothing about its navigation."""
+
+    LINK_OK = "LINK_OK"
+    NO_LINK = "NO_LINK"
 
 
 class HubError(Exception):
@@ -54,10 +62,17 @@ class DuplicateRecommendation(HubError):
 
 
 class Hub:
-    def __init__(self, audit: AuditLog, clock: Callable[[], float]) -> None:
+    def __init__(
+        self, audit: AuditLog, clock: Callable[[], float], link_timeout_s: float = 2.0
+    ) -> None:
+        """link_timeout_s: a vehicle silent for longer than this is NO_LINK (proposal: four report
+        intervals at the default 0.5 s feed rate). The server's own clock, not the feed's."""
         self._audit = audit
         self.audit = audit
         self._clock = clock
+        self._link_timeout_s = link_timeout_s
+        self._last_report_s: dict[str, float] = {}
+        self._link: dict[str, LinkState] = {}
         self._trust: dict[str, NavTrust] = {}
         self._recs: dict[str, Recommendation] = {}
         self._decisions: dict[str, Decision] = {}
@@ -84,6 +99,7 @@ class Hub:
         # that expired unanswered (and lets the recommender issue them again). Without it nothing
         # would ever mark them expired unless a client happened to ask for the state.
         self.sweep()
+        self._note_report(msg.vehicle_id)
         previous = self._trust.get(msg.vehicle_id)
         self._trust[msg.vehicle_id] = msg
         if previous is None or (previous.state, previous.reason) != (msg.state, msg.reason):
@@ -104,6 +120,7 @@ class Hub:
         """Latest position for the map. High rate, so it is published but not audited."""
         if not (-90 <= lat_deg <= 90 and -180 <= lon_deg <= 180):
             raise ValueError("latitude or longitude out of range")
+        self._note_report(vehicle_id)
         pos = {"lat_deg": lat_deg, "lon_deg": lon_deg, "alt_m": alt_m, "stamp_s": self._clock()}
         self._positions[vehicle_id] = pos
         self._publish({"type": "position", "data": {"vehicle_id": vehicle_id, **pos}})
@@ -174,8 +191,12 @@ class Hub:
         return decision
 
     def sweep(self) -> list[Decision]:
-        """Mark recommendations past their expiry as EXPIRED (once). Returns the new ones."""
+        """Mark vehicles silent past the timeout NO_LINK, and recommendations past their expiry
+        EXPIRED (each once). Returns the newly expired decisions."""
         now = self._clock()
+        for vehicle_id, last_s in self._last_report_s.items():
+            if self._link[vehicle_id] is LinkState.LINK_OK and self._is_silent(now - last_s):
+                self._set_link(vehicle_id, LinkState.NO_LINK, now - last_s)
         expired = []
         for rec in self._recs.values():
             if rec.id not in self._decisions and now > rec.expires_s:
@@ -183,6 +204,48 @@ class Hub:
                 self._record(decision, rec.vehicle_id)
                 expired.append(decision)
         return expired
+
+    def _note_report(self, vehicle_id: str) -> None:
+        """Any report from a vehicle (trust or position) counts as hearing from it."""
+        now = self._clock()
+        silence_s = now - self._last_report_s.get(vehicle_id, now)
+        self._link.setdefault(vehicle_id, LinkState.LINK_OK)
+        if self._link[vehicle_id] is LinkState.LINK_OK and self._is_silent(silence_s):
+            self._set_link(vehicle_id, LinkState.NO_LINK, silence_s)  # an outage nobody swept
+        self._last_report_s[vehicle_id] = now
+        if self._link[vehicle_id] is LinkState.NO_LINK:
+            self._set_link(vehicle_id, LinkState.LINK_OK, silence_s)
+
+    def _is_silent(self, age_s: float) -> bool:
+        """Strictly older than the timeout: a report exactly at the limit is still a live link."""
+        return age_s > self._link_timeout_s
+
+    def _set_link(self, vehicle_id: str, state: LinkState, last_report_age_s: float) -> None:
+        """Record a link change. last_report_age_s: how old the vehicle's last report was when this
+        happened, so for LINK_OK it is the length of the silence that just ended."""
+        previous = self._link[vehicle_id]
+        self._link[vehicle_id] = state
+        self._audit.append(
+            self._clock(),
+            "link_change",
+            vehicle_id,
+            {
+                "state": state,
+                "previous_state": previous,
+                "last_report_age_s": last_report_age_s,
+                "link_timeout_s": self._link_timeout_s,
+            },
+        )
+        self._publish(
+            {
+                "type": "link",
+                "data": {
+                    "vehicle_id": vehicle_id,
+                    "state": state,
+                    "last_report_age_s": last_report_age_s,
+                },
+            }
+        )
 
     def _record(self, decision: Decision, vehicle_id: str) -> None:
         self._decisions[decision.recommendation_id] = decision
@@ -193,12 +256,21 @@ class Hub:
 
     def state(self) -> dict[str, Any]:
         self.sweep()
+        now = self._clock()
         return {
-            "server_s": self._clock(),
+            "server_s": now,
             "source": self._source,
             "origin": self._origin,
             "positions": {v: {"vehicle_id": v, **p} for v, p in sorted(self._positions.items())},
             "vehicles": {v: navtrust_to_dict(m) for v, m in sorted(self._trust.items())},
+            "links": {
+                v: {
+                    "vehicle_id": v,
+                    "state": self._link[v],
+                    "last_report_age_s": now - self._last_report_s[v],
+                }
+                for v in sorted(self._link)
+            },
             "open_recommendations": [
                 recommendation_to_dict(r)
                 for r in self._recs.values()
