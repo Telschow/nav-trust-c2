@@ -1,6 +1,6 @@
 # Research: authority under lost link
 
-Prepared 2026-10-24 for ADR 0004. All sources accessed 2026-10-24. Public, unclassified, non-weapon material only. Quotes are from the owner's page or file; anything not fetched is listed under gaps.
+First pass 2026-10-24, extended the same day with defence primary sources. All sources accessed 2026-10-24. Public, unclassified, non-weapon material only. Quotes are from the owner's page or file; anything not read from the owner is listed under gaps and not used.
 
 ## Question
 
@@ -8,76 +8,82 @@ What do public defence and uncrewed-systems practice say a vehicle may do on its
 
 ## Short answer
 
-- Every source reached treats lost-link behaviour as something decided before flight and carried out onboard, not something the operator decides at the moment of loss. This is option 2 in spirit; PX4 and ArduPilot are option 1 as shipped.
-- Autopilot failsafes are blunt: a timer, then one configured action (hold, return, land, disarm, terminate). They key on link silence or position-estimate validity, not on position plausibility.
-- Aviation guidance (EASA/JARUS SORA, ICAO, RTCA, NASA) sizes the pre-planned action by a decision time plus time to execute, and stresses predictability to others over cleverness.
-- After recovery, both autopilots stay in the failsafe state; the operator takes the vehicle back explicitly. Nothing replays old commands.
-- Recording and auditing of delegated authority is thinly covered in public sources. The only direct hit is a CAA proposal for a periodic link-status log. ADR 0004's id-and-hash approval row has no public precedent to copy, and none to contradict.
-- Not verified: DoDD 3000.09 text, RTCA DO-400 text, STANAG documents, PX4 "blind land" behaviour.
+- Every source read treats the lost-link action as decided before flight and run onboard: PX4 and ArduPilot parameters, the FAA/DoD air traffic procedure, SORA contingency procedures, the NASA study. This is option 2 in spirit. The autopilots as shipped are option 1. No source uses option 3.
+- The US procedure that DoD air traffic facilities apply says the lost-link procedure is "programmed into the flight management system", is looked up from the airworthiness certificate or the authorisation, and is not decided at the time of loss. That is a pre-authorisation recorded in a document the controller can retrieve.
+- PX4 does not catch a plausible but wrong position. Its "blind land" is a last-resort in the position controller that fires when the velocity estimate is not finite. It does not fire for a frozen fix. PX4's data-link action is `Disabled` by default, so the ADR's "PX4 data-link-loss failsafe" row holds only if the simulation sets it.
+- After the link returns, ArduPilot stays in the failsafe mode, and PX4 Hold clears only on a mode change. Nothing replays old commands.
+- Defence sources add little beyond the civil ones that could be read. DoDD 3000.09, the STANAGs, and Army and Air Force lost-link documents returned HTTP 403 and are not used.
+- No public source describes how delegated authority is hashed, bounded in age, or audited. ADR 0004's mechanism has no public precedent found.
 
 ## Findings
 
 ### 1. Autopilot failsafes: what runs with no operator
 
-- PX4 data link loss fires "if the connection to the last MAVLink ground station like QGroundControl is lost". `COM_DL_LOSS_T` is the time after loss before it triggers; `NAV_DLL_ACT` selects "Disabled, Hold mode, Return mode, Land mode, Disarm, Terminate". [PX4 safety docs](https://docs.px4.io/main/en/config/safety.html), 2026-10-24.
-- PX4 orders failsafe actions "in increasing severity" (warning, hold, return, land, disarm, terminate) and "If multiple failsafes are triggered, the more severe action is taken." Same page. This supports ADR 0004's rule that the contingency's LAND overrides RTL, but only if the project's monitor is the thing raising the severity; PX4 itself does not know the position is inconsistent.
-- PX4 position loss fires when "the position estimate becomes invalid", with fallback Return, then Land, then Descend if no position estimate exists. Same page. A frozen but "valid" fix does not meet this, which matches ADR 0003.
-- PX4 v1.18 adds a GNSS check failsafe (fix count below `SYS_HAS_NUM_GNSS`, or divergence between two receivers) with `COM_GNSSLOSS_ACT`, default warning only. Same page. Needs two receivers; the repo's simulated vehicle should be checked for this (see suggestions).
-- PX4 source: GCS-loss failsafe is skipped when the user's intended mode is Land or Precision Land, or the vehicle is disarmed; Hold clears on mode change or disarm, Terminate never clears. [failsafe.cpp, main](https://raw.githubusercontent.com/PX4/PX4-Autopilot/main/src/modules/commander/failsafe/failsafe.cpp), 2026-10-24. No explicit return-of-link clearing for the GCS failsafe appeared in that file; `checkFailsafe()` was not in the fetched text. Treat reconnection behaviour in PX4 as partly unverified.
-- ArduPilot GCS failsafe fires when no heartbeat arrives for `FS_GCS_TIMEOUT` seconds (default 5). Actions: RTL (Land if GPS unusable), SmartRTL, Land, DO_LAND_START mission sequence, Brake, or continue the mission via `FS_OPTIONS`. It never fires if no GCS has ever connected. [ArduPilot GCS failsafe](https://ardupilot.org/copter/docs/gcs-failsafe.html), 2026-10-24.
-- ArduPilot after recovery: "If the GCS reconnects, the copter stays in the failsafe mode"; the pilot must change mode. Same page.
-- MAVLink does not define the response to heartbeat loss. It suggests 1 Hz heartbeats and treating a peer as disconnected after "four or five messages are not received", and says the rate and tolerance are "not defined by MAVLink". [MAVLink heartbeat service](https://mavlink.io/en/services/heartbeat.html), 2026-10-24. So `NO_LINK` timing is the project's to define.
+- PX4 data link loss fires when the connection to the last MAVLink ground station is lost. `COM_DL_LOSS_T` is the threshold: "After this amount of seconds without datalink, the GCS connection lost mode triggers", default 10, min 5, max 300. `NAV_DLL_ACT` selects the action, default 0 (Disabled), with Hold, Return, Land, Terminate and Disarm as the other values. [PX4 commander_params.yaml, main](https://raw.githubusercontent.com/PX4/PX4-Autopilot/main/src/modules/commander/commander_params.yaml); [PX4 safety docs](https://docs.px4.io/main/en/config/safety.html), both 2026-10-24. These are values on `main`, not on the repo's pinned commit.
+- `COM_DLL_EXCEPT` (default 0) lists modes in which GCS loss is ignored. Source: the failsafe is also skipped when the intended mode is Land or Precision Land, or the vehicle is disarmed. [failsafe.cpp, main](https://raw.githubusercontent.com/PX4/PX4-Autopilot/main/src/modules/commander/failsafe/failsafe.cpp), 2026-10-24.
+- PX4 orders actions "in increasing severity" and "If multiple failsafes are triggered, the more severe action is taken." By default most failsafes enter Hold "for COM_FAIL_ACT_T seconds" first; `COM_FAIL_ACT_T` default 5.0 s, range 0 to 25. [PX4 safety docs](https://docs.px4.io/main/en/config/safety.html); [yaml](https://raw.githubusercontent.com/PX4/PX4-Autopilot/main/src/modules/commander/commander_params.yaml), 2026-10-24. Whether that hold applies to the data-link failsafe was not confirmed.
+- PX4 position loss fires "if the position estimate becomes invalid", falling back Return, Land, then Descend. `COM_POS_FS_ACT` default 0 (Descend). Low accuracy (`COM_POS_FS_EPH`, default 5.0 m) uses `COM_POS_LOW_ACT`, default 3 (Return), and "is only executed if the vehicle is in auto mission or auto loiter mode". Same sources. A frozen fix that stays valid and accurate triggers neither, matching ADR 0003.
+- PX4 GNSS loss: `COM_GNSSLOSS_ACT` default 0 (Warning); 1 Return, 2 Land, 3 Terminate. The docs tie detection to fix count and two-receiver divergence. `SYS_HAS_NUM_GNSS` is referenced there but its default was not found in the file read. Same sources.
+- "Blind land" is confirmed in PX4 source. In the multicopter position controller, if the horizontal velocity estimate is not finite the failsafe setpoint is "descend with land speed since we can't stop" at `MPC_LAND_SPEED`, with the warning "Failsafe: blind land". If the vertical velocity is invalid it does an "emergency descend". [MulticopterPositionControl.cpp, main](https://raw.githubusercontent.com/PX4/PX4-Autopilot/main/src/modules/mc_pos_control/MulticopterPositionControl.cpp), 2026-10-24. The only timeout in that file is a 200 ms fallback to the last setpoint. The file does not say how long a GNSS outage lasts before the velocity estimate goes invalid; that comes from the estimator and is not shown in the PX4 docs read. The CLAUDE.md figure ("a few seconds") is therefore not confirmed from an owner source.
+- PX4 `NAV_RCL_ACT` text: "If Hold cannot be entered (e.g. without a valid position estimate), the normal failsafe takes over". Same yaml.
+- PX4 clear conditions in source: Hold, Return and Land for GCS loss and GNSS loss clear on mode change or disarm; Terminate never clears; low-accuracy actions clear when the condition clears. [failsafe.cpp](https://raw.githubusercontent.com/PX4/PX4-Autopilot/main/src/modules/commander/failsafe/failsafe.cpp), 2026-10-24. `checkFailsafe()` was not in the fetched text, so the exact return-of-link behaviour is partly unverified.
+- ArduPilot GCS failsafe fires with no heartbeat for `FS_GCS_TIMEOUT` (default 5 s); actions include RTL (Land if GPS unusable), SmartRTL, Land, DO_LAND_START, Brake, or continue the mission via `FS_OPTIONS`. It never fires if no GCS has ever connected. "If the GCS reconnects, the copter stays in the failsafe mode." [ArduPilot GCS failsafe](https://ardupilot.org/copter/docs/gcs-failsafe.html), 2026-10-24.
+- MAVLink leaves heartbeat-loss behaviour undefined; it suggests 1 Hz and "four or five messages are not received". [MAVLink heartbeat service](https://mavlink.io/en/services/heartbeat.html), 2026-10-24.
 
-### 2. Pre-planned lost-link procedures in aviation
+### 2. Pre-planned lost-link procedures
 
-- EASA SORA 2.5 training slides separate normal operation, an abnormal situation handled by "contingency procedures (return home, manual control, land on a pre-determined site etc.)", and an emergency (loss of control of the operation) handled by emergency procedures ("land asap or activation of FTS") plus an emergency response plan. [EASA SORA slides, dated 6 March 2023](https://www.easa.europa.eu/it/downloads/137614/en), 2026-10-24. A pre-approved LAND on a detected fault fits the contingency tier; the slides are a presentation, not the final text.
-- Same slides: the contingency volume depends on "reaction time" and "time to execute contingency manoeuvres". The wait time before acting is therefore part of the safety case, which bears on the ADR's wait-time versus `COM_DL_LOSS_T` point.
-- NASA Ames describes lost C2 link procedures as "a set of rules and/or route(s) that would be programmed into the UA", executed automatically "after internal systems confirm the loss of link". It names three design aspects: predictability, robustness ("without being over-prescriptive"), and survivability. [Sakakeeny et al., NTRS 20240007906](https://ntrs.nasa.gov/api/citations/20240007906/downloads/Initial_Assessment_of_LC2L_Procedures.pdf), 2026-10-24.
-- Same paper: it breaks the event into a decision time, a declared lost state (T0), a first segment that continues the current route so others can react, a second segment, link re-establishment (T2) and recovery to normal (T3). It reports ICAO RPASP-16/WP-15 decision times of 30 s in terminal and 240 s en route airspace. These are manned-airspace values for large aircraft and are not transferable to a small SAR drone.
-- Same paper: after the link returns, "the RP and ATC need to coordinate actions to return the UA to its nominal flight plan". Reconnection is a coordinated, human step.
-- RTCA DO-400 (2023) is described in the NASA paper as guidance by phase of flight with actions for the UA, remote pilot and ATC. The standard itself is paywalled and was not read.
-- UK CAA CAP3154 (consultation, September 2025) has a Lost C2 Link chapter that only says a separate consultation is planned. Its use cases say a formal review would define how the pilot knows the link is lost and how long the system waits "before the UA returns to home (Lost C2 Link timer)". One example specifies "RTH upon link loss". [CAP3154](https://www.caa.co.uk/publication/download/26093), 2026-10-24. It states it is not acceptable means of compliance.
-- FAA: proposed Part 108 is reported to require lost-link procedures (section 108.165(d)). The only evidence found was secondary search summaries, so no claim is made; the Federal Register text was not read.
+- SORA 2.5 main body (JARUS, 13.05.2024): abnormal situations call for contingency procedures that "should return the operation to a controlled state and allow the return to using standard operating procedures or allow the safe cessation of the flight". Loss of control is where the outcome "highly relies on providence" or "could not be handled by a contingency procedure"; emergency procedures follow, and "may be supported by automated features of the UAS". [SORA 2.5 main body, sections 2.3.1 and 2.3.2](http://jarus-rpas.org/wp-content/uploads/2024/06/SORA-v2.5-Main-Body-Release-JAR_doc_25.pdf), 2026-10-24.
+- SORA 2.5 Annex I defines lost link as "loss of command and control link contact with the UA such that the remote pilot can no longer intervene in the UA's flight control". [Annex I](http://jarus-rpas.org/wp-content/uploads/2024/06/SORA-v2.5-Annex-I-Release.JAR_doc_30pdf.pdf), 2026-10-24.
+- EASA means of compliance for OSO 6 (SAIL III, Issue 1, 18 December 2023, marked "Proposed"): link degradation is conveyed to the remote pilot; "When a certain level of degraded conditions ... to be defined by the applicant, is reached, the C2 Link should be declared lost. The operator should have procedures in place to manage the loss". One example: on C2 loss the mission is interrupted by a return-to-home mode, and a footnote says return home with no pilot monitoring "needs to be shared before the mission(s) with all other actors involved". [EASA MOC to OSO#6-01](https://www.easa.europa.eu/en/downloads/139100/en), 2026-10-24.
+- EASA SORA slides (6 March 2023): contingency volume depends on "reaction time" and "time to execute contingency manoeuvres". [EASA slides](https://www.easa.europa.eu/it/downloads/137614/en), 2026-10-24.
+- FAA notice N JO 7110.724 (effective 11 October 2016, cancellation date 27 April 2017, so a superseded text), applying to "Department of Defense (DOD) air traffic facilities": "Lost link procedures are programmed into the flight management system and associated with the flight plan being flown." The controller determines the procedure "as outlined in the Special Airworthiness Certificate or Certificate of Waiver or Authorization (COA)". The procedure "should, at a minimum, include lost link route of flight, lost link orbit points, lost link altitudes, communications procedures and preplanned flight termination points". It defines lost link as loss of either uplink or downlink, and "In the event positive link cannot be established, flight termination must be implemented." It records the event by advising the Front Line Manager "so the event can be documented". [FAA N JO 7110.724](https://www.faa.gov/documentLibrary/media/Notice/N_JO_7110.724_5-2-9_UAS_Lost_Link.pdf), 2026-10-24. Note that the notice treats a downlink-only fault as lost link; the repo models a symmetric link.
+- NASA Ames: lost-link procedures are "a set of rules and/or route(s) that would be programmed into the UA" and run automatically "after internal systems confirm the loss of link". Design aspects: predictability, robustness ("without being over-prescriptive"), survivability. The event has a decision time, a declared state (T0), a first segment continuing the route, a second segment, re-establishment (T2) and recovery (T3). After T2, "the RP and ATC need to coordinate actions to return the UA to its nominal flight plan". ICAO RPASP-16/WP-15 decision times of 30 s (terminal) and 240 s (en route) are for large crewed-airspace aircraft and do not transfer to a small SAR drone. [Sakakeeny et al., NTRS 20240007906](https://ntrs.nasa.gov/api/citations/20240007906/downloads/Initial_Assessment_of_LC2L_Procedures.pdf), 2026-10-24.
+- UK CAA CAP3154 (September 2025 consultation): its Lost C2 Link chapter only says a separate consultation is planned; examples say a review would define how the pilot knows the link is lost and the wait before return home. [CAP3154](https://www.caa.co.uk/publication/download/26093), 2026-10-24. It is explicitly not acceptable means of compliance.
 
-### 3. Delegation, pre-authorisation and recording
+### 3. Delegation, recording and audit
 
-- The aviation sources above treat the lost-link action as part of the approved operation (the SORA application, the flight plan, the programmed route), which is pre-authorisation by construction. None of the fetched documents describes revoking it in flight.
-- CAP3154 proposal 1.2: "A periodic log should be maintained showing which connections are active and the status of all connections in the C2 Link". [CAP3154](https://www.caa.co.uk/publication/download/26093), 2026-10-24. This is link-performance logging for SORA OSO 6, not an authority record.
-- No fetched source describes how delegated authority is cryptographically bound, hashed or audited. The project's design here is its own.
-- DoD Directive 3000.09 (2023) is the usual cite for "appropriate levels of human judgment". Its PDF returned HTTP 403 and was not read; a search snippet quoted the phrase but that is a secondary relay and is not used as evidence here.
+- In the US procedure the delegation is the approved authorisation itself (certificate or COA), looked up at the time of loss. Event documentation is by the controller. No revocation in flight is described. [FAA N JO 7110.724](https://www.faa.gov/documentLibrary/media/Notice/N_JO_7110.724_5-2-9_UAS_Lost_Link.pdf), 2026-10-24.
+- CAP3154 proposal 1.2: "A periodic log should be maintained showing which connections are active and the status of all connections in the C2 Link." This is link-performance logging, not an authority record. [CAP3154](https://www.caa.co.uk/publication/download/26093), 2026-10-24.
+- No source read describes integrity protection, hashing or maximum age of a delegated authority.
+
+## What defence sources add beyond civil ones
+
+Little that could be read. The one defence-applicable document read, the FAA notice for DoD air traffic facilities, is civil airspace procedure and shows the same pre-programmed, pre-authorised pattern. Everything that would carry defence-specific content was not readable: DoDD 3000.09 (HTTP 403), NATO STANAG 4586 Edition 4 (HTTP 403 from nso.nato.int), STANAG 4671 or AEP-4671 (not located), US Army sUAS airspace handbook, DAFMAN 11-501 and AFMAN 11-202V3 (HTTP 403). Search snippets suggest the Army handbook recommends preprogrammed return-to-home and lost-link reports, and the Air Force documents require lost-link logging and a link status display, but those are secondary relays and are not used as evidence. No UK MoD or DSTAN lost-link text was found in public search. Conclusion: no defence-specific finding is claimed; these are open gaps, not evidence of absence.
 
 ## Comparison with ADR 0004
 
 | Option | What the sources do |
 |---|---|
-| 1. PX4 failsafes only | This is the shipped default in PX4 and ArduPilot, and in aviation a pre-programmed action is the norm. The sources give no mechanism for catching a plausible-but-wrong position. PX4's GNSS check needs two receivers. |
-| 2. Pre-authorised contingencies | Matches the contingency tier of SORA and the programmed lost-link procedures in NASA/ICAO/RTCA. The authority is granted in the approved operation before flight. Public sources are silent on a project-specific onboard monitor that overrides the autopilot's action. |
-| 3. Wait for the operator | No source reached uses this as the lost-link policy. All assume the vehicle acts without the link. NASA treats the loss as a state where the pilot "will be unable to upload data". |
+| 1. PX4 failsafes only | Shipped default. But PX4's data-link action defaults to Disabled, blind land fires on an invalid velocity estimate and not on a frozen fix, and low-accuracy actions apply only in auto mission or loiter. No source gives a mechanism for a plausible wrong position. |
+| 2. Pre-authorised contingencies | Matches SORA contingency procedures, the FAA/DoD lost-link procedure tied to the authorisation, and NASA. Authority is granted before flight in a retrievable document. Public sources are silent on an onboard monitor that overrides an autopilot action. |
+| 3. Wait for the operator | No source uses it. FAA text: "In the event positive link cannot be established, flight termination must be implemented", i.e. the vehicle acts without the operator. |
 
 Review points in the ADR:
 
-- STALE versus NO_LINK separate: consistent with NASA's view that degradation is gradual and "loss" is a declared state after a decision time. MAVLink leaves the timeout to the integrator.
-- NO_LINK as telemetry silence only: ArduPilot and PX4 also key on missing heartbeat from the GCS, a one-way observation. The sources do not discuss asymmetric links.
-- Contingency as advance approval: aviation practice supports pre-approval of the lost-link action. The CLAUDE.md wording change is a project matter.
-- LAND only: SORA lists land at a predetermined site as one contingency, return home as another. The aviation default is return or land, so limiting to LAND is narrower than practice, justified by ADR 0003 and not contradicted by the sources.
-- Wait time shorter than `COM_DL_LOSS_T`: PX4 acts at `COM_DL_LOSS_T` with `NAV_DLL_ACT`. The ordering requirement is correct in principle. Also relevant: PX4 skips the data-link failsafe when the intended mode is already Land.
-- Approve once, id and hash, max age, no revocation: no public analogue found. NASA's T0 to T3 sequence shows reconciliation as a human step, which fits "never replay stale decisions".
+- STALE versus NO_LINK separate: consistent with EASA ("declared lost" at a level the applicant defines) and NASA (a decision time before the state is declared).
+- NO_LINK as telemetry silence only: the FAA text counts uplink-only or downlink-only failure as lost link. The repo's symmetric assumption is stated and out of scope; the sources do not support it as general.
+- Contingency as advance approval: the same shape as a COA or SORA authorisation. The CLAUDE.md wording change remains a project matter.
+- LAND only: SORA examples also list return home; EASA's note says unmonitored return home must be shared in advance with others. LAND-only is narrower than practice and is supported by ADR 0003, not contradicted.
+- Wait shorter than `COM_DL_LOSS_T`: default is 10 s (min 5), and PX4 may add a `COM_FAIL_ACT_T` Hold (default 5.0 s) before the action. The comparison should be with the full time to PX4's action, and `NAV_DLL_ACT` must be set for PX4 to act at all.
+- Approve once, id and hash, max age, no revocation: no public analogue. The FAA/COA model also has no in-flight revocation.
 
 ## Gaps and not verified
 
-- DoDD 3000.09, STANAG 4586/4671/4703, JARUS SORA 2.5 main body, ICAO Doc 10019, RTCA DO-400, FAA Part 108 text: not fetched (HTTP 403, certificate error, paywall or not located). Nothing from them is asserted.
-- PX4 parameter defaults for `COM_DL_LOSS_T`, `NAV_DLL_ACT`, `COM_GNSSLOSS_ACT`: the parameter reference page was too large to reach them and the Commander yaml fetch did not contain them. Read them from the pinned commit before quoting numbers.
-- PX4 "blind land" (GNSS outage) is cited in CLAUDE.md but was not found in the safety docs text read. Verify in the pinned source.
-- PX4 behaviour when the GCS link returns during a data-link failsafe: partly unverified (see section 1).
-- No public source found on audit of delegated authority, onboard override of an autopilot failsafe, or position-plausibility monitoring as a failsafe trigger.
-- SORA slides are 2023 presentation material, not the published standard.
+- DoDD 3000.09, NATO STANAG 4586 Ed. 4, STANAG 4671 and AEP-4671, STANAG 4703: HTTP 403 or not located. Not used. The 3000.09 phrase "appropriate levels of human judgment" is only seen in a search snippet.
+- Army sUAS handbook, DAFMAN 11-501, AFMAN 11-202V3, Navy and MIL-HDBK-516 or DoD UAS roadmap text: 403 or not found.
+- UK MoD / DSTAN lost-link text: none found.
+- ICAO Doc 10019 and the ICAO working paper: HTTP 403 or certificate errors. Only the NASA description of the working paper was read.
+- RTCA DO-400 and DO-365: paywalled; the RTCA page had no scope text. DO-400 is known here only through the NASA paper.
+- FAA Part 108 text: not read. FAA JO 7110.65 current paragraph: only the 2016 notice read.
+- PX4: values are from `main`, not the pinned commit; `SYS_HAS_NUM_GNSS` default not found; time from GNSS outage to invalid velocity estimate not found; return-of-link clearing in `checkFailsafe()` not read; whether `COM_FAIL_ACT_T` applies to data link loss not confirmed.
+- No public source found on audit of delegated authority, onboard override of an autopilot failsafe, or plausibility monitoring as a failsafe trigger.
 
 ## Suggestions for the maintainer (proposals, not decisions)
 
-1. Read `COM_DL_LOSS_T`, `NAV_DLL_ACT`, and the clear conditions in the pinned PX4 commit, and put the numbers into the ADR with the commit id.
-2. Check whether the simulated vehicle has two GNSS receivers; if not, PX4's GNSS check failsafe is not an alternative to the contingency and the ADR can say so.
-3. State the contingency's decision time and time to execute explicitly, as SORA and NASA do, and tie them to a measured figure from issue 81 rather than the aviation values.
-4. Say what the vehicle does after LAND completes and the link returns: PX4 and ArduPilot stay in the failsafe state until the operator changes mode, which matches "never replay stale decisions".
-5. Consider recording link status periodically, not only at contingency use, to match the CAA's log proposal in a different domain.
-6. Note in the ADR that the "approve once, hash, no revocation" mechanism is project-specific, with no public precedent found.
-7. Obtain DoDD 3000.09, DO-400 and the SORA 2.5 main body from the owner before citing them.
+1. Check what the simulation sets for `NAV_DLL_ACT`, `COM_DL_LOSS_T`, `COM_FAIL_ACT_T`, `COM_GNSSLOSS_ACT` at the pinned commit. If `NAV_DLL_ACT` is the default (Disabled), the matrix row "Link lost, GNSS healthy: PX4 data-link-loss failsafe" is wrong as written.
+2. Reword the "Link lost, GNSS lost" row: blind land is a position-controller reaction to an invalid velocity estimate, not a configured failsafe. Measure the outage-to-landing time in the repo's recordings rather than quoting "a few seconds".
+3. Express the wait-time constraint against the full time to PX4's action (loss time plus any Hold), and tie the contingency's own decision time and execution time to figures measured in issue 81, as SORA and NASA frame them.
+4. Consider whether a downlink-only or uplink-only fault belongs in the "out of scope" list with the reason, since FAA text treats either as lost link.
+5. State in the ADR that the contingency is the equivalent of an authorisation looked up at the time of loss (COA or SORA pattern), and that its integrity hash and maximum age have no public precedent found.
+6. Say what happens after LAND when the link returns: both autopilots stay in the failsafe state until a human acts, which fits "never replay stale decisions".
+7. Obtain DoDD 3000.09, STANAG 4586/4671/4703, DO-400 and ICAO Doc 10019 from the owner by another route (library or the maintainer's access) before citing them.
