@@ -6,6 +6,10 @@ export const TONE: Record<TrustState, { hex: string; text: string; bg: string; r
   RED: { hex: "#f06262", text: "text-bad", bg: "bg-bad/14", ring: "ring-bad/45" },
 };
 
+/** The link indicator's colour: the console accent token, so it cannot drift from the "No link"
+ * badge. Not a trust colour: a vehicle with no link has no trust state now. */
+export const LINK_TONE = "var(--color-accent)";
+
 /** One colour per vehicle for its sectors and trail. Kept away from the traffic-light hues. */
 const VEHICLE_HUES = ["#6aa9e9", "#b59cf0", "#4cc2d1", "#e48bb8", "#a9c85a", "#e8955a"];
 
