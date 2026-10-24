@@ -49,6 +49,8 @@ export interface ConsoleState {
   stateSince: Record<string, number>; // server_s when the state last changed
   recommendations: Record<string, Recommendation>;
   decisions: Record<string, Decision>;
+  /** ids of recommendations the operator has marked "Seen" */
+  seen: string[];
   fleet: Fleet;
   doneSectors: string[]; // ids of sectors the backend says have been flown
   calibration: Calibration | null;
@@ -69,6 +71,7 @@ export const initialState: ConsoleState = {
   stateSince: {},
   recommendations: {},
   decisions: {},
+  seen: [],
   fleet: {},
   doneSectors: [],
   calibration: null,
@@ -81,7 +84,8 @@ export type Action =
   | { type: "server"; event: ServerEvent; clientNow: number }
   | { type: "fleet"; fleet: Fleet; done: string[] }
   | { type: "calibration"; calibration: Calibration }
-  | { type: "decided"; decision: Decision };
+  | { type: "decided"; decision: Decision }
+  | { type: "seen"; id: string };
 
 function withLog(
   s: ConsoleState,
@@ -153,6 +157,8 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
       return { ...s, fleet: action.fleet, doneSectors: action.done };
     case "calibration":
       return { ...s, calibration: action.calibration };
+    case "seen":
+      return s.seen.includes(action.id) ? s : { ...s, seen: [...s.seen, action.id] };
     case "decided":
       return { ...s, decisions: { ...s.decisions, [action.decision.recommendation_id]: action.decision } };
     case "server": {
@@ -185,6 +191,7 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
             stateSince,
             recommendations: recs,
             decisions: {},
+            seen: [],
           };
         }
         case "navtrust":
@@ -238,6 +245,15 @@ export function trustCounts(s: ConsoleState): FleetCounts {
     else counts[trust.state] += 1;
   }
   return counts;
+}
+
+/** Recommendations that expired unanswered and that the operator has not yet marked seen, newest
+ * first. They stay in view so an expiry never passes unnoticed. */
+export function pinnedExpired(s: ConsoleState): { rec: Recommendation; decision: Decision }[] {
+  return Object.values(s.decisions)
+    .filter((d) => d.outcome === "EXPIRED" && s.recommendations[d.recommendation_id] && !s.seen.includes(d.recommendation_id))
+    .sort((a, b) => b.decided_s - a.decided_s)
+    .map((decision) => ({ rec: s.recommendations[decision.recommendation_id]!, decision }));
 }
 
 export interface RaisedAgain {

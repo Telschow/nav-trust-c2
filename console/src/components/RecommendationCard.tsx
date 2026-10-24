@@ -1,9 +1,9 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { actionsOf, contextNote, formatDuration, ordinal, reasonText, titleOf, urgencyNote } from "../language";
+import { STATE_LABEL, actionsOf, contextNote, formatDuration, ordinal, reasonText, titleOf, urgencyNote } from "../language";
 import type { RaisedAgain } from "../store";
 import { TONE, vehicleColor } from "../tone";
-import type { Decision, Recommendation } from "../types";
+import type { Decision, NavTrust, Recommendation } from "../types";
 
 interface OpenProps {
   rec: Recommendation;
@@ -93,6 +93,41 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, onApprove,
           </button>
         </div>
       </div>
+    </article>
+  );
+}
+
+/** An expired recommendation that stays in view until the operator marks it seen, so that an
+ * expiry never slides quietly into the history. */
+export function ExpiredNotice({
+  rec,
+  decision,
+  trustNow,
+  onSeen,
+}: {
+  rec: Recommendation;
+  decision: Decision;
+  trustNow: NavTrust | undefined;
+  onSeen: () => void;
+}) {
+  return (
+    <article className="panel border-warn/60 px-4 py-3" aria-label={`Expired: ${titleOf(rec)}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-warn">Expired, nobody answered</span>
+        <span className="font-mono text-xs text-muted">T+{formatDuration(decision.decided_s)}</span>
+      </div>
+      <p className="mt-1.5 text-sm font-medium">{titleOf(rec)}</p>
+      <p className="mt-1 text-xs text-muted">
+        Nothing was sent to the vehicle.{" "}
+        {trustNow ? `${rec.vehicle_id} is now ${STATE_LABEL[trustNow.state]}.` : `${rec.vehicle_id}: state not known.`}
+      </p>
+      <button
+        type="button"
+        onClick={onSeen}
+        className="mt-2.5 h-8 rounded-[3px] border border-line px-3 text-xs font-medium hover:bg-panel-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        Seen
+      </button>
     </article>
   );
 }

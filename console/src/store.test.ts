@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedRecommendations, initialState, isNoLink, openRecommendations, raisedAgain, reducer, serverNow, trustCounts } from "./store";
+import { decidedRecommendations, initialState, isNoLink, openRecommendations, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -328,5 +328,50 @@ describe("re-raised decisions (issue 111)", () => {
     s = decide(s, "r1", "EXPIRED", 160);
     s = apply(s, ev({ type: "state", server_s: 200, data: { ...snapshot, open_recommendations: [recAt("r2", 161)] } }));
     expect(raisedAgain(s, recAt("r2", 161))).toBeNull();
+  });
+});
+
+describe("expired decisions stay visible until seen (issue 112)", () => {
+  const exp = (s: ConsoleState, id: string, vehicle: string, created: number) => {
+    const r: Recommendation = { ...rec, id, vehicle_id: vehicle, created_s: created, expires_s: created + 60 };
+    let n = apply(s, ev({ type: "recommendation", server_s: created, data: r }));
+    n = apply(n, ev({ type: "decision", server_s: created + 60, data: { recommendation_id: id, outcome: "EXPIRED", decided_s: created + 60, operator: "system", note: "" } }));
+    return n;
+  };
+  const answer = (s: ConsoleState, id: string, outcome: "APPROVED" | "DENIED") =>
+    apply(s, ev({ type: "decision", server_s: 150, data: { recommendation_id: id, outcome, decided_s: 150, operator: "o", note: "" } }));
+
+  it("an expired recommendation is pinned, newest first", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    s = exp(s, "r2", "uav3", 200);
+    expect(pinnedExpired(s).map((p) => p.rec.id)).toEqual(["r2", "r1"]);
+  });
+
+  it("stays pinned however many other events arrive", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    for (let i = 0; i < 70; i++) s = apply(s, ev({ type: "navtrust", server_s: 200 + i, data: trust("uav1", i % 2 ? "GREEN" : "AMBER", i % 2 ? null : "GNSS_LOSS") }));
+    expect(pinnedExpired(s).map((p) => p.rec.id)).toEqual(["r1"]);
+  });
+
+  it("marking it seen removes the notice but keeps the decision in the history", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    s = reducer(s, { type: "seen", id: "r1" });
+    expect(pinnedExpired(s)).toEqual([]);
+    expect(decidedRecommendations(s).map((d) => d.rec.id)).toEqual(["r1"]);
+  });
+
+  it("an approved or denied decision is not pinned", () => {
+    let s = apply(initialState, ev({ type: "recommendation", server_s: 100, data: { ...rec, id: "a" } }));
+    s = answer(s, "a", "APPROVED");
+    s = apply(s, ev({ type: "recommendation", server_s: 100, data: { ...rec, id: "d" } }));
+    s = answer(s, "d", "DENIED");
+    expect(pinnedExpired(s)).toEqual([]);
+  });
+
+  it("a fresh snapshot starts with nothing pinned and nothing seen", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    s = apply(s, ev({ type: "state", server_s: 300, data: snapshot }));
+    expect(pinnedExpired(s)).toEqual([]);
+    expect(s.seen).toEqual([]);
   });
 });

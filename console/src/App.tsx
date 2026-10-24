@@ -6,10 +6,10 @@ import { ConfirmDialog } from "./components/ConfirmDialog";
 import { DecisionBanner } from "./components/DecisionBanner";
 import { Header } from "./components/Header";
 import { MapView } from "./components/MapView";
-import { DecidedRow, RecommendationCard } from "./components/RecommendationCard";
+import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/RecommendationCard";
 import { VehicleRow } from "./components/VehicleRow";
 import { useConsole, useServerNow } from "./hooks";
-import { decidedRecommendations, openRecommendations, raisedAgain, trustCounts } from "./store";
+import { decidedRecommendations, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
@@ -151,6 +151,15 @@ export function App() {
               <p className="mt-3 border border-line-soft px-3 py-3 text-sm text-muted">No action needs your decision.</p>
             )}
             <div aria-live="polite" className="mt-3 flex flex-col gap-3">
+              {pinnedExpired(state).map(({ rec, decision }) => (
+                <ExpiredNotice
+                  key={`expired-${rec.id}`}
+                  rec={rec}
+                  decision={decision}
+                  trustNow={state.vehicles[rec.vehicle_id]}
+                  onSeen={() => dispatch({ type: "seen", id: rec.id })}
+                />
+              ))}
               {open.map((rec) => (
                 <RecommendationCard
                   key={rec.id}

@@ -6,6 +6,7 @@ import { DecisionBanner } from "./DecisionBanner";
 import { ordinal, titleOf } from "../language";
 import { RecommendationCard } from "./RecommendationCard";
 import { Header } from "./Header";
+import { ExpiredNotice } from "./RecommendationCard";
 import { StateChip } from "./StateChip";
 import { VehicleRow } from "./VehicleRow";
 import type { Recommendation } from "../types";
@@ -273,5 +274,31 @@ describe("a decision raised again (issue 111)", () => {
 
   it("counts up the ordinals", () => {
     expect([1, 2, 3, 4, 11, 12, 21, 22].map(ordinal)).toEqual(["1st", "2nd", "3rd", "4th", "11th", "12th", "21st", "22nd"]);
+  });
+});
+
+describe("ExpiredNotice (issue 112)", () => {
+  const expiredRec = { ...rec, vehicle_id: "uav2", command: "LAND" as const };
+  const decision = { recommendation_id: "r1", outcome: "EXPIRED" as const, decided_s: 160, operator: "system", note: "" };
+  const redNow = { vehicle_id: "uav2", stamp_s: 1, state: "RED" as const, reason: "INCONSISTENT_INNOVATION" as const, horizontal_bound_m: null, confidence: 0, headroom: 0 };
+
+  it("says nobody answered, that nothing was sent, and what the vehicle's state is now", () => {
+    render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={redNow} onSeen={vi.fn()} />);
+    expect(screen.getByText("Expired, nobody answered")).toBeTruthy();
+    expect(screen.getByText(/Nothing was sent to the vehicle/)).toBeTruthy();
+    expect(screen.getByText(/uav2 is now Not trusted/)).toBeTruthy();
+    expect(screen.queryByText(/denied/i)).toBeNull();
+  });
+
+  it("has a Seen control that works", () => {
+    const seen = vi.fn();
+    render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={redNow} onSeen={seen} />);
+    fireEvent.click(screen.getByRole("button", { name: "Seen" }));
+    expect(seen).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not claim a state it does not know", () => {
+    render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={undefined} onSeen={vi.fn()} />);
+    expect(screen.getByText(/uav2: state not known/)).toBeTruthy();
   });
 });
