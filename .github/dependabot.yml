@@ -6,6 +6,10 @@ updates:
   - package-ecosystem: npm
     directory: "/console"
     schedule: { interval: weekly }
+    # components.test.tsx requires the exact same version of both, so they must arrive together
+    groups:
+      react:
+        patterns: ["react", "react-dom"]
   - package-ecosystem: github-actions
     directory: "/"
     schedule: { interval: weekly }
