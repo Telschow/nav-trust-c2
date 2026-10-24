@@ -11,11 +11,6 @@ from navtrust.types import NavTrust, ReasonCode, TrustState
 POS = {"uav1": (0.0, 0.0), "uav2": (0.0, 5.0), "uav3": (0.0, 10.0)}
 
 
-class Clock:
-    def __call__(self) -> float:
-        return 50.0
-
-
 def fleet() -> FleetState:
     return FleetState(
         assign(split_area(1000, 900, 3), ["uav1", "uav2", "uav3"]), positions=dict(POS)
@@ -28,7 +23,7 @@ def msg(v: str, state: TrustState, reason: ReasonCode | None = None) -> NavTrust
 
 def make(no_link: set[str]) -> tuple[Recommender, FleetState]:
     """Three GREEN vehicles; `no_link` names those the backend currently cannot hear."""
-    r = Recommender(Clock(), link_ok=lambda v: v not in no_link)
+    r = Recommender(lambda: 50.0, link_ok=lambda v: v not in no_link)
     f = fleet()
     for v in POS:
         assert r.observe(msg(v, TrustState.GREEN), f) == []
@@ -47,6 +42,9 @@ def test_when_every_possible_taker_has_no_link_there_is_nothing_to_recommend() -
 
 
 def test_a_vehicle_whose_own_link_is_down_is_offered_no_command_but_its_sector_can_move() -> None:
+    # Forward-looking: the server ingests a vehicle's report before the recommender sees it, so a
+    # vehicle that is reporting is reachable. This rule matters once a recommendation can be
+    # raised for a vehicle without a report from it (for example on a link-loss trigger).
     r, f = make(no_link={"uav3"})
     [rec] = r.observe(msg("uav3", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION), f)
     assert rec.command is None
@@ -68,7 +66,8 @@ def test_no_link_and_nobody_to_take_the_sector_means_no_recommendation() -> None
 def test_the_recommender_follows_the_hubs_view_of_the_link() -> None:
     clock = [100.0]
     hub = Hub(AuditLog(), lambda: clock[0], link_timeout_s=2.0)
-    recommender = Recommender(Clock(), link_ok=hub.is_reachable)
+    # the hub's clock makes uav2 silent; the recommender's own clock only dates its output
+    recommender = Recommender(lambda: 50.0, link_ok=hub.is_reachable)
     f = fleet()
     for v in POS:
         hub.ingest_navtrust(msg(v, TrustState.GREEN))

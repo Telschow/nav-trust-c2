@@ -13,8 +13,8 @@ fast, uncontrolled descents hundreds of metres from where the vehicle believed i
 (tests/replay/test_stuck_action_evidence.py).
 
 Only GREEN vehicles may take over work, and never one the backend cannot hear (NO_LINK): a
-re-task aimed at an unreachable vehicle would not arrive (ADR 0004). A vehicle whose own link is
-down is offered no command either. If there is no taker, there is nothing to recommend for a
+re-task aimed at an unreachable vehicle would not arrive (ADR 0004). No command is offered to a
+vehicle whose own link is down. If there is no taker, there is nothing to recommend for a
 GNSS_LOSS/STALE vehicle (a recommendation needs a command or a move); the alert itself still
 shows. One recommendation per vehicle and reason per RED episode, but it is issued again if it
 expires unanswered while the vehicle is still RED (`on_decision`), because a runaway vehicle
@@ -34,6 +34,10 @@ from c2.messages import Command, Decision, Outcome, Recommendation, SectorMove
 from navtrust.types import NavTrust, ReasonCode, TrustState
 
 
+def _always_reachable(vehicle_id: str) -> bool:
+    return True
+
+
 @dataclass(frozen=True)
 class RecommenderConfig:
     ttl_s: float = 60.0  # how long an operator has to answer (proposal)
@@ -48,7 +52,7 @@ class Recommender:
         self,
         clock: Callable[[], float],
         config: RecommenderConfig | None = None,
-        link_ok: Callable[[str], bool] = lambda vehicle_id: True,
+        link_ok: Callable[[str], bool] = _always_reachable,
     ) -> None:
         """link_ok: whether the backend can currently hear a vehicle (the hub's view)."""
         self._clock = clock
