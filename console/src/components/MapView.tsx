@@ -220,7 +220,7 @@ function Legend() {
           ))}
           <span className="flex items-center gap-2">
             <span className="size-2.5 rounded-full" style={{ background: LINK_TONE }} />
-            No link: the position and state are the last known
+            No link: position and state are last known, not current
           </span>
           <span className="mt-1 flex items-center gap-2">
             <span className="size-3 rounded-full border border-dashed border-muted" />

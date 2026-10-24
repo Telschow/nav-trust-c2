@@ -8,13 +8,18 @@ const trust = (state: NavTrust["state"]): NavTrust => ({
   horizontal_bound_m: null, confidence: 0, headroom: 0,
 });
 
-describe("map marker for a vehicle the backend can hear (unchanged from before the link work)", () => {
+describe("map marker for a vehicle the backend can hear", () => {
   it.each([
     ["GREEN", TONE.GREEN.hex, false, "uav1"],
     ["AMBER", TONE.AMBER.hex, true, "uav1 · AMBER"],
     ["RED", TONE.RED.hex, true, "uav1 · RED"],
   ] as const)("%s", (state, tone, dashed, tag) => {
     expect(markerView("uav1", trust(state), false)).toEqual({ tone, dashed, tag });
+  });
+
+  it("draws the three trust states in three different colours", () => {
+    const tones = (["GREEN", "AMBER", "RED"] as const).map((s) => markerView("uav1", trust(s), false).tone);
+    expect(new Set(tones).size).toBe(3);
   });
 
   it("a vehicle with a position but no trust report yet gets the amber colour and no ring", () => {
