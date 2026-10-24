@@ -19,7 +19,7 @@ export function heardAgeS(link: LinkInfo | undefined, now: number | null): numbe
 /** The clock the map's markers depend on. It is the real clock only while some vehicle has no
  * link, because only then does a marker show an age; otherwise it never changes, so the map is
  * not redrawn on a timer for nothing. */
-export function ageClock(links: Record<string, LinkInfo>, now: number | null): number | null {
+export function tickWhileNoLink(links: Record<string, LinkInfo>, now: number | null): number | null {
   return Object.values(links).some((l) => l.state === "NO_LINK") ? now : null;
 }
 

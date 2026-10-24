@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ageClock, heardAgeS, markerView } from "./markers";
+import { tickWhileNoLink, heardAgeS, markerView } from "./markers";
 import { LINK_TONE, TONE } from "./tone";
 import type { NavTrust } from "./types";
 
@@ -66,7 +66,7 @@ describe("age on the map for a vehicle with no link (issue 114)", () => {
     const up = { uav1: { state: "LINK_OK" as const, lastHeardAt_s: 29 } };
     const down = { ...up, uav2: { state: "NO_LINK" as const, lastHeardAt_s: 18 } };
     // with every link up the value never changes, so nothing is redrawn as the clock advances
-    expect([ageClock({}, 10), ageClock(up, 11), ageClock(up, 12)]).toEqual([null, null, null]);
-    expect([ageClock(down, 30), ageClock(down, 31)]).toEqual([30, 31]);
+    expect([tickWhileNoLink({}, 10), tickWhileNoLink(up, 11), tickWhileNoLink(up, 12)]).toEqual([null, null, null]);
+    expect([tickWhileNoLink(down, 30), tickWhileNoLink(down, 31)]).toEqual([30, 31]);
   });
 });

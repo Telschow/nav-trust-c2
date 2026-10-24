@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedRecommendations, initialState, isNoLink, openRecommendations, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
+import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -358,6 +358,13 @@ describe("expired decisions stay visible until seen (issue 112)", () => {
     s = reducer(s, { type: "seen", id: "r1" });
     expect(pinnedExpired(s)).toEqual([]);
     expect(decidedRecommendations(s).map((d) => d.rec.id)).toEqual(["r1"]);
+  });
+
+  it("an unseen expiry is shown pinned, not twice: the history lists it only once seen", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    expect(decidedHistory(s).map((d) => d.rec.id)).toEqual([]);
+    s = reducer(s, { type: "seen", id: "r1" });
+    expect(decidedHistory(s).map((d) => d.rec.id)).toEqual(["r1"]);
   });
 
   it("an approved or denied decision is not pinned", () => {

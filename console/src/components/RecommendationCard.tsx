@@ -103,11 +103,14 @@ export function ExpiredNotice({
   rec,
   decision,
   trustNow,
+  noLink = false,
   onSeen,
 }: {
   rec: Recommendation;
   decision: Decision;
   trustNow: NavTrust | undefined;
+  /** the vehicle cannot be heard, so its trust state is only the last one known */
+  noLink?: boolean;
   onSeen: () => void;
 }) {
   return (
@@ -119,7 +122,11 @@ export function ExpiredNotice({
       <p className="mt-1.5 text-sm font-medium">{titleOf(rec)}</p>
       <p className="mt-1 text-xs text-muted">
         Nothing was sent to the vehicle.{" "}
-        {trustNow ? `${rec.vehicle_id} is now ${STATE_LABEL[trustNow.state]}.` : `${rec.vehicle_id}: state not known.`}
+        {!trustNow
+          ? `${rec.vehicle_id}: state not known.`
+          : noLink
+            ? `${rec.vehicle_id} has no link; its last known state was ${STATE_LABEL[trustNow.state]}.`
+            : `${rec.vehicle_id} is now ${STATE_LABEL[trustNow.state]}.`}
       </p>
       <button
         type="button"

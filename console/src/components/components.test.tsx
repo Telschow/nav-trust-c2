@@ -297,6 +297,12 @@ describe("ExpiredNotice (issue 112)", () => {
     expect(seen).toHaveBeenCalledTimes(1);
   });
 
+  it("with no link, the vehicle's state is only the last known one and says so", () => {
+    render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={redNow} noLink onSeen={vi.fn()} />);
+    expect(screen.getByText(/uav2 has no link; its last known state was Not trusted/)).toBeTruthy();
+    expect(screen.queryByText(/is now/)).toBeNull();
+  });
+
   it("does not claim a state it does not know", () => {
     render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={undefined} onSeen={vi.fn()} />);
     expect(screen.getByText(/uav2: state not known/)).toBeTruthy();
@@ -369,6 +375,33 @@ describe("ConfirmDialog: landing needs a deliberate hold (issue 113)", () => {
     render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
     expect(document.activeElement).not.toBe(holdButton());
     expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+  });
+
+  it("tells assistive technology that the hold started, and that releasing cancelled it", () => {
+    vi.useFakeTimers();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    expect(screen.getByRole("status").textContent).toBe("");
+    fireEvent.pointerDown(holdButton());
+    expect(screen.getByRole("status").textContent).toMatch(/Holding/);
+    fireEvent.pointerUp(holdButton());
+    expect(screen.getByRole("status").textContent).toMatch(/Released. Nothing was approved/);
+  });
+
+  it("links the instruction to the button", () => {
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    const hint = document.getElementById(holdButton().getAttribute("aria-describedby") ?? "");
+    expect(hint?.textContent).toMatch(/Landing cannot be undone/);
+  });
+
+  it("clearing the operator name during a hold stops it from confirming", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    const { rerender } = render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.pointerDown(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS - 100);
+    rerender(<ConfirmDialog {...base} rec={land} operator="  " onConfirm={onConfirm} />);
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS);
+    expect(onConfirm).not.toHaveBeenCalled();
   });
 
   it("a blank operator name disables the hold", () => {

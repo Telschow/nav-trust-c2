@@ -9,7 +9,7 @@ import { MapView } from "./components/MapView";
 import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/RecommendationCard";
 import { VehicleRow } from "./components/VehicleRow";
 import { useConsole, useServerNow } from "./hooks";
-import { decidedRecommendations, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
+import { decidedHistory, isNoLink, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
@@ -37,7 +37,7 @@ export function App() {
   const [focus, setFocus] = useState<{ vehicleId: string; n: number } | null>(null);
 
   const open = openRecommendations(state);
-  const decided = decidedRecommendations(state).slice(0, 4);
+  const decided = decidedHistory(state).slice(0, 4);
   const vehicleIds = Object.keys(state.vehicles).sort();
   const demo = state.source !== "live";
 
@@ -157,6 +157,7 @@ export function App() {
                   rec={rec}
                   decision={decision}
                   trustNow={state.vehicles[rec.vehicle_id]}
+                  noLink={isNoLink(state, rec.vehicle_id)}
                   onSeen={() => dispatch({ type: "seen", id: rec.id })}
                 />
               ))}

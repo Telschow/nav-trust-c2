@@ -247,6 +247,13 @@ export function trustCounts(s: ConsoleState): FleetCounts {
   return counts;
 }
 
+/** The decided recommendations for the "Recently decided" list: an expiry the operator has not yet
+ * seen is shown pinned instead, so it is not listed twice. */
+export function decidedHistory(s: ConsoleState): { rec: Recommendation; decision: Decision }[] {
+  const pinned = new Set(pinnedExpired(s).map((p) => p.rec.id));
+  return decidedRecommendations(s).filter((d) => !pinned.has(d.rec.id));
+}
+
 /** Recommendations that expired unanswered and that the operator has not yet marked seen, newest
  * first. They stay in view so an expiry never passes unnoticed. */
 export function pinnedExpired(s: ConsoleState): { rec: Recommendation; decision: Decision }[] {

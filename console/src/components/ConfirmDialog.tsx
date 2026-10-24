@@ -7,29 +7,37 @@ import type { Recommendation } from "../types";
  * operators). Landing is the one irreversible command, so approving it takes a deliberate act. */
 export const HOLD_TO_CONFIRM_MS = 1500;
 
+type HoldPhase = "idle" | "holding" | "released";
+
 function useHold(durationMs: number, onComplete: () => void, enabled: boolean) {
-  const [holding, setHolding] = useState(false);
+  const [phase, setPhase] = useState<HoldPhase>("idle");
   const timer = useRef<number | null>(null);
   const done = useRef(onComplete);
   done.current = onComplete;
-  const release = () => {
+  const stillEnabled = useRef(enabled);
+  stillEnabled.current = enabled;
+  const stop = (next: HoldPhase) => {
     if (timer.current !== null) window.clearTimeout(timer.current);
+    const wasHolding = timer.current !== null;
     timer.current = null;
-    setHolding(false);
+    setPhase(wasHolding ? next : "idle");
   };
+  const release = () => stop("released");
   const start = () => {
     if (!enabled || timer.current !== null) return;
-    setHolding(true);
+    setPhase("holding");
     timer.current = window.setTimeout(() => {
       timer.current = null;
-      setHolding(false);
+      // the name may have been cleared, or the request sent, while the button was held
+      if (!stillEnabled.current) return setPhase("released");
+      setPhase("idle");
       done.current();
     }, durationMs);
   };
   useEffect(() => () => {
     if (timer.current !== null) window.clearTimeout(timer.current);
   }, []);
-  return { holding, start, release };
+  return { phase, holding: phase === "holding", start, release };
 }
 
 interface Props {
@@ -94,10 +102,20 @@ export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onC
         </p>
 
         {landing && (
-          <p className="mt-4 border border-bad/60 px-3 py-2 text-sm font-medium text-bad">
+          <p id="hold-hint" className="mt-4 border border-bad/60 px-3 py-2 text-sm font-medium text-bad">
             Landing cannot be undone. Press and hold the button for {HOLD_TO_CONFIRM_MS / 1000} seconds to
             confirm; release early to cancel.
           </p>
+        )}
+
+        {landing && (
+          <span role="status" className="sr-only">
+            {hold.phase === "holding"
+              ? "Holding. Keep holding to confirm the landing."
+              : hold.phase === "released"
+                ? "Released. Nothing was approved."
+                : ""}
+          </span>
         )}
 
         <label className="mt-4 block text-sm">
@@ -123,10 +141,15 @@ export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onC
             <button
               type="button"
               disabled={!canConfirm}
-              onPointerDown={hold.start}
+              aria-describedby="hold-hint"
+              onPointerDown={(e) => {
+                // keep the pointer on the button, so finger jitter at its edge does not cancel a touch hold
+                e.currentTarget.setPointerCapture?.(e.pointerId);
+                hold.start();
+              }}
               onPointerUp={hold.release}
-              onPointerLeave={hold.release}
               onPointerCancel={hold.release}
+              onContextMenu={(e) => e.preventDefault()}
               onBlur={hold.release}
               onKeyDown={(e) => {
                 if ((e.key === " " || e.key === "Enter") && !e.repeat) {
@@ -141,7 +164,7 @@ export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onC
                 }
               }}
               data-holding={hold.holding}
-              className="relative h-10 select-none overflow-hidden rounded-[3px] bg-accent text-sm font-semibold text-[#08121d] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+              className="relative h-10 touch-none select-none overflow-hidden rounded-[3px] bg-accent text-sm font-semibold text-[#08121d] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
             >
               <span
                 aria-hidden
