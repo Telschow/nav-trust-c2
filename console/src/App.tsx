@@ -134,7 +134,7 @@ export function App() {
 
         {/* map */}
         <section className="min-h-[420px] p-3" aria-label="Map">
-          <MapView state={state} focus={focus} />
+          <MapView state={state} now={now} focus={focus} />
         </section>
 
         {/* decisions */}

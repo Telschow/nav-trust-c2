@@ -6,7 +6,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { Info, Maximize2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { localToLonLat, sectorRing } from "../geo";
-import { markerView } from "../markers";
+import { ageClock, heardAgeS, markerView } from "../markers";
 import { isNoLink } from "../store";
 import type { ConsoleState } from "../store";
 import { LINK_TONE, TONE, vehicleColor } from "../tone";
@@ -37,12 +37,14 @@ const STYLE: maplibregl.StyleSpecification = {
 
 interface Props {
   state: ConsoleState;
+  /** the server clock, advancing between messages (null until known) */
+  now: number | null;
   focus: { vehicleId: string; n: number } | null;
 }
 
 const EMPTY: FeatureCollection = { type: "FeatureCollection", features: [] };
 
-export function MapView({ state, focus }: Props) {
+export function MapView({ state, now, focus }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markers = useRef(new Map<string, { marker: maplibregl.Marker; el: HTMLElement }>());
@@ -133,12 +135,20 @@ export function MapView({ state, focus }: Props) {
     });
   }, [state.trails, ready]);
 
+  // only changes while some vehicle has no link, so a healthy fleet is not redrawn on a timer
+  const tickNow = ageClock(state.links, now);
+
   // vehicle markers
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !ready) return;
     for (const [vehicleId, pos] of Object.entries(state.positions)) {
-      const view = markerView(vehicleId, state.vehicles[vehicleId], isNoLink(state, vehicleId));
+      const view = markerView(
+        vehicleId,
+        state.vehicles[vehicleId],
+        isNoLink(state, vehicleId),
+        heardAgeS(state.links[vehicleId], tickNow),
+      );
       let entry = markers.current.get(vehicleId);
       if (!entry) {
         const el = document.createElement("div");
@@ -153,7 +163,7 @@ export function MapView({ state, focus }: Props) {
       const tag = entry.el.querySelector(".tag");
       if (tag) tag.textContent = view.tag;
     }
-  }, [state.positions, state.vehicles, state.links, ready]);
+  }, [state.positions, state.vehicles, state.links, tickNow, ready]);
 
   // focus a vehicle when its card is clicked
   useEffect(() => {
