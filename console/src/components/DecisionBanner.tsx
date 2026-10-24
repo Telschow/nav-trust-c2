@@ -1,15 +1,18 @@
-import { formatDuration, titleOf, urgencyNote } from "../language";
+import { formatDuration, ordinal, titleOf, urgencyNote } from "../language";
+import type { RaisedAgain } from "../store";
 import type { Recommendation } from "../types";
 
 interface Props {
   open: Recommendation[]; // most urgent first
   now: number | null;
+  /** whether the most urgent one is a repeat of one that expired unanswered */
+  raisedAgain?: RaisedAgain | null | undefined;
   onReview: () => void;
 }
 
 /** A solid band across the whole screen while any decision waits, so it cannot be missed
  * while looking at the map. It names the most urgent one and how long is left. */
-export function DecisionBanner({ open, now, onReview }: Props) {
+export function DecisionBanner({ open, now, raisedAgain, onReview }: Props) {
   const first = open[0];
   if (!first) return null;
   const remaining = now === null ? null : Math.max(0, first.expires_s - now);
@@ -19,6 +22,11 @@ export function DecisionBanner({ open, now, onReview }: Props) {
       {/* only this part is announced; the countdown changes twice a second and would be read out each time */}
       <span role="alert" className="flex min-w-0 flex-1 items-center gap-4">
         <span className="font-semibold uppercase tracking-[0.08em]">Decision required</span>
+        {raisedAgain && (
+          <span className="rounded-[2px] border border-[#1c0808]/70 px-1.5 py-px text-xs font-semibold">
+            {`Raised again (${ordinal(raisedAgain.nth)} time)`}
+          </span>
+        )}
         <span className="min-w-0 flex-1 truncate">
           <span className="font-semibold">{titleOf(first)}</span>
           {urgencyNote(first) && <span className="hidden lg:inline"> · {urgencyNote(first)}</span>}

@@ -240,6 +240,32 @@ export function trustCounts(s: ConsoleState): FleetCounts {
   return counts;
 }
 
+export interface RaisedAgain {
+  /** how many times this vehicle and reason have now been put to the operator (2 = the second) */
+  nth: number;
+  /** server_s when the latest earlier one expired unanswered */
+  previousExpiredAt_s: number;
+}
+
+/** Whether a recommendation follows earlier ones for the same vehicle and reason that expired
+ * unanswered. Derived from the decisions the console holds, so a reload forgets them: a denial or
+ * an approval is not a re-raise, and the first recommendation after a reload looks first-time. */
+export function raisedAgain(s: ConsoleState, rec: Recommendation): RaisedAgain | null {
+  const earlier = Object.values(s.recommendations).filter(
+    (r) =>
+      r.id !== rec.id &&
+      r.vehicle_id === rec.vehicle_id &&
+      r.reason === rec.reason &&
+      r.created_s < rec.created_s &&
+      s.decisions[r.id]?.outcome === "EXPIRED",
+  );
+  if (earlier.length === 0) return null;
+  return {
+    nth: earlier.length + 1,
+    previousExpiredAt_s: Math.max(...earlier.map((r) => s.decisions[r.id]!.decided_s)),
+  };
+}
+
 /** Recommendations still waiting for an answer: most urgent first, then oldest first. */
 export function openRecommendations(s: ConsoleState): Recommendation[] {
   return Object.values(s.recommendations)

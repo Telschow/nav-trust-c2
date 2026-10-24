@@ -1,18 +1,21 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { actionsOf, contextNote, formatDuration, reasonText, titleOf, urgencyNote } from "../language";
+import { actionsOf, contextNote, formatDuration, ordinal, reasonText, titleOf, urgencyNote } from "../language";
+import type { RaisedAgain } from "../store";
 import { TONE, vehicleColor } from "../tone";
 import type { Decision, Recommendation } from "../types";
 
 interface OpenProps {
   rec: Recommendation;
   now: number | null;
+  /** set when this repeats a recommendation that expired unanswered */
+  raisedAgain?: RaisedAgain | null | undefined;
   disabled: boolean;
   onApprove: () => void;
   onDeny: () => void;
 }
 
-export function RecommendationCard({ rec, now, disabled, onApprove, onDeny }: OpenProps) {
+export function RecommendationCard({ rec, now, raisedAgain, disabled, onApprove, onDeny }: OpenProps) {
   const remaining = now === null ? null : rec.expires_s - now;
   const total = rec.expires_s - rec.created_s;
   const expired = remaining !== null && remaining <= 0;
@@ -31,6 +34,11 @@ export function RecommendationCard({ rec, now, disabled, onApprove, onDeny }: Op
 
       <div className="px-4 pb-4 pt-3">
         <h3 className="text-[17px] font-semibold leading-tight">{titleOf(rec)}</h3>
+        {raisedAgain && (
+          <p className="mt-2 border-l-2 border-warn pl-3 text-sm">
+            {`Raised again, ${ordinal(raisedAgain.nth)} time. The previous one expired unanswered at T+${formatDuration(raisedAgain.previousExpiredAt_s)}.`}
+          </p>
+        )}
         <p className="mt-2 text-sm text-muted">
           <span className="text-text">Why:</span> {reasonText(rec.reason)}.
         </p>

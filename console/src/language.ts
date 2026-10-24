@@ -44,6 +44,14 @@ export function headroomLevel(headroom: number): HeadroomLevel {
   return headroom >= 0.25 ? "shrinking" : "low";
 }
 
+/** 1 -> "1st", 2 -> "2nd", 11 -> "11th", 22 -> "22nd" */
+export function ordinal(n: number): string {
+  const lastTwo = n % 100;
+  const suffix =
+    lastTwo >= 11 && lastTwo <= 13 ? "th" : (({ 1: "st", 2: "nd", 3: "rd" } as Record<number, string>)[n % 10] ?? "th");
+  return `${n}${suffix}`;
+}
+
 /** 75 -> "1:15", 3725 -> "1:02:05" */
 export function formatDuration(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));

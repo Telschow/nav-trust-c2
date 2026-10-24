@@ -3,7 +3,7 @@ import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfirmDialog } from "./ConfirmDialog";
 import { DecisionBanner } from "./DecisionBanner";
-import { titleOf } from "../language";
+import { ordinal, titleOf } from "../language";
 import { RecommendationCard } from "./RecommendationCard";
 import { Header } from "./Header";
 import { StateChip } from "./StateChip";
@@ -249,5 +249,29 @@ describe("Header counts (LL-01, issue 73: a state last known is not counted as c
   it("shows no link count when every vehicle is heard", () => {
     render(<Header connected source="live" now={10} counts={{ GREEN: 2, AMBER: 0, RED: 0, noLink: 0 }} />);
     expect(screen.queryByText(/no link/)).toBeNull();
+  });
+});
+
+describe("a decision raised again (issue 111)", () => {
+  const again = { nth: 2, previousExpiredAt_s: 160 };
+
+  it("the band says it was raised again, and how many times", () => {
+    render(<DecisionBanner open={[rec]} now={130} raisedAgain={again} onReview={vi.fn()} />);
+    expect(screen.getByText("Raised again (2nd time)")).toBeTruthy();
+  });
+
+  it("the card says when the previous one expired unanswered", () => {
+    render(<RecommendationCard rec={rec} now={130} raisedAgain={again} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.getByText("Raised again, 2nd time. The previous one expired unanswered at T+2:40.")).toBeTruthy();
+  });
+
+  it("a first-time decision shows no such wording", () => {
+    render(<DecisionBanner open={[rec]} now={130} raisedAgain={null} onReview={vi.fn()} />);
+    render(<RecommendationCard rec={rec} now={130} raisedAgain={null} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.queryByText(/Raised again/)).toBeNull();
+  });
+
+  it("counts up the ordinals", () => {
+    expect([1, 2, 3, 4, 11, 12, 21, 22].map(ordinal)).toEqual(["1st", "2nd", "3rd", "4th", "11th", "12th", "21st", "22nd"]);
   });
 });

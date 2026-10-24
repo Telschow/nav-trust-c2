@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedRecommendations, initialState, isNoLink, openRecommendations, reducer, serverNow, trustCounts } from "./store";
+import { decidedRecommendations, initialState, isNoLink, openRecommendations, raisedAgain, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -276,5 +276,57 @@ describe("link health (LL-01, issue 73)", () => {
     let s = apply(initialState, ev({ type: "state", server_s: 50, data: withLinks({ uav1: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 4 } }) }));
     s = apply(s, ev({ type: "state", server_s: 80, data: snapshot }));
     expect(s.links).toEqual({});
+  });
+});
+
+describe("re-raised decisions (issue 111)", () => {
+  const recAt = (id: string, created: number, vehicle = "uav2", reason: Recommendation["reason"] = "INCONSISTENT_INNOVATION"): Recommendation =>
+    ({ ...rec, id, vehicle_id: vehicle, reason, created_s: created, expires_s: created + 60 });
+  const decide = (s: ConsoleState, id: string, outcome: "EXPIRED" | "DENIED" | "APPROVED", at: number) =>
+    apply(s, ev({ type: "decision", server_s: at, data: { recommendation_id: id, outcome, decided_s: at, operator: "o", note: "" } }));
+  const raise = (s: ConsoleState, r: Recommendation) => apply(s, ev({ type: "recommendation", server_s: r.created_s, data: r }));
+
+  it("a first recommendation for a vehicle and reason is not marked", () => {
+    const s = raise(initialState, recAt("r1", 100));
+    expect(raisedAgain(s, recAt("r1", 100))).toBeNull();
+  });
+
+  it("one that follows an expiry for the same vehicle and reason is raised again, with when the last expired", () => {
+    let s = raise(initialState, recAt("r1", 100));
+    s = decide(s, "r1", "EXPIRED", 160);
+    s = raise(s, recAt("r2", 161));
+    expect(raisedAgain(s, recAt("r2", 161))).toEqual({ nth: 2, previousExpiredAt_s: 160 });
+  });
+
+  it("counts every earlier expiry and reports the latest", () => {
+    let s = raise(initialState, recAt("r1", 100));
+    s = decide(s, "r1", "EXPIRED", 160);
+    s = raise(s, recAt("r2", 161));
+    s = decide(s, "r2", "EXPIRED", 221);
+    s = raise(s, recAt("r3", 222));
+    expect(raisedAgain(s, recAt("r3", 222))).toEqual({ nth: 3, previousExpiredAt_s: 221 });
+  });
+
+  it("an earlier denial or approval is not a re-raise", () => {
+    let s = raise(initialState, recAt("r1", 100));
+    s = decide(s, "r1", "DENIED", 120);
+    s = raise(s, recAt("r2", 130));
+    expect(raisedAgain(s, recAt("r2", 130))).toBeNull();
+  });
+
+  it("an expiry for another vehicle or another reason does not count", () => {
+    let s = raise(initialState, recAt("r1", 100, "uav3"));
+    s = decide(s, "r1", "EXPIRED", 160);
+    s = raise(s, recAt("r2", 161, "uav2"));
+    s = raise(s, recAt("r3", 162, "uav3", "GNSS_LOSS"));
+    expect(raisedAgain(s, recAt("r2", 161, "uav2"))).toBeNull();
+    expect(raisedAgain(s, recAt("r3", 162, "uav3", "GNSS_LOSS"))).toBeNull();
+  });
+
+  it("a fresh snapshot forgets earlier expiries", () => {
+    let s = raise(initialState, recAt("r1", 100));
+    s = decide(s, "r1", "EXPIRED", 160);
+    s = apply(s, ev({ type: "state", server_s: 200, data: { ...snapshot, open_recommendations: [recAt("r2", 161)] } }));
+    expect(raisedAgain(s, recAt("r2", 161))).toBeNull();
   });
 });
