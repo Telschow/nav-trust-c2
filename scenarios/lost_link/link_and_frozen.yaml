@@ -1,0 +1,19 @@
+name: link_and_frozen
+class: link_loss
+description: >
+  The same frozen-position fault as stuck_position, then the MAVLink link is cut 5 s after the
+  fault begins and never returns. Only what the scripts send to PX4 is dropped. No onboard monitor exists yet, so this is
+  the baseline the onboard monitor (issue 76) has to improve on. Not part of the main eval set.
+expected_px4: >
+  Proposal, to be checked by the recording: no failsafe for the frozen fix (ADR 0003). After the
+  cut, PX4's data-link-loss failsafe returns the vehicle toward home, from a position it
+  believes is unchanged, so the return is not expected to be controlled.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+fault:
+  mode: stuck
+  zone: {west: 200, south: -50, east: 280, north: 150}
+  latch: true
+# delay_s is a proposal. Uplink only, so the recording still hears the vehicle.
+link_cut: {after: fault_start, delay_s: 5, direction: uplink}
+runs: 2
+max_duration_s: 300

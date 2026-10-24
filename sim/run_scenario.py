@@ -37,6 +37,12 @@ def record_argv(s: Scenario, run: int, out_dir: Path) -> list[str]:
         argv += ["--mode", s.fault.mode]
         if s.fault.latch:
             argv.append("--latch-fault")
+    if s.link_cut:
+        c = s.link_cut
+        argv += ["--link-cut-after", c.after, "--link-cut-delay", str(c.delay_s)]
+        if c.duration_s is not None:
+            argv += ["--link-cut-duration", str(c.duration_s)]
+        argv += ["--link-cut-direction", c.direction]
     return argv
 
 

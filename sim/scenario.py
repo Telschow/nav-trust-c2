@@ -12,8 +12,10 @@ from typing import Any
 
 import yaml
 
-CLASSES = ("nominal", "short_outage", "long_outage", "stuck_position", "wrong_fix")
+CLASSES = ("nominal", "short_outage", "long_outage", "stuck_position", "wrong_fix", "link_loss")
 MODES = ("off", "stuck", "wrong")  # failure modes of PX4's `failure gps`
+LINK_CUT_AFTER = ("mission_start", "fault_start")
+LINK_CUT_DIRECTIONS = ("both", "uplink")
 
 
 @dataclass(frozen=True)
@@ -41,6 +43,18 @@ class Fault:
 
 
 @dataclass(frozen=True)
+class LinkCut:
+    """Cut the MAVLink link between PX4 and the scripts, both directions, for one vehicle."""
+
+    after: str  # one of LINK_CUT_AFTER
+    delay_s: float
+    duration_s: float | None = None  # None: the link never comes back
+    # "uplink" drops only what the scripts send to PX4, so PX4 loses its ground station while the
+    # recorder keeps hearing the vehicle and can show what the failsafe did
+    direction: str = "both"
+
+
+@dataclass(frozen=True)
 class Scenario:
     name: str
     scenario_class: str
@@ -50,6 +64,7 @@ class Scenario:
     fault: Fault | None
     runs: int
     max_duration_s: float
+    link_cut: LinkCut | None = None
 
     def recording_name(self, run: int) -> str:
         return f"{self.name}-{run}"
@@ -82,8 +97,27 @@ def parse_scenario(data: dict[str, Any]) -> Scenario:
         if zone.east <= zone.west or zone.north <= zone.south:
             raise ValueError(f"{name}: zone must have positive width and height")
         fault = Fault(mode, zone, bool(f.get("latch", False)))
-    if (scenario_class == "nominal") != (fault is None):
-        raise ValueError(f"{name}: only the nominal class has no fault")
+
+    link_cut: LinkCut | None = None
+    if "link_cut" in data:
+        c = data["link_cut"]
+        after = str(c.get("after"))
+        if after not in LINK_CUT_AFTER:
+            raise ValueError(f"{name}: link_cut after must be one of {LINK_CUT_AFTER}")
+        if after == "fault_start" and fault is None:
+            raise ValueError(f"{name}: link_cut after fault_start needs a GNSS fault")
+        delay_s = float(c.get("delay_s", 0.0))
+        duration_s = float(c["duration_s"]) if c.get("duration_s") is not None else None
+        if delay_s < 0 or (duration_s is not None and duration_s <= 0):
+            raise ValueError(f"{name}: link_cut delay_s must be >= 0 and duration_s > 0")
+        direction = str(c.get("direction", "both"))
+        if direction not in LINK_CUT_DIRECTIONS:
+            raise ValueError(f"{name}: link_cut direction must be one of {LINK_CUT_DIRECTIONS}")
+        link_cut = LinkCut(after, delay_s, duration_s, direction)
+    if (scenario_class == "link_loss") != (link_cut is not None):
+        raise ValueError(f"{name}: only the link_loss class has a link_cut, and it needs one")
+    if (scenario_class == "nominal") != (fault is None and link_cut is None):
+        raise ValueError(f"{name}: only the nominal class has no fault and no link cut")
 
     runs = int(need("runs"))
     max_duration = float(need("max_duration_s"))
@@ -98,6 +132,7 @@ def parse_scenario(data: dict[str, Any]) -> Scenario:
         fault=fault,
         runs=runs,
         max_duration_s=max_duration,
+        link_cut=link_cut,
     )
 
 

@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import json
 import subprocess
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -20,10 +21,14 @@ from typing import Any
 from mavsdk_grpc import System
 
 from navtrust.recording import SCHEMA
+from sim.failsafe_params import apply_failsafe_params
+from sim.flight_mode_log import log_flight_mode
 from sim.fly_survey import DEFAULT_ADDRESS, JsonlLog, VehicleDisarmed, fly
 from sim.gnss_injector import MODES, ensure_enabled, inject_loop, log_gps_info
 from sim.ground_truth import gz_available, log_ground_truth
 from sim.interference import rectangle
+from sim.link_cut import LinkCutSchedule, UdpRelay, drive_link_cut, relay_ports
+from sim.scenario import LINK_CUT_AFTER, LINK_CUT_DIRECTIONS, LinkCut
 from sim.survey import GeoPoint
 
 ESTIMATOR_FIELDS = (
@@ -105,6 +110,16 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
         "max_duration_s": args.max_duration,
         "ground_truth": args.ground_truth,
         "latch_fault": args.latch_fault,
+        "link_cut": (
+            {
+                "after": args.link_cut_after,
+                "delay_s": args.link_cut_delay,
+                "duration_s": args.link_cut_duration,
+                "direction": args.link_cut_direction,
+            }
+            if args.link_cut_after
+            else None
+        ),
         "operator_action": (
             {"action": args.operator_action, "delay_s": args.operator_delay}
             if args.operator_action
@@ -113,14 +128,53 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+class _EventLog(JsonlLog):
+    """A log that tells the link-cut schedule when the mission starts and the fault begins."""
+
+    def __init__(self, path: Path, schedule: LinkCutSchedule | None) -> None:
+        super().__init__(path)
+        self._schedule = schedule
+
+    def write(self, event: str, **fields: Any) -> None:
+        super().write(event, **fields)
+        if self._schedule is not None:
+            if event == "mission_started":
+                self._schedule.mission_started(time.monotonic())
+            elif event == "gnss_enter":
+                self._schedule.fault_started(time.monotonic())
+
+
 async def run(args: argparse.Namespace) -> Path:
-    log = JsonlLog(Path(args.out))
+    cut = (
+        LinkCut(
+            args.link_cut_after,
+            args.link_cut_delay,
+            args.link_cut_duration,
+            args.link_cut_direction,
+        )
+        if args.link_cut_after
+        else None
+    )
+    schedule = LinkCutSchedule(cut) if cut else None
+    log = _EventLog(Path(args.out), schedule)
     drone = System(port=args.grpc_port)
+    relay: UdpRelay | None = None
+    side_tasks: list[asyncio.Task[None]] = []
+    address = args.system_address
     try:
         log.write("header", **build_header(args))
-        await drone.connect(system_address=args.system_address)
-        log.write("connected", address=args.system_address)
+        if schedule is not None:
+            listen_port, px4_port, script_port = relay_ports(address)
+            relay = UdpRelay(listen_port, px4_port, script_port)
+            await relay.start()
+            address = f"udpin://0.0.0.0:{script_port}"
+            side_tasks.append(asyncio.create_task(drive_link_cut(relay, schedule, log.write)))
+        await drone.connect(system_address=address)
+        log.write("connected", address=address)
         await ensure_enabled(drone)
+        if schedule is not None:
+            log.write("failsafe_params", **await apply_failsafe_params(drone))
+            side_tasks.append(asyncio.create_task(log_flight_mode(drone, log)))
 
         def on_ready(origin: GeoPoint) -> list[asyncio.Task[None]]:
             tasks = [
@@ -179,7 +233,14 @@ async def run(args: argparse.Namespace) -> Path:
             # waypoint). Say so in the file instead of leaving a silent truncation.
             log.write("recording_stopped", reason="max_duration", max_duration_s=args.max_duration)
     finally:
-        log.close()
+        try:
+            for task in side_tasks:
+                task.cancel()
+            await asyncio.gather(*side_tasks, return_exceptions=True)
+            if relay is not None:
+                await relay.stop()
+        finally:
+            log.close()
     return log.path
 
 
@@ -214,6 +275,21 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="experiment: send this command --operator-delay seconds after the fault begins",
     )
     p.add_argument("--operator-delay", type=float, default=15.0)
+    p.add_argument(
+        "--link-cut-after",
+        choices=LINK_CUT_AFTER,
+        help="cut the MAVLink link (both directions) for this vehicle after this event",
+    )
+    p.add_argument("--link-cut-delay", type=float, default=0.0, help="seconds after the event")
+    p.add_argument(
+        "--link-cut-direction",
+        choices=LINK_CUT_DIRECTIONS,
+        default="both",
+        help="uplink: drop only what the scripts send to PX4, so the recording still hears it",
+    )
+    p.add_argument(
+        "--link-cut-duration", type=float, help="seconds until the link returns; default never"
+    )
     p.add_argument(
         "--latch-fault",
         action="store_true",
