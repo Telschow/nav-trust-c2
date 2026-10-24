@@ -179,7 +179,7 @@ describe("VehicleRow AMBER", () => {
   });
 });
 
-describe("VehicleRow with no link (issue 73: a trust state is never shown as current)", () => {
+describe("VehicleRow with no link (LL-01, issue 73: a trust state is never shown as current)", () => {
   const green = {
     vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
     horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
@@ -238,7 +238,7 @@ describe("VehicleRow with no link (issue 73: a trust state is never shown as cur
   });
 });
 
-describe("Header counts (issue 73: a state last known is not counted as current)", () => {
+describe("Header counts (LL-01, issue 73: a state last known is not counted as current)", () => {
   it("counts a vehicle with no link separately, not as trusted", () => {
     render(<Header connected source="live" now={10} counts={{ GREEN: 1, AMBER: 0, RED: 0, noLink: 1 }} />);
     expect(screen.getByText("2 vehicles")).toBeTruthy();
