@@ -11,8 +11,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import contextlib
 import ipaddress
 import time
+from collections.abc import AsyncIterator
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -118,10 +120,27 @@ def create_app(
     gate: CommandGate | None = None,
     progress: SectorProgress | None = None,
     console_dir: str | Path | None = None,
+    sweep_interval_s: float = 0.5,
 ) -> FastAPI:
     """recommender needs fleet; gate (command execution) needs an approved decision; progress
-    (which sectors are flown) needs fleet and the area origin."""
-    app = FastAPI(title="nav-trust-c2 backend")
+    (which sectors are flown) needs fleet and the area origin. The hub is swept every
+    sweep_interval_s so a vehicle that goes silent is marked NO_LINK even when nothing arrives."""
+
+    @contextlib.asynccontextmanager
+    async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        async def sweep_forever() -> None:
+            while True:
+                hub.sweep()
+                await asyncio.sleep(sweep_interval_s)
+
+        task = asyncio.create_task(sweep_forever())
+        try:
+            yield
+        finally:
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    app = FastAPI(title="nav-trust-c2 backend", lifespan=lifespan)
 
     @app.middleware("http")
     async def same_origin_only(request: Request, call_next: Any) -> Response:
