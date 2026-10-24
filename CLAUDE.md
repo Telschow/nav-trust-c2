@@ -1,20 +1,23 @@
 # CLAUDE.md
 
 ## Project
-nav-trust-c2: human-on-the-loop mission control for a small team of simulated drones (PX4 SITL,
-Gazebo, MAVSDK). Detects GNSS degradation, shows per-vehicle navigation trust
-(GREEN/AMBER/RED + reason + position bound), recommends hold / RTL / re-task. Nothing executes
-without operator approval. Search-and-rescue / area-survey framing.
+nav-trust-c2:
+- human-on-the-loop mission control for a small team of simulated drones (PX4 SITL,
+Gazebo, MAVSDK).
+- Detects GNSS degradation, shows per-vehicle navigation trust
+(GREEN/AMBER/RED + reason + position bound), recommends hold / RTL / re-task.
+- Nothing executes without operator approval, given live or in advance (ADR 0004).
+- Search-and-rescue / area-survey framing.
 
 ## Scope guardrails (non-negotiable)
 - Simulation only, unclassified, public sources. No weapons, targeting, effectors, real
   platform parameters, or swarm attack behaviours.
-- Every vehicle command except PX4 internal failsafes requires a recorded operator approval.
+- Every vehicle command except PX4 internal failsafes requires a recorded operator approval. A contingency the operator approved before the mission counts as that approval for the fault, link condition and action it names (LAND only), and for nothing else (ADR 0004).
 
 ## Layout
 navtrust/ (pure Python trust engine, no sim dependency) | c2/ (allocator, recommender, policy
 gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds) | scenarios/
-(YAML) | eval/ (batch runner, metrics) | docs/product, docs/programme, docs/adr, docs/ICD.md
+(YAML) | eval/ (batch runner, metrics) | docs/product, docs/programme, docs/adr, docs/ICD.md, GLOSSARY.md, docs/research
 
 ## Commands
 - All checks without the sim: `make check` (ruff, ruff format, mypy strict, pytest)
