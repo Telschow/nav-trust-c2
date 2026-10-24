@@ -50,3 +50,23 @@ Not in any milestone: tuning frozen-position detection against a fresh held-out 
 moving the PX4 pin to a release tag (issue 79) and a lost-link usability round after M5b
 (issue 82). Accepted limits stay stated where results appear: one simulator, few runs, a small
 convenience sample (R1, R2, R11).
+
+## Priority of the open issues
+
+Scored on 24 October 2026 with the scales above. The audit boost multiplies Impact by 1.5 for issues that close a finding of the 24 October docs audit. Each issue carries the same numbers in its own `## RICE` section, and the issue is the source if the two differ. These are judgements, not measurements. Scales: Reach 1 to 10, Impact 0.25 to 3, Confidence 50, 80 or 100%, Effort in ideal working days (the same as contested-nav `docs/prioritisation.md`). Epics and the recurring status issue (#19) are not scored.
+
+| Issue | Item | Reach | Impact | Audit boost | Confidence | Effort (days) | Score |
+|---|---|---:|---:|---|---:|---:|---:|
+| #97 | [M5a] Run the lost-link baseline scenarios in the simulator (maintainer) | 8 | 2 | x1.5 | 80% | 0.5 | 38.40 |
+| #99 | [M5a] Docs audit: align claims with the evidence | 10 | 2 | x1.5 | 80% | 1 | 24.00 |
+| #73 | [M5a] Link-health model: per-vehicle report freshness and a NO LINK state | 8 | 2 | x1.5 | 80% | 1 | 19.20 |
+| #74 | [M5a] PX4 data-link-loss failsafe: link-cut hook and recorded behaviour with healthy navigation | 6 | 1 | x1.5 | 80% | 0.5 | 14.40 |
+| #16 | [M4a] Usability session with 2 to 3 people and findings note | 6 | 2 | x1.5 | 80% | 2 | 7.20 |
+| #81 | [M5b] More frozen-position runs for the LAND finding (R5) | 6 | 2 | x1.5 | 50% | 2 | 4.50 |
+| #82 | [M5b] Usability round for lost-link states | 6 | 2 | x1.5 | 50% | 2 | 4.50 |
+| #83 | [M6] Feasibility spike: can the simulator inject gradual GNSS drift? | 4 | 1 | none | 50% | 1 | 2.00 |
+| #75 | [M5b] link_loss scenario family with ground truth and an eval table | 8 | 2 | none | 50% | 4 | 2.00 |
+| #76 | [M5b] Onboard trust monitor executing pre-authorised contingencies | 8 | 3 | none | 50% | 6 | 2.00 |
+| #79 | [Backlog] Move the PX4 pin to a release tag once GPS failure injection ships (R9) | 2 | 1 | none | 50% | 1 | 1.00 |
+| #77 | [M5b] Reconnection: state reconciliation and command acknowledgement | 4 | 1 | none | 50% | 3 | 0.67 |
+| #78 | [Backlog] Tune frozen-position detection against a fresh held-out set (M-01, R7) | 4 | 1 | none | 50% | 3 | 0.67 |
