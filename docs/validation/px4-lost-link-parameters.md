@@ -102,5 +102,5 @@ What no test here shows, and a simulator run must: that PX4 really declares the 
 when only the relayed link goes quiet (PX4 has a second MAVLink instance for a ground station on
 18571; nothing should be attached to it), that telemetry keeps flowing during an `uplink` cut,
 and that the run ends when the vehicle lands. The contingency wait-time rule for issue 76
-(wait shorter than `COM_DL_LOSS_T` plus the hold) should import `COM_DL_LOSS_T_S` from
+(wait shorter than `COM_DL_LOSS_T`, so the hold has not started; ADR 0004) should import `COM_DL_LOSS_T_S` from
 `sim/failsafe_params.py`.
