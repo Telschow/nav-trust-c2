@@ -40,7 +40,7 @@ the evidence.
 | ID | Issue | Status |
 |---|---|---|
 | I1 | Held-out expectation E3 not met: one `STALE` episode in `wrong_fix_fast-1`, caused by a 6.8 s stall of the whole simulation | Reported, not excluded; see the held-out report |
-| I2 | Product docs v1 are written (issue 1 closed). Weekly status files after 2026-W41 (W42 and W43) are not written | Open, maintainer |
+| I2 | Product docs v1 are written (issue 1 closed). Weekly status files W42 and W43 are written | Closed |
 | I3 | `confidence` in the ICD had no defined meaning | Closed: `docs/ICD.md` now defines it as the measured coverage of the calibrated bound |
 | I4 | `BIAS_DRIFT` is not produced: there is no gradual-drift fault to develop it against | Accepted for v1; state as a non-goal |
 | I5 | Several issues stayed open after their work merged because "Closes #X and #Y" closes only the first | Fixed; one `Closes` per issue from now on |

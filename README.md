@@ -27,8 +27,9 @@ operator approval; one gate is the only path to a command, and a test enforces i
 - The displayed bound, within 3 m, held in 100% of 4,040 reports on the data it was tuned on and
   in 99.72% of 5,308 reports on an independent set. The first version, taken from the
   estimator's own accuracy figure, held in 30.8%.
-- A frozen GPS position does not stall the vehicle, it flies away (5.3 km in one run). Only
-  LAND ended the flight in a controlled stop, so that is what is recommended.
+- A frozen GPS position does not stall the vehicle, it flies away (5.3 km at the 220 s cut-off,
+  one run). Only LAND ended the flight in a controlled stop, so that is what is recommended (one run per
+  action).
 - With one of three vehicles lost, the area covered was 100% when the operator approved the
   re-task and 87% when the operator denied it (3 runs each, scripted operator).
 - Held-out validation: 7 of 8 pre-declared expectations met. The one that was not is reported,
@@ -78,7 +79,8 @@ flowchart TB
 - Simulation only. Unclassified, public sources only.
 - Mission framing is search-and-rescue and area survey.
 - No weapons, no targeting, no effectors, no real platform parameters, no swarm attack behaviour.
-- The operator always approves vehicle commands. Only PX4's own failsafes act without approval.
+- The operator approves vehicle commands. Only PX4's own failsafes act without approval today. A
+  contingency approved before the mission is planned (ADR 0004, not built).
 
 ## Non-goals
 

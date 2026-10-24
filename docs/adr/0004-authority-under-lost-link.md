@@ -15,8 +15,9 @@ engine), link health (does the backend still hear the vehicle) and operator avai
 decision be made in time). Terms are defined in `GLOSSARY.md`.
 
 The evidence that matters is ADR 0003. With a frozen GNSS position no PX4 failsafe fires, and
-the vehicle runs away: 5320 m from its start with no action, against 450 m with LAND, which
-put it on the ground 9 s after the command. HOLD and RTL ended in fast uncontrolled descents.
+the vehicle runs away: 5320 m from its start (farthest point at the 220 s cut-off) with no
+action, against 450 m with LAND, which put it on the ground 9 s after the command. HOLD and RTL
+reached the ground at 31.7 and 24.6 m/s horizontal speed.
 That is one run per action in one simulator (issue 81 adds more).
 
 The cases, as a contingency matrix (rows are a proposal):
@@ -55,11 +56,15 @@ unbounded for fast faults, and no source in the research note uses it.
    frozen position. A vehicle never decides anything about other vehicles.
 3. **When it acts.** Only when the link has been down longer than the policy's wait time and the
    trust reason matches an entry. Otherwise it does nothing and keeps reporting. The wait time
-   must be shorter than PX4's `COM_DL_LOSS_T` plus any `COM_FAIL_ACT_T` hold, or PX4's own action
-   starts first.
-4. **PX4 underneath.** The data-link-loss action is set explicitly in the simulated vehicles,
-   because it defaults to Disabled. Proposed value: RTL while navigation is healthy. The onboard
-   monitor overrides it to LAND on a position inconsistency that matches an entry.
+   must be shorter than PX4's `COM_DL_LOSS_T` (10 s in the simulated vehicles), so that the
+   `COM_FAIL_ACT_T` hold and PX4's own action have not started. (Amended 2026-10-24: the first
+   text said "plus any hold", about 15 s, which disagreed with the parameters note and issue 76.)
+4. **PX4 underneath.** The simulated vehicles' airframe already sets the data-link-loss action to
+   Return (`NAV_DLL_ACT` 2), so no parameter change is needed (see
+   `docs/validation/px4-lost-link-parameters.md`). RTL while navigation is healthy is unmeasured
+   until the baseline runs of issue 97 exist. The onboard monitor overrides it to LAND on a
+   position inconsistency that matches an entry. (Amended 2026-10-24: the first text said the
+   action had to be set explicitly because it defaults to Disabled.)
 5. **Recording.** The policy is approved once per mission as an audited approval. The vehicle
    accepts a policy only if it matches that audit row's id and hash, and only up to a fixed
    maximum age. There is no revocation, because the link may be down when one is wanted. This is
