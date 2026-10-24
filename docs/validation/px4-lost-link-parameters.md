@@ -38,25 +38,29 @@ in `tests/test_blind_land.py`). Rows are GNSS-off outages; each short-outage run
 | short_outage-3 (two zones) | 4.0 and 4.1 | no | none | none |
 
 - With GNSS gone for good, the vehicle began a steady descent about 5 s after the loss in 2 of 2
-  runs, at about 0.74 m/s, and was on the ground about 45 s after the loss.
-- In 6 of 6 outages of 4 s, the vehicle did not descend.
-- So the reaction starts between 4 s (no reaction, 6 of 6) and 5.2 s (reaction, 2 of 2). That is
-  consistent with `EKF2_NOAID_TOUT` (5 s), and the descent rate is close to `MPC_LAND_SPEED`
-  (0.7 m/s). Consistent is not shown: the recordings carry no flight-mode events and there are no
-  PX4 logs, so which mechanism acted is not established.
+  runs and was on the ground about 45 s after the loss. It came down from 30 m in about 40 s
+  (touchdown minus onset in the table), a rate close to `MPC_LAND_SPEED`.
+- In all six outages of 4.0 to 4.1 s, the vehicle did not descend.
+- These are different tests, so they do not bracket a threshold: a 4 s outage that ended without a
+  reaction, and a loss that never ended with a reaction at about 5 s. A 5 s dead-reckoning limit
+  (`EKF2_NOAID_TOUT`) would fit both. Fitting is not shown: the recordings carry no flight-mode
+  events and there are no PX4 logs, so which mechanism acted is not established. "Blind land" is
+  the repo's name for this reaction (`CLAUDE.md`); this note measures the descent and does not
+  identify the mechanism.
 
 ## What this changes (proposals for the maintainer)
 
 - **`CLAUDE.md` and CONOPS vignette A** say "a few seconds" and "the timing was not measured
   exactly". Measured: no reaction at 4 s, descent from about 5 s, touchdown about 45 s after the
   loss, in this simulator.
-- **ADR 0004, "link lost, GNSS lost".** The GNSS-driven descent starts about 5 s in, before the
-  data-link-loss failsafe can act (10 s plus a 5 s hold). In that row the vehicle is already
-  landing when the link failsafe would start.
+- **ADR 0004, "link lost, GNSS lost".** If both fail, the GNSS-driven descent would be expected
+  to start about 5 s in, before PX4's data-link-loss action (10 s plus a 5 s hold). This is an
+  inference: no recording has both faults, so issue 75's `link_and_gnss_loss` is the test.
 - **ADR 0004, wait time.** The contingency wait time must be shorter than the 15 s before RTL
   starts, and arguably shorter than the 10 s before the hold.
-- **Issue 74.** Record `NAV_DLL_ACT` and `COM_DL_LOSS_T` in each lost-link recording's header, so
-  the setting is evidence and not an assumption.
+- **Issue 74** (PX4 data-link-loss failsafe, the telemetry link in the glossary). Record
+  `NAV_DLL_ACT` and `COM_DL_LOSS_T` in each lost-link recording's header, so the setting is
+  evidence and not an assumption. Issue 74 should start from the table above.
 
 ## Limits
 

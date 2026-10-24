@@ -64,6 +64,10 @@ def measure_outages(recording: Recording) -> list[OutageResult]:
     return results
 
 
+def _seconds(value: float | None, missing: str) -> str:
+    return f"{value:.1f}" if value is not None else missing
+
+
 def table(recordings: Path) -> str:
     """One row per GNSS-off outage, for every recording that injects `off`."""
     rows = [
@@ -75,9 +79,9 @@ def table(recordings: Path) -> str:
         if recording.header.get("failure_mode") != "off":
             continue
         for o in measure_outages(recording):
-            back = f"{o.duration_s:.1f}" if o.duration_s is not None else "never"
-            onset = f"{o.descent_onset_s:.1f}" if o.descent_onset_s is not None else "none"
-            down = f"{o.touchdown_s:.1f}" if o.touchdown_s is not None else "none"
+            back = _seconds(o.duration_s, "never")
+            onset = _seconds(o.descent_onset_s, "none")
+            down = _seconds(o.touchdown_s, "none")
             rows.append(
                 f"| {path.stem} | {back} | {'yes' if o.descended else 'no'} | {onset} | {down} |"
             )
