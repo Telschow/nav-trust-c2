@@ -6,8 +6,10 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { Info, Maximize2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { localToLonLat, sectorRing } from "../geo";
+import { markerView } from "../markers";
+import { isNoLink } from "../store";
 import type { ConsoleState } from "../store";
-import { TONE, vehicleColor } from "../tone";
+import { LINK_TONE, TONE, vehicleColor } from "../tone";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -136,8 +138,7 @@ export function MapView({ state, focus }: Props) {
     const map = mapRef.current;
     if (!map || !ready) return;
     for (const [vehicleId, pos] of Object.entries(state.positions)) {
-      const trust = state.vehicles[vehicleId];
-      const tone = TONE[trust?.state ?? "AMBER"].hex;
+      const view = markerView(vehicleId, state.vehicles[vehicleId], isNoLink(state, vehicleId));
       let entry = markers.current.get(vehicleId);
       if (!entry) {
         const el = document.createElement("div");
@@ -147,12 +148,12 @@ export function MapView({ state, focus }: Props) {
         markers.current.set(vehicleId, entry);
       }
       entry.marker.setLngLat([pos.lon_deg, pos.lat_deg]);
-      entry.el.style.setProperty("--tone", tone);
-      entry.el.classList.toggle("untrusted", trust !== undefined && trust.state !== "GREEN");
+      entry.el.style.setProperty("--tone", view.tone);
+      entry.el.classList.toggle("untrusted", view.dashed);
       const tag = entry.el.querySelector(".tag");
-      if (tag) tag.textContent = `${vehicleId}${trust && trust.state !== "GREEN" ? ` · ${trust.state}` : ""}`;
+      if (tag) tag.textContent = view.tag;
     }
-  }, [state.positions, state.vehicles, ready]);
+  }, [state.positions, state.vehicles, state.links, ready]);
 
   // focus a vehicle when its card is clicked
   useEffect(() => {
@@ -217,6 +218,10 @@ function Legend() {
               {s === "GREEN" ? "Position trusted" : s === "AMBER" ? "Position degraded" : "Position not trusted"}
             </span>
           ))}
+          <span className="flex items-center gap-2">
+            <span className="size-2.5 rounded-full" style={{ background: LINK_TONE }} />
+            No link: the position and state are the last known
+          </span>
           <span className="mt-1 flex items-center gap-2">
             <span className="size-3 rounded-full border border-dashed border-muted" />
             Dashed ring: do not rely on this position
