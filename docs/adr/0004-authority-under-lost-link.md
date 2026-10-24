@@ -1,8 +1,7 @@
 # ADR 0004: Authority under lost link
 
-Status: proposed, 2026-10-24. Context and options drafted by Claude at the maintainer's
-request (issue 72). A draft decision was added on the maintainer's request; it is not accepted
-until the maintainer edits it and changes this status to accepted.
+Status: accepted, 2026-10-24. Decided by the maintainer; context and options written by
+Claude on their instruction (issue 72).
 
 ## Context
 
@@ -42,30 +41,7 @@ The cases, as a contingency matrix (rows are a proposal):
    returns. Unbounded exposure for fast faults. The `operator_unresponsive` scenario (issue 75)
    measures this exposure.
 
-## Points raised in review
-
-Not decisions. Raised on 2026-10-24 for the maintainer to accept, change or drop.
-
-- `STALE` (the engine's own input is silent) and `NO_LINK` (the backend has not heard from the
-  vehicle) stay separate. While a vehicle is `NO_LINK` no command is proposed to it, but its
-  sector may still be re-assigned.
-- `NO_LINK` means telemetry silence only. Cutting both directions together is a stated
-  assumption; an asymmetric link is out of scope.
-- A contingency counts as an approval given in advance, so every command still traces to a
-  recorded approval or to PX4. The wording of the scope guardrail in `CLAUDE.md` would be
-  amended when this ADR is accepted, not before.
-- The only allowed action is LAND, because ADR 0003 is the only evidence for any action under a
-  frozen position. A vehicle never decides anything about other vehicles.
-- PX4's data-link-loss action is RTL when navigation is healthy. The onboard monitor overrides it
-  to LAND on position inconsistency. The contingency's wait time must be shorter than
-  `COM_DL_LOSS_T`, or RTL starts first.
-- The policy is approved once per mission and referenced by the audit row's id and hash, with a
-  fixed maximum age and no revocation (the link may be down when one is wanted). This is
-  integrity of the record, not authentication.
-
 ## Decision
-
-Draft by Claude for the maintainer to accept, change or reject.
 
 Option 2: pre-authorised contingencies, with PX4's own failsafes underneath. Option 1 alone
 leaves a frozen or spoofed position uncaught, because PX4's position-loss failsafe fires when the
@@ -94,7 +70,7 @@ unbounded for fast faults, and no source in the research note uses it.
 7. **After reconnection**, the vehicle reports each onboard action with time, reason and policy
    reference. Recommendations raised before the outage are closed as superseded if the situation
    changed. An approved command that was never acknowledged is audited, not resent.
-8. **Guardrail wording** in `CLAUDE.md`, to be changed when this ADR is accepted: "Every vehicle
+8. **Guardrail wording** for the scope guardrail in `CLAUDE.md`: "Every vehicle
    command except PX4 internal failsafes requires a recorded operator approval. A contingency the
    operator approved before the mission counts as that approval for the fault, link condition and
    action it names, and for nothing else."
