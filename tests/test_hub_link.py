@@ -101,7 +101,7 @@ def test_state_reports_each_vehicles_link_and_the_age_of_its_last_report() -> No
     hub.ingest_navtrust(report("uav1"))
     clock.t = 101.0
     hub.ingest_navtrust(report("uav2"))
-    clock.t = 103.5  # uav1 silent for 3.5 s, uav2 for 2.5 s: both past the 2 s timeout
+    clock.t = 103.5  # uav1 has been silent 3.5 s, uav2 2.5 s; the 2 s timeout has passed for both
     hub.ingest_position("uav2", 47.0, 8.0, 30.0)  # uav2 is heard again
     clock.t = 104.0
     state = hub.state()

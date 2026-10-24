@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import contextlib
 import ipaddress
+import logging
 import time
 from collections.abc import AsyncIterator
 from dataclasses import asdict
@@ -130,7 +131,10 @@ def create_app(
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
         async def sweep_forever() -> None:
             while True:
-                hub.sweep()
+                try:
+                    hub.sweep()
+                except Exception:  # a failing subscriber must not end link detection
+                    logging.getLogger(__name__).exception("hub sweep failed; will retry")
                 await asyncio.sleep(sweep_interval_s)
 
         task = asyncio.create_task(sweep_forever())
@@ -333,6 +337,12 @@ def main() -> None:
     p.add_argument("--db", default="logs/audit.sqlite")
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8000)
+    p.add_argument(
+        "--link-timeout",
+        type=float,
+        default=2.0,
+        help="seconds without a report before a vehicle is NO_LINK (proposal: 2)",
+    )
     p.add_argument("--console", default="console/dist", help="built console to serve at /")
     p.add_argument(
         "--source",
@@ -358,7 +368,7 @@ def main() -> None:
     args = p.parse_args()
     start = time.monotonic()
     clock = lambda: time.monotonic() - start  # noqa: E731
-    hub = Hub(AuditLog(args.db), clock)
+    hub = Hub(AuditLog(args.db), clock, link_timeout_s=args.link_timeout)
     if args.source:
         hub.set_source(args.source)
     ids = [f"uav{i}" for i in range(1, args.vehicles + 1)]

@@ -7,6 +7,7 @@ log; a rejected decision attempt is logged too.
 from __future__ import annotations
 
 from collections.abc import Callable
+from enum import StrEnum
 from typing import Any
 
 from c2.audit import AuditLog
@@ -22,8 +23,12 @@ from navtrust.types import NavTrust
 
 Event = dict[str, Any]
 
-LINK_OK = "LINK_OK"
-NO_LINK = "NO_LINK"
+
+class LinkState(StrEnum):
+    """Whether the backend is hearing a vehicle. Says nothing about its navigation."""
+
+    LINK_OK = "LINK_OK"
+    NO_LINK = "NO_LINK"
 
 
 class HubError(Exception):
@@ -67,7 +72,7 @@ class Hub:
         self._clock = clock
         self._link_timeout_s = link_timeout_s
         self._last_report_s: dict[str, float] = {}
-        self._link: dict[str, str] = {}
+        self._link: dict[str, LinkState] = {}
         self._trust: dict[str, NavTrust] = {}
         self._recs: dict[str, Recommendation] = {}
         self._decisions: dict[str, Decision] = {}
@@ -190,8 +195,8 @@ class Hub:
         EXPIRED (each once). Returns the newly expired decisions."""
         now = self._clock()
         for vehicle_id, last_s in self._last_report_s.items():
-            if self._link[vehicle_id] == LINK_OK and now - last_s > self._link_timeout_s:
-                self._set_link(vehicle_id, NO_LINK, now - last_s)
+            if self._link[vehicle_id] is LinkState.LINK_OK and self._is_silent(now - last_s):
+                self._set_link(vehicle_id, LinkState.NO_LINK, now - last_s)
         expired = []
         for rec in self._recs.values():
             if rec.id not in self._decisions and now > rec.expires_s:
@@ -204,16 +209,18 @@ class Hub:
         """Any report from a vehicle (trust or position) counts as hearing from it."""
         now = self._clock()
         silence_s = now - self._last_report_s.get(vehicle_id, now)
-        if (
-            self._link.setdefault(vehicle_id, LINK_OK) == LINK_OK
-            and silence_s > self._link_timeout_s
-        ):
-            self._set_link(vehicle_id, NO_LINK, silence_s)  # an outage nobody swept
+        self._link.setdefault(vehicle_id, LinkState.LINK_OK)
+        if self._link[vehicle_id] is LinkState.LINK_OK and self._is_silent(silence_s):
+            self._set_link(vehicle_id, LinkState.NO_LINK, silence_s)  # an outage nobody swept
         self._last_report_s[vehicle_id] = now
-        if self._link[vehicle_id] == NO_LINK:
-            self._set_link(vehicle_id, LINK_OK, silence_s)
+        if self._link[vehicle_id] is LinkState.NO_LINK:
+            self._set_link(vehicle_id, LinkState.LINK_OK, silence_s)
 
-    def _set_link(self, vehicle_id: str, state: str, last_report_age_s: float) -> None:
+    def _is_silent(self, age_s: float) -> bool:
+        """Strictly older than the timeout: a report exactly at the limit is still a live link."""
+        return age_s > self._link_timeout_s
+
+    def _set_link(self, vehicle_id: str, state: LinkState, last_report_age_s: float) -> None:
         """Record a link change. last_report_age_s: how old the vehicle's last report was when this
         happened, so for LINK_OK it is the length of the silence that just ended."""
         previous = self._link[vehicle_id]
