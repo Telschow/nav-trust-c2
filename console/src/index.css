@@ -102,6 +102,25 @@ button:not(:disabled):active {
   top: 8px;
 }
 
+/* Stacking on the map. Every label is a MapLibre marker in one layer, and the sector labels are
+   re-added whenever the sectors update, so without a z-index they always end up on top. Vehicles
+   go above sector labels, and a flagged vehicle (not trusted, degraded or no link) above a healthy
+   one, so the tag that matters is never the one that is covered. */
+/* markers live in MapLibre's canvas container; isolating it keeps these values among the labels,
+   so the map controls (z-index 2) always stay on top of them */
+.maplibregl-canvas-container {
+  isolation: isolate;
+}
+.sector-tag {
+  z-index: 1;
+}
+.vehicle-marker {
+  z-index: 2;
+}
+.vehicle-marker.untrusted {
+  z-index: 3;
+}
+
 /* vehicle markers on the map: a flat ring and dot, a hard halo for contrast, no glow */
 .vehicle-marker {
   display: flex;
