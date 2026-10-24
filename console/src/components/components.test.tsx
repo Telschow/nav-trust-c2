@@ -177,3 +177,49 @@ describe("VehicleRow AMBER", () => {
     expect(screen.getByText(/No action is recommended unless it turns RED/)).toBeTruthy();
   });
 });
+
+describe("VehicleRow with no link (issue 73: a trust state is never shown as current)", () => {
+  const green = {
+    vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
+    horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
+  };
+  const props = { vehicleId: "uav1", since: 0, now: 30, sectors: [], doneSectors: [], history: [], calibration: null, onFocus: vi.fn() };
+  const noLink = { state: "NO_LINK" as const, lastHeard_s: 18 };
+
+  it("says there is no link and how long ago the vehicle was last heard", () => {
+    render(<VehicleRow {...props} trust={green} link={noLink} />);
+    expect(screen.getByText("No link")).toBeTruthy();
+    expect(screen.getByText("Last heard 0:12 ago")).toBeTruthy();
+  });
+
+  it("shows the trust state as the last one known, not as current", () => {
+    render(<VehicleRow {...props} trust={green} link={noLink} />);
+    expect(screen.getByText("Last known")).toBeTruthy();
+    expect(screen.getByText("Trusted")).toBeTruthy(); // still readable, but marked
+  });
+
+  it("claims no position error and no margin to alert while there is no link", () => {
+    render(<VehicleRow {...props} trust={green} link={noLink} />);
+    expect(screen.queryByText("within 3 m")).toBeNull();
+    expect(screen.queryByText(/of reports/)).toBeNull();
+    expect(screen.queryByRole("meter")).toBeNull();
+    expect(screen.queryByText(/Comfortable/)).toBeNull();
+    expect(screen.getAllByText(/not current/).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("tells a screen reader, in the row's name, that there is no link", () => {
+    render(<VehicleRow {...props} trust={green} link={noLink} />);
+    expect(screen.getByRole("button", { name: /no link/i })).toBeTruthy();
+  });
+
+  it("looks as before when the link is up or nothing is known about it", () => {
+    for (const link of [undefined, { state: "LINK_OK" as const, lastHeard_s: 29 }]) {
+      cleanup();
+      render(<VehicleRow {...props} trust={green} link={link} />);
+      expect(screen.queryByText("No link")).toBeNull();
+      expect(screen.queryByText("Last known")).toBeNull();
+      expect(screen.getByText("within 3 m")).toBeTruthy();
+      expect(screen.getByRole("meter")).toBeTruthy();
+    }
+  });
+});

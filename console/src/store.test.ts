@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedRecommendations, initialState, openRecommendations, reducer, serverNow } from "./store";
+import { decidedRecommendations, initialState, isNoLink, openRecommendations, reducer, serverNow } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -205,5 +205,66 @@ describe("C2-03: every recommendation the recommender can make is readable and a
     expect(contextNote(combos[2]!)).toBeNull();
     expect(urgencyNote(combos[2]!)).not.toBeNull();
     expect(urgencyNote(combos[0]!)).toBeNull();
+  });
+});
+
+describe("link health (issue 73)", () => {
+  const withLinks = (links: NonNullable<StateSnapshot["links"]>): StateSnapshot => ({ ...snapshot, links });
+
+  it("loads each vehicle's link from the snapshot and works out when it was last heard", () => {
+    const s = apply(
+      initialState,
+      ev({
+        type: "state",
+        server_s: 50,
+        data: withLinks({
+          uav1: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 4 },
+          uav2: { vehicle_id: "uav2", state: "LINK_OK", last_report_age_s: 0.5 },
+        }),
+      }),
+    );
+    expect(s.links.uav1).toEqual({ state: "NO_LINK", lastHeard_s: 46 });
+    expect(s.links.uav2?.state).toBe("LINK_OK");
+    expect(isNoLink(s, "uav1")).toBe(true);
+    expect(isNoLink(s, "uav2")).toBe(false);
+  });
+
+  it("an older backend that sends no links shows no link problem for anyone", () => {
+    const s = apply(initialState, ev({ type: "state", server_s: 50, data: snapshot }));
+    expect(s.links).toEqual({});
+    expect(isNoLink(s, "uav1")).toBe(false);
+  });
+
+  it("a vehicle going quiet is NO_LINK, dated from the age the backend reports, and is logged", () => {
+    let s = apply(initialState, ev({ type: "state", server_s: 50, data: snapshot }));
+    s = apply(
+      s,
+      ev({ type: "link", server_s: 60, data: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 2.5 } }),
+    );
+    expect(s.links.uav1).toEqual({ state: "NO_LINK", lastHeard_s: 57.5 });
+    expect(s.log[0]?.tone).toBe("warn");
+    expect(s.log[0]?.text).toContain("uav1 has no link");
+  });
+
+  it("the next report restores the link and the log says how long it was silent", () => {
+    let s = apply(initialState, ev({ type: "state", server_s: 50, data: snapshot }));
+    s = apply(s, ev({ type: "link", server_s: 60, data: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 2.5 } }));
+    s = apply(s, ev({ type: "link", server_s: 72, data: { vehicle_id: "uav1", state: "LINK_OK", last_report_age_s: 14 } }));
+    expect(s.links.uav1?.state).toBe("LINK_OK");
+    expect(isNoLink(s, "uav1")).toBe(false);
+    expect(s.log[0]?.tone).toBe("good");
+    expect(s.log[0]?.text).toContain("uav1 link restored after 0:14");
+  });
+
+  it("the last trust state is kept while the link is down, to be shown as last known", () => {
+    let s = apply(initialState, ev({ type: "state", server_s: 50, data: snapshot }));
+    s = apply(s, ev({ type: "link", server_s: 60, data: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 2.5 } }));
+    expect(s.vehicles.uav1?.state).toBe("GREEN");
+  });
+
+  it("a fresh snapshot replaces the links", () => {
+    let s = apply(initialState, ev({ type: "state", server_s: 50, data: withLinks({ uav1: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 4 } }) }));
+    s = apply(s, ev({ type: "state", server_s: 80, data: snapshot }));
+    expect(s.links).toEqual({});
   });
 });

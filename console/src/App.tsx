@@ -130,6 +130,7 @@ export function App() {
               doneSectors={state.doneSectors}
               history={state.history[id] ?? []}
               calibration={state.calibration}
+              link={state.links[id]}
               onFocus={() => setFocus((f) => ({ vehicleId: id, n: (f?.n ?? 0) + 1 }))}
             />
           ))}
