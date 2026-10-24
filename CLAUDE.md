@@ -48,3 +48,17 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
   It is a marketing-site extraction: keep the tokens, but trust state colours and operator
   density come first.
 - Ask before adding heavy dependencies or changing the ICD.
+
+## Agent skills
+
+### Issue tracker
+
+Issues live in GitHub Issues (`Telschow/nav-trust-c2`, via `gh`). See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: root `GLOSSARY.md` plus `docs/adr/`. See `docs/agents/domain.md`.
