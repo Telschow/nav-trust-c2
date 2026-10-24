@@ -1,7 +1,36 @@
 import { Check } from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { actionsOf, titleOf } from "../language";
 import type { Recommendation } from "../types";
+
+/** How long the confirm control must be held to approve a landing (a proposal, to be tested with
+ * operators). Landing is the one irreversible command, so approving it takes a deliberate act. */
+export const HOLD_TO_CONFIRM_MS = 1500;
+
+function useHold(durationMs: number, onComplete: () => void, enabled: boolean) {
+  const [holding, setHolding] = useState(false);
+  const timer = useRef<number | null>(null);
+  const done = useRef(onComplete);
+  done.current = onComplete;
+  const release = () => {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+    timer.current = null;
+    setHolding(false);
+  };
+  const start = () => {
+    if (!enabled || timer.current !== null) return;
+    setHolding(true);
+    timer.current = window.setTimeout(() => {
+      timer.current = null;
+      setHolding(false);
+      done.current();
+    }, durationMs);
+  };
+  useEffect(() => () => {
+    if (timer.current !== null) window.clearTimeout(timer.current);
+  }, []);
+  return { holding, start, release };
+}
 
 interface Props {
   rec: Recommendation;
@@ -14,14 +43,19 @@ interface Props {
 }
 
 export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onCancel, onConfirm }: Props) {
+  const landing = rec.command === "LAND";
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+  const canConfirm = !busy && operator.trim() !== "";
+  const hold = useHold(HOLD_TO_CONFIRM_MS, onConfirm, canConfirm);
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
   // Once, when the dialog opens. The console re-renders on every keystroke and live update with a
   // new onCancel; re-running this on each render pulled focus out of the name field onto
   // "Confirm approval", so a space typed in a name approved the command.
   useEffect(() => {
-    confirmRef.current?.focus();
+    // a landing does not open on its confirm control, so one stray key cannot start it
+    (landing ? cancelButtonRef : confirmRef).current?.focus();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && cancelRef.current();
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -59,6 +93,13 @@ export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onC
             : "These commands are sent to the vehicles and the decision is recorded in the audit log."}
         </p>
 
+        {landing && (
+          <p className="mt-4 border border-bad/60 px-3 py-2 text-sm font-medium text-bad">
+            Landing cannot be undone. Press and hold the button for {HOLD_TO_CONFIRM_MS / 1000} seconds to
+            confirm; release early to cancel.
+          </p>
+        )}
+
         <label className="mt-4 block text-sm">
           <span className="label">Your name (recorded with the decision)</span>
           <input
@@ -72,20 +113,59 @@ export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onC
         <div className="mt-5 grid grid-cols-2 gap-2">
           <button
             type="button"
+            ref={cancelButtonRef}
             onClick={onCancel}
             className="h-10 rounded-[3px] border border-line text-sm font-medium hover:bg-panel-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             Cancel
           </button>
-          <button
-            ref={confirmRef}
-            type="button"
-            disabled={busy || operator.trim() === ""}
-            onClick={onConfirm}
-            className="h-10 rounded-[3px] bg-accent text-sm font-semibold text-[#08121d] hover:brightness-110 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-          >
-            {busy ? "Sending..." : "Confirm approval"}
-          </button>
+          {landing ? (
+            <button
+              type="button"
+              disabled={!canConfirm}
+              onPointerDown={hold.start}
+              onPointerUp={hold.release}
+              onPointerLeave={hold.release}
+              onPointerCancel={hold.release}
+              onBlur={hold.release}
+              onKeyDown={(e) => {
+                if ((e.key === " " || e.key === "Enter") && !e.repeat) {
+                  e.preventDefault();
+                  hold.start();
+                }
+              }}
+              onKeyUp={(e) => {
+                if (e.key === " " || e.key === "Enter") {
+                  e.preventDefault();
+                  hold.release();
+                }
+              }}
+              data-holding={hold.holding}
+              className="relative h-10 select-none overflow-hidden rounded-[3px] bg-accent text-sm font-semibold text-[#08121d] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              <span
+                aria-hidden
+                className="absolute inset-y-0 left-0 bg-white/45"
+                style={{
+                  width: hold.holding ? "100%" : "0%",
+                  transition: hold.holding ? `width ${HOLD_TO_CONFIRM_MS}ms linear` : "none",
+                }}
+              />
+              <span className="relative">
+                {busy ? "Sending..." : hold.holding ? "Keep holding..." : "Hold to confirm landing"}
+              </span>
+            </button>
+          ) : (
+            <button
+              ref={confirmRef}
+              type="button"
+              disabled={!canConfirm}
+              onClick={onConfirm}
+              className="h-10 rounded-[3px] bg-accent text-sm font-semibold text-[#08121d] hover:brightness-110 disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            >
+              {busy ? "Sending..." : "Confirm approval"}
+            </button>
+          )}
         </div>
       </div>
     </div>

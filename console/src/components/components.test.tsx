@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { ConfirmDialog, HOLD_TO_CONFIRM_MS } from "./ConfirmDialog";
 import { DecisionBanner } from "./DecisionBanner";
 import { ordinal, titleOf } from "../language";
 import { RecommendationCard } from "./RecommendationCard";
@@ -300,5 +300,92 @@ describe("ExpiredNotice (issue 112)", () => {
   it("does not claim a state it does not know", () => {
     render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={undefined} onSeen={vi.fn()} />);
     expect(screen.getByText(/uav2: state not known/)).toBeTruthy();
+  });
+});
+
+describe("ConfirmDialog: landing needs a deliberate hold (issue 113)", () => {
+  const land: Recommendation = { ...rec, command: "LAND" };
+  const retask: Recommendation = { ...rec, command: null };
+  const base = { operator: "daniel", demo: false, busy: false, onOperatorChange: vi.fn(), onCancel: vi.fn() };
+  const holdButton = () => screen.getByRole("button", { name: /Hold to confirm landing|Keep holding/ });
+
+  afterEach(() => vi.useRealTimers());
+
+  it("confirms only after the full hold", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.pointerDown(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS - 1);
+    expect(onConfirm).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("releasing early cancels the hold and leaves the dialog open", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.pointerDown(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS - 500);
+    fireEvent.pointerUp(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS * 2);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("a plain click does not confirm a landing", () => {
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.click(holdButton());
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("holding Space on the keyboard works the same way, and releasing early cancels", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.keyDown(holdButton(), { key: " " });
+    vi.advanceTimersByTime(500);
+    fireEvent.keyUp(holdButton(), { key: " " });
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS * 2);
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.keyDown(holdButton(), { key: " " });
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows that the hold is in progress", () => {
+    vi.useFakeTimers();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    expect(screen.queryByText("Keep holding...")).toBeNull();
+    fireEvent.pointerDown(holdButton());
+    expect(screen.getByText("Keep holding...")).toBeTruthy();
+    fireEvent.pointerUp(holdButton());
+    expect(screen.queryByText("Keep holding...")).toBeNull();
+  });
+
+  it("does not open with the confirm control focused", () => {
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    expect(document.activeElement).not.toBe(holdButton());
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+  });
+
+  it("a blank operator name disables the hold", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} operator="  " onConfirm={onConfirm} />);
+    fireEvent.pointerDown(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS * 2);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("a re-task with no vehicle command still confirms with one click and opens on Confirm", () => {
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={retask} onConfirm={onConfirm} />);
+    const confirm = screen.getByRole("button", { name: "Confirm approval" });
+    expect(document.activeElement).toBe(confirm);
+    fireEvent.click(confirm);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });
