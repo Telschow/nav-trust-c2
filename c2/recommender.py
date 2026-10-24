@@ -12,7 +12,9 @@ In single clean runs only LAND ended the flight in a controlled stop; HOLD and R
 fast, uncontrolled descents hundreds of metres from where the vehicle believed it was
 (tests/replay/test_stuck_action_evidence.py).
 
-Only GREEN vehicles may take over work. If there is none, there is nothing to recommend for a
+Only GREEN vehicles may take over work, and never one the backend cannot hear (NO_LINK): a
+re-task aimed at an unreachable vehicle would not arrive (ADR 0004). A vehicle whose own link is
+down is offered no command either. If there is no taker, there is nothing to recommend for a
 GNSS_LOSS/STALE vehicle (a recommendation needs a command or a move); the alert itself still
 shows. One recommendation per vehicle and reason per RED episode, but it is issued again if it
 expires unanswered while the vehicle is still RED (`on_decision`), because a runaway vehicle
@@ -42,9 +44,16 @@ class RecommenderConfig:
 
 
 class Recommender:
-    def __init__(self, clock: Callable[[], float], config: RecommenderConfig | None = None) -> None:
+    def __init__(
+        self,
+        clock: Callable[[], float],
+        config: RecommenderConfig | None = None,
+        link_ok: Callable[[str], bool] = lambda vehicle_id: True,
+    ) -> None:
+        """link_ok: whether the backend can currently hear a vehicle (the hub's view)."""
         self._clock = clock
         self._cfg = config or RecommenderConfig()
+        self._link_ok = link_ok
         self._latest: dict[str, TrustState] = {}
         self._issued: dict[str, ReasonCode] = {}  # vehicle -> reason of the open episode
         self._counter = 0
@@ -74,7 +83,9 @@ class Recommender:
     def _build(self, msg: NavTrust, fleet: FleetState) -> Recommendation | None:
         vehicle = msg.vehicle_id
         assert msg.reason is not None
-        command = Command.LAND if msg.reason is ReasonCode.INCONSISTENT_INNOVATION else None
+        wants_land = msg.reason is ReasonCode.INCONSISTENT_INNOVATION
+        # no command to a vehicle the backend cannot hear; its sector can still move
+        command = Command.LAND if wants_land and self._link_ok(vehicle) else None
         moves = self._moves(vehicle, fleet)
         if command is None and not moves:
             return None
@@ -102,7 +113,10 @@ class Recommender:
         takers = [
             v
             for v in fleet.assignment
-            if v != vehicle and self._latest.get(v) is TrustState.GREEN and v in fleet.positions
+            if v != vehicle
+            and self._latest.get(v) is TrustState.GREEN
+            and v in fleet.positions
+            and self._link_ok(v)
         ]
         if not pending or not takers:
             return []

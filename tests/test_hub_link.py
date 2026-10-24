@@ -116,3 +116,14 @@ def test_state_reports_each_vehicles_link_and_the_age_of_its_last_report() -> No
 def test_a_vehicle_never_heard_from_has_no_link_entry() -> None:
     hub, _, _, _ = make()
     assert hub.state()["links"] == {}
+
+
+def test_a_vehicle_is_reachable_unless_it_has_been_silent_past_the_timeout() -> None:
+    hub, _, clock, _ = make()
+    assert hub.is_reachable("uav9")  # never heard from: no evidence the link is lost
+    hub.ingest_navtrust(report())
+    assert hub.is_reachable("uav1")
+    clock.t = 102.5  # no sweep has run
+    assert not hub.is_reachable("uav1")
+    hub.ingest_navtrust(report())
+    assert hub.is_reachable("uav1")

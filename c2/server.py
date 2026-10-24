@@ -395,7 +395,7 @@ def main() -> None:
     app = create_app(
         hub,
         fleet=fleet,
-        recommender=Recommender(clock),
+        recommender=Recommender(clock, link_ok=hub.is_reachable),
         gate=CommandGate(hub, fleet, executor),
         progress=SectorProgress(sectors, swath_half_width_m=args.spacing / 2),
         console_dir=args.console,

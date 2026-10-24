@@ -125,6 +125,12 @@ class Hub:
         self._positions[vehicle_id] = pos
         self._publish({"type": "position", "data": {"vehicle_id": vehicle_id, **pos}})
 
+    def is_reachable(self, vehicle_id: str) -> bool:
+        """Whether the backend can hear a vehicle now. Computed from the age of its last report,
+        so it does not wait for a sweep. A vehicle never heard from is not known to be lost."""
+        last_s = self._last_report_s.get(vehicle_id)
+        return last_s is None or not self._is_silent(self._clock() - last_s)
+
     def latest_trust(self, vehicle_id: str) -> NavTrust | None:
         return self._trust.get(vehicle_id)
 
