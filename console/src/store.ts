@@ -1,8 +1,10 @@
-import { actionsOf, reasonText, titleOf, urgencyRank } from "./language";
+import { actionsOf, formatDuration, reasonText, titleOf, urgencyRank } from "./language";
 import type {
   Calibration,
   Decision,
   Fleet,
+  LinkState,
+  LinkStatus,
   NavTrust,
   Origin,
   Position,
@@ -27,6 +29,12 @@ export interface LogEntry {
   text: string;
 }
 
+export interface LinkInfo {
+  state: LinkState;
+  /** server_s of the vehicle's last report, so "last heard" can keep counting on the server clock */
+  lastHeardAt_s: number;
+}
+
 export interface ConsoleState {
   connected: boolean;
   /** server clock minus client clock (seconds); null until the first message */
@@ -34,6 +42,7 @@ export interface ConsoleState {
   source: string;
   origin: Origin | null;
   vehicles: Record<string, NavTrust>;
+  links: Record<string, LinkInfo>;
   positions: Record<string, Position>;
   trails: Record<string, [number, number][]>; // [lon, lat]
   history: Record<string, HistoryPoint[]>;
@@ -53,6 +62,7 @@ export const initialState: ConsoleState = {
   source: "live",
   origin: null,
   vehicles: {},
+  links: {},
   positions: {},
   trails: {},
   history: {},
@@ -105,6 +115,23 @@ function applyTrust(s: ConsoleState, msg: NavTrust, server_s: number): ConsoleSt
   return next;
 }
 
+function applyLink(s: ConsoleState, change: LinkStatus, server_s: number): ConsoleState {
+  const duration = formatDuration(change.last_report_age_s);
+  const next: ConsoleState = {
+    ...s,
+    links: {
+      ...s.links,
+      [change.vehicle_id]: {
+        state: change.state,
+        lastHeardAt_s: change.state === "NO_LINK" ? server_s - change.last_report_age_s : server_s,
+      },
+    },
+  };
+  return change.state === "NO_LINK"
+    ? withLog(next, server_s, "warn", `${change.vehicle_id} has no link: last heard ${duration} ago`)
+    : withLog(next, server_s, "good", `${change.vehicle_id} link restored after ${duration}`);
+}
+
 function applyPosition(s: ConsoleState, pos: Position): ConsoleState {
   const trail = s.trails[pos.vehicle_id] ?? [];
   const last = trail[trail.length - 1];
@@ -142,11 +169,16 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
             stateSince[v] = snap.server_s;
             history[v] = [{ server_s: snap.server_s, state: t.state }];
           }
+          const links: Record<string, LinkInfo> = {};
+          for (const [v, l] of Object.entries(snap.links ?? {})) {
+            links[v] = { state: l.state, lastHeardAt_s: snap.server_s - l.last_report_age_s };
+          }
           return {
             ...base,
             source: snap.source,
             origin: snap.origin,
             vehicles: snap.vehicles,
+            links,
             positions: snap.positions,
             trails: {},
             history,
@@ -159,6 +191,8 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
           return applyTrust(base, event.data, event.server_s);
         case "position":
           return applyPosition(base, event.data);
+        case "link":
+          return applyLink(base, event.data, event.server_s);
         case "origin":
           return { ...base, origin: event.data };
         case "source":
@@ -184,6 +218,26 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
       }
     }
   }
+}
+
+/** The backend has not heard from this vehicle: its trust state is only the last one known. */
+export function isNoLink(s: ConsoleState, vehicleId: string): boolean {
+  return s.links[vehicleId]?.state === "NO_LINK";
+}
+
+export interface FleetCounts extends Record<TrustState, number> {
+  /** vehicles the backend cannot hear: not counted under their last known state */
+  noLink: number;
+}
+
+/** How many vehicles are in each trust state now. A vehicle with no link has no state now. */
+export function trustCounts(s: ConsoleState): FleetCounts {
+  const counts: FleetCounts = { GREEN: 0, AMBER: 0, RED: 0, noLink: 0 };
+  for (const [id, trust] of Object.entries(s.vehicles)) {
+    if (isNoLink(s, id)) counts.noLink += 1;
+    else counts[trust.state] += 1;
+  }
+  return counts;
 }
 
 /** Recommendations still waiting for an answer: most urgent first, then oldest first. */

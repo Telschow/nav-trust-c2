@@ -7,9 +7,10 @@ import {
   headroomLevel,
   reasonText,
 } from "../language";
-import type { HistoryPoint } from "../store";
+import type { HistoryPoint, LinkInfo } from "../store";
 import { vehicleColor } from "../tone";
 import type { Calibration, NavTrust, Sector } from "../types";
+import { LinkBadge } from "./LinkBadge";
 import { StateChip } from "./StateChip";
 import { TrustStrip } from "./TrustStrip";
 
@@ -22,6 +23,8 @@ interface Props {
   doneSectors: string[];
   history: HistoryPoint[];
   calibration: Calibration | null;
+  /** undefined: the backend says nothing about the link, so none is shown */
+  link?: LinkInfo | undefined;
   onFocus: () => void;
 }
 
@@ -34,9 +37,23 @@ export function VehicleRow({
   doneSectors,
   history,
   calibration,
+  link,
   onFocus,
 }: Props) {
-  const inState = since !== undefined && now !== null ? formatDuration(now - since) : "-";
+  const noLink = link?.state === "NO_LINK";
+  // with no link, everything below the vehicle's name is the last thing it reported, not now
+  const inState = noLink
+    ? "not current"
+    : since !== undefined && now !== null
+      ? formatDuration(now - since)
+      : "-";
+  const positionError = noLink
+    ? { value: "not current" }
+    : {
+        value: formatBound(trust.horizontal_bound_m),
+        note: trust.horizontal_bound_m === null ? undefined : `${formatPercent(trust.confidence)} of reports`,
+        title: calibration ? calibrationText(calibration) : undefined,
+      };
   return (
     <button
       type="button"
@@ -46,7 +63,11 @@ export function VehicleRow({
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
         trust.state === "RED" && "bg-bad/10 hover:bg-bad/14",
       )}
-      aria-label={`${vehicleId}, ${trust.state}. Show on map`}
+      aria-label={
+        noLink
+          ? `${vehicleId}, ${trust.state} (last known), no link. Show on map`
+          : `${vehicleId}, ${trust.state}. Show on map`
+      }
     >
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-2.5">
@@ -57,21 +78,26 @@ export function VehicleRow({
           />
           <span className="font-mono text-[15px] font-medium">{vehicleId}</span>
         </span>
-        <StateChip state={trust.state} />
+        <span className="flex items-center gap-1.5">
+          {noLink && <LinkBadge />}
+          <StateChip state={trust.state} lastKnown={noLink} />
+        </span>
       </div>
 
+      {noLink && (
+        <p className="mt-1 text-xs text-accent">
+          {now !== null && link
+            ? `Last heard ${formatDuration(now - link.lastHeardAt_s)} ago`
+            : "Last heard: unknown"}
+        </p>
+      )}
+
       <p className={clsx("mt-1 text-[13px] leading-snug", trust.state === "GREEN" ? "text-muted" : "text-text")}>
-        {reasonText(trust.reason)}
+        {noLink ? `Last known: ${reasonText(trust.reason)}` : reasonText(trust.reason)}
       </p>
 
       <dl className="mt-2 grid grid-cols-[1.25fr_0.75fr_1fr] divide-x divide-line-soft border-y border-line-soft text-xs">
-        <Metric
-          label="Position error"
-          value={formatBound(trust.horizontal_bound_m)}
-          note={trust.horizontal_bound_m === null ? undefined : `${formatPercent(trust.confidence)} of reports`}
-          title={calibration ? calibrationText(calibration) : undefined}
-          first
-        />
+        <Metric label="Position error" {...positionError} first />
         <Metric label="In state" value={inState} />
         <Metric
           label="Sectors"
@@ -81,7 +107,11 @@ export function VehicleRow({
       </dl>
 
       <div className="mt-2">
-        <Headroom trust={trust} />
+        {noLink ? (
+          <p className="text-xs text-faint">Margin to alert: not current, no link.</p>
+        ) : (
+          <Headroom trust={trust} />
+        )}
       </div>
 
       <div className="mt-2">

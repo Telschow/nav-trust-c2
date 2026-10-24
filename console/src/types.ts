@@ -59,6 +59,17 @@ export interface Position {
   stamp_s: number;
 }
 
+/** Whether the backend is hearing a vehicle. Says nothing about its navigation. */
+export type LinkState = "LINK_OK" | "NO_LINK";
+
+/** A link change (`link` event) or one entry of the snapshot's `links`. `last_report_age_s` is
+ * how old the vehicle's last report was when the state changed; in the snapshot, its live age. */
+export interface LinkStatus {
+  vehicle_id: string;
+  state: LinkState;
+  last_report_age_s: number;
+}
+
 export interface Origin {
   lat_deg: number;
   lon_deg: number;
@@ -81,6 +92,7 @@ export type ServerEvent =
   | { type: "position"; server_s: number; data: Position }
   | { type: "recommendation"; server_s: number; data: Recommendation }
   | { type: "decision"; server_s: number; data: Decision }
+  | { type: "link"; server_s: number; data: LinkStatus }
   | { type: "origin"; server_s: number; data: Origin }
   | { type: "source"; server_s: number; data: { label: string } };
 
@@ -90,5 +102,7 @@ export interface StateSnapshot {
   origin: Origin | null;
   positions: Record<string, Position>;
   vehicles: Record<string, NavTrust>;
+  /** absent from an older backend: treat as "no link problem known" */
+  links?: Record<string, LinkStatus>;
   open_recommendations: Recommendation[];
 }
