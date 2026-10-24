@@ -6,10 +6,10 @@ import { ConfirmDialog } from "./components/ConfirmDialog";
 import { DecisionBanner } from "./components/DecisionBanner";
 import { Header } from "./components/Header";
 import { MapView } from "./components/MapView";
-import { DecidedRow, RecommendationCard } from "./components/RecommendationCard";
+import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/RecommendationCard";
 import { VehicleRow } from "./components/VehicleRow";
 import { useConsole, useServerNow } from "./hooks";
-import { decidedRecommendations, openRecommendations, trustCounts } from "./store";
+import { decidedHistory, isNoLink, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
@@ -37,7 +37,7 @@ export function App() {
   const [focus, setFocus] = useState<{ vehicleId: string; n: number } | null>(null);
 
   const open = openRecommendations(state);
-  const decided = decidedRecommendations(state).slice(0, 4);
+  const decided = decidedHistory(state).slice(0, 4);
   const vehicleIds = Object.keys(state.vehicles).sort();
   const demo = state.source !== "live";
 
@@ -97,7 +97,7 @@ export function App() {
         Skip to decisions
       </a>
       <Header connected={state.connected} source={state.source} counts={counts} now={now} />
-      <DecisionBanner open={open} now={now} onReview={review} />
+      <DecisionBanner open={open} now={now} raisedAgain={open[0] ? raisedAgain(state, open[0]) : null} onReview={review} />
 
       {!state.connected && (
         <div role="alert" className="flex items-center gap-2 border-b border-bad/50 bg-bad/10 px-4 py-2 text-sm text-bad">
@@ -134,7 +134,7 @@ export function App() {
 
         {/* map */}
         <section className="min-h-[420px] p-3" aria-label="Map">
-          <MapView state={state} focus={focus} />
+          <MapView state={state} now={now} focus={focus} />
         </section>
 
         {/* decisions */}
@@ -151,11 +151,22 @@ export function App() {
               <p className="mt-3 border border-line-soft px-3 py-3 text-sm text-muted">No action needs your decision.</p>
             )}
             <div aria-live="polite" className="mt-3 flex flex-col gap-3">
+              {pinnedExpired(state).map(({ rec, decision }) => (
+                <ExpiredNotice
+                  key={`expired-${rec.id}`}
+                  rec={rec}
+                  decision={decision}
+                  trustNow={state.vehicles[rec.vehicle_id]}
+                  noLink={isNoLink(state, rec.vehicle_id)}
+                  onSeen={() => dispatch({ type: "seen", id: rec.id })}
+                />
+              ))}
               {open.map((rec) => (
                 <RecommendationCard
                   key={rec.id}
                   rec={rec}
                   now={now}
+                  raisedAgain={raisedAgain(state, rec)}
                   disabled={busy}
                   onApprove={() => setConfirming(rec)}
                   onDeny={() => void decide(rec, "DENIED")}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { markerView } from "./markers";
+import { tickWhileNoLink, heardAgeS, markerView } from "./markers";
 import { LINK_TONE, TONE } from "./tone";
 import type { NavTrust } from "./types";
 
@@ -38,5 +38,35 @@ describe("map marker for a vehicle with no link (LL-01: a state last known is no
 
   it("does not need a trust report to say it", () => {
     expect(markerView("uav1", undefined, true).tag).toBe("uav1 · NO LINK");
+  });
+});
+
+describe("age on the map for a vehicle with no link (issue 114)", () => {
+  it("the no-link tag says how long ago the vehicle was last heard", () => {
+    expect(markerView("uav1", trust("GREEN"), true, 42).tag).toBe("uav1 · NO LINK, last heard 0:42");
+    expect(markerView("uav1", trust("RED"), true, 75).tag).toBe("uav1 · NO LINK, last heard 1:15");
+  });
+
+  it("invents no age before the server clock is known", () => {
+    expect(markerView("uav1", trust("GREEN"), true, null).tag).toBe("uav1 · NO LINK");
+    expect(markerView("uav1", trust("GREEN"), true).tag).toBe("uav1 · NO LINK");
+  });
+
+  it("a vehicle with its link up is drawn exactly as before, whatever age is passed", () => {
+    expect(markerView("uav1", trust("AMBER"), false, 42)).toEqual(markerView("uav1", trust("AMBER"), false));
+  });
+
+  it("works out the age on the server clock, or none", () => {
+    expect(heardAgeS({ state: "NO_LINK", lastHeardAt_s: 18 }, 30)).toBe(12);
+    expect(heardAgeS({ state: "NO_LINK", lastHeardAt_s: 18 }, null)).toBeNull();
+    expect(heardAgeS(undefined, 30)).toBeNull();
+  });
+
+  it("the map needs the clock to tick only while some vehicle has no link", () => {
+    const up = { uav1: { state: "LINK_OK" as const, lastHeardAt_s: 29 } };
+    const down = { ...up, uav2: { state: "NO_LINK" as const, lastHeardAt_s: 18 } };
+    // with every link up the value never changes, so nothing is redrawn as the clock advances
+    expect([tickWhileNoLink({}, 10), tickWhileNoLink(up, 11), tickWhileNoLink(up, 12)]).toEqual([null, null, null]);
+    expect([tickWhileNoLink(down, 30), tickWhileNoLink(down, 31)]).toEqual([30, 31]);
   });
 });

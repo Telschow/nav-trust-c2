@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedRecommendations, initialState, isNoLink, openRecommendations, reducer, serverNow, trustCounts } from "./store";
+import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -276,5 +276,109 @@ describe("link health (LL-01, issue 73)", () => {
     let s = apply(initialState, ev({ type: "state", server_s: 50, data: withLinks({ uav1: { vehicle_id: "uav1", state: "NO_LINK", last_report_age_s: 4 } }) }));
     s = apply(s, ev({ type: "state", server_s: 80, data: snapshot }));
     expect(s.links).toEqual({});
+  });
+});
+
+describe("re-raised decisions (issue 111)", () => {
+  const recAt = (id: string, created: number, vehicle = "uav2", reason: Recommendation["reason"] = "INCONSISTENT_INNOVATION"): Recommendation =>
+    ({ ...rec, id, vehicle_id: vehicle, reason, created_s: created, expires_s: created + 60 });
+  const decide = (s: ConsoleState, id: string, outcome: "EXPIRED" | "DENIED" | "APPROVED", at: number) =>
+    apply(s, ev({ type: "decision", server_s: at, data: { recommendation_id: id, outcome, decided_s: at, operator: "o", note: "" } }));
+  const raise = (s: ConsoleState, r: Recommendation) => apply(s, ev({ type: "recommendation", server_s: r.created_s, data: r }));
+
+  it("a first recommendation for a vehicle and reason is not marked", () => {
+    const s = raise(initialState, recAt("r1", 100));
+    expect(raisedAgain(s, recAt("r1", 100))).toBeNull();
+  });
+
+  it("one that follows an expiry for the same vehicle and reason is raised again, with when the last expired", () => {
+    let s = raise(initialState, recAt("r1", 100));
+    s = decide(s, "r1", "EXPIRED", 160);
+    s = raise(s, recAt("r2", 161));
+    expect(raisedAgain(s, recAt("r2", 161))).toEqual({ nth: 2, previousExpiredAt_s: 160 });
+  });
+
+  it("counts every earlier expiry and reports the latest", () => {
+    let s = raise(initialState, recAt("r1", 100));
+    s = decide(s, "r1", "EXPIRED", 160);
+    s = raise(s, recAt("r2", 161));
+    s = decide(s, "r2", "EXPIRED", 221);
+    s = raise(s, recAt("r3", 222));
+    expect(raisedAgain(s, recAt("r3", 222))).toEqual({ nth: 3, previousExpiredAt_s: 221 });
+  });
+
+  it("an earlier denial or approval is not a re-raise", () => {
+    let s = raise(initialState, recAt("r1", 100));
+    s = decide(s, "r1", "DENIED", 120);
+    s = raise(s, recAt("r2", 130));
+    expect(raisedAgain(s, recAt("r2", 130))).toBeNull();
+  });
+
+  it("an expiry for another vehicle or another reason does not count", () => {
+    let s = raise(initialState, recAt("r1", 100, "uav3"));
+    s = decide(s, "r1", "EXPIRED", 160);
+    s = raise(s, recAt("r2", 161, "uav2"));
+    s = raise(s, recAt("r3", 162, "uav3", "GNSS_LOSS"));
+    expect(raisedAgain(s, recAt("r2", 161, "uav2"))).toBeNull();
+    expect(raisedAgain(s, recAt("r3", 162, "uav3", "GNSS_LOSS"))).toBeNull();
+  });
+
+  it("a fresh snapshot forgets earlier expiries", () => {
+    let s = raise(initialState, recAt("r1", 100));
+    s = decide(s, "r1", "EXPIRED", 160);
+    s = apply(s, ev({ type: "state", server_s: 200, data: { ...snapshot, open_recommendations: [recAt("r2", 161)] } }));
+    expect(raisedAgain(s, recAt("r2", 161))).toBeNull();
+  });
+});
+
+describe("expired decisions stay visible until seen (issue 112)", () => {
+  const exp = (s: ConsoleState, id: string, vehicle: string, created: number) => {
+    const r: Recommendation = { ...rec, id, vehicle_id: vehicle, created_s: created, expires_s: created + 60 };
+    let n = apply(s, ev({ type: "recommendation", server_s: created, data: r }));
+    n = apply(n, ev({ type: "decision", server_s: created + 60, data: { recommendation_id: id, outcome: "EXPIRED", decided_s: created + 60, operator: "system", note: "" } }));
+    return n;
+  };
+  const answer = (s: ConsoleState, id: string, outcome: "APPROVED" | "DENIED") =>
+    apply(s, ev({ type: "decision", server_s: 150, data: { recommendation_id: id, outcome, decided_s: 150, operator: "o", note: "" } }));
+
+  it("an expired recommendation is pinned, newest first", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    s = exp(s, "r2", "uav3", 200);
+    expect(pinnedExpired(s).map((p) => p.rec.id)).toEqual(["r2", "r1"]);
+  });
+
+  it("stays pinned however many other events arrive", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    for (let i = 0; i < 70; i++) s = apply(s, ev({ type: "navtrust", server_s: 200 + i, data: trust("uav1", i % 2 ? "GREEN" : "AMBER", i % 2 ? null : "GNSS_LOSS") }));
+    expect(pinnedExpired(s).map((p) => p.rec.id)).toEqual(["r1"]);
+  });
+
+  it("marking it seen removes the notice but keeps the decision in the history", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    s = reducer(s, { type: "seen", id: "r1" });
+    expect(pinnedExpired(s)).toEqual([]);
+    expect(decidedRecommendations(s).map((d) => d.rec.id)).toEqual(["r1"]);
+  });
+
+  it("an unseen expiry is shown pinned, not twice: the history lists it only once seen", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    expect(decidedHistory(s).map((d) => d.rec.id)).toEqual([]);
+    s = reducer(s, { type: "seen", id: "r1" });
+    expect(decidedHistory(s).map((d) => d.rec.id)).toEqual(["r1"]);
+  });
+
+  it("an approved or denied decision is not pinned", () => {
+    let s = apply(initialState, ev({ type: "recommendation", server_s: 100, data: { ...rec, id: "a" } }));
+    s = answer(s, "a", "APPROVED");
+    s = apply(s, ev({ type: "recommendation", server_s: 100, data: { ...rec, id: "d" } }));
+    s = answer(s, "d", "DENIED");
+    expect(pinnedExpired(s)).toEqual([]);
+  });
+
+  it("a fresh snapshot starts with nothing pinned and nothing seen", () => {
+    let s = exp(initialState, "r1", "uav2", 100);
+    s = apply(s, ev({ type: "state", server_s: 300, data: snapshot }));
+    expect(pinnedExpired(s)).toEqual([]);
+    expect(s.seen).toEqual([]);
   });
 });

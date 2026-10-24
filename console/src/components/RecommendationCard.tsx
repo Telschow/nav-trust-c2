@@ -1,18 +1,21 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { actionsOf, contextNote, formatDuration, reasonText, titleOf, urgencyNote } from "../language";
+import { STATE_LABEL, actionsOf, contextNote, formatDuration, ordinal, reasonText, titleOf, urgencyNote } from "../language";
+import type { RaisedAgain } from "../store";
 import { TONE, vehicleColor } from "../tone";
-import type { Decision, Recommendation } from "../types";
+import type { Decision, NavTrust, Recommendation } from "../types";
 
 interface OpenProps {
   rec: Recommendation;
   now: number | null;
+  /** set when this repeats a recommendation that expired unanswered */
+  raisedAgain?: RaisedAgain | null | undefined;
   disabled: boolean;
   onApprove: () => void;
   onDeny: () => void;
 }
 
-export function RecommendationCard({ rec, now, disabled, onApprove, onDeny }: OpenProps) {
+export function RecommendationCard({ rec, now, raisedAgain, disabled, onApprove, onDeny }: OpenProps) {
   const remaining = now === null ? null : rec.expires_s - now;
   const total = rec.expires_s - rec.created_s;
   const expired = remaining !== null && remaining <= 0;
@@ -31,6 +34,11 @@ export function RecommendationCard({ rec, now, disabled, onApprove, onDeny }: Op
 
       <div className="px-4 pb-4 pt-3">
         <h3 className="text-[17px] font-semibold leading-tight">{titleOf(rec)}</h3>
+        {raisedAgain && (
+          <p className="mt-2 border-l-2 border-warn pl-3 text-sm">
+            {`Raised again, ${ordinal(raisedAgain.nth)} time. The previous one expired unanswered at T+${formatDuration(raisedAgain.previousExpiredAt_s)}.`}
+          </p>
+        )}
         <p className="mt-2 text-sm text-muted">
           <span className="text-text">Why:</span> {reasonText(rec.reason)}.
         </p>
@@ -85,6 +93,48 @@ export function RecommendationCard({ rec, now, disabled, onApprove, onDeny }: Op
           </button>
         </div>
       </div>
+    </article>
+  );
+}
+
+/** An expired recommendation that stays in view until the operator marks it seen, so that an
+ * expiry never slides quietly into the history. */
+export function ExpiredNotice({
+  rec,
+  decision,
+  trustNow,
+  noLink = false,
+  onSeen,
+}: {
+  rec: Recommendation;
+  decision: Decision;
+  trustNow: NavTrust | undefined;
+  /** the vehicle cannot be heard, so its trust state is only the last one known */
+  noLink?: boolean;
+  onSeen: () => void;
+}) {
+  return (
+    <article className="panel border-warn/60 px-4 py-3" aria-label={`Expired: ${titleOf(rec)}`}>
+      <div className="flex items-baseline justify-between gap-3">
+        <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-warn">Expired, nobody answered</span>
+        <span className="font-mono text-xs text-muted">T+{formatDuration(decision.decided_s)}</span>
+      </div>
+      <p className="mt-1.5 text-sm font-medium">{titleOf(rec)}</p>
+      <p className="mt-1 text-xs text-muted">
+        Nothing was sent to the vehicle.{" "}
+        {!trustNow
+          ? `${rec.vehicle_id}: state not known.`
+          : noLink
+            ? `${rec.vehicle_id} has no link; its last known state was ${STATE_LABEL[trustNow.state]}.`
+            : `${rec.vehicle_id} is now ${STATE_LABEL[trustNow.state]}.`}
+      </p>
+      <button
+        type="button"
+        onClick={onSeen}
+        className="mt-2.5 h-8 rounded-[3px] border border-line px-3 text-xs font-medium hover:bg-panel-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      >
+        Seen
+      </button>
     </article>
   );
 }

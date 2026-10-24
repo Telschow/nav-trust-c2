@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ConfirmDialog } from "./ConfirmDialog";
+import { ConfirmDialog, HOLD_TO_CONFIRM_MS } from "./ConfirmDialog";
 import { DecisionBanner } from "./DecisionBanner";
-import { titleOf } from "../language";
+import { ordinal, titleOf } from "../language";
 import { RecommendationCard } from "./RecommendationCard";
 import { Header } from "./Header";
+import { ExpiredNotice } from "./RecommendationCard";
 import { StateChip } from "./StateChip";
 import { VehicleRow } from "./VehicleRow";
 import type { Recommendation } from "../types";
@@ -249,5 +250,175 @@ describe("Header counts (LL-01, issue 73: a state last known is not counted as c
   it("shows no link count when every vehicle is heard", () => {
     render(<Header connected source="live" now={10} counts={{ GREEN: 2, AMBER: 0, RED: 0, noLink: 0 }} />);
     expect(screen.queryByText(/no link/)).toBeNull();
+  });
+});
+
+describe("a decision raised again (issue 111)", () => {
+  const again = { nth: 2, previousExpiredAt_s: 160 };
+
+  it("the band says it was raised again, and how many times", () => {
+    render(<DecisionBanner open={[rec]} now={130} raisedAgain={again} onReview={vi.fn()} />);
+    expect(screen.getByText("Raised again (2nd time)")).toBeTruthy();
+  });
+
+  it("the card says when the previous one expired unanswered", () => {
+    render(<RecommendationCard rec={rec} now={130} raisedAgain={again} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.getByText("Raised again, 2nd time. The previous one expired unanswered at T+2:40.")).toBeTruthy();
+  });
+
+  it("a first-time decision shows no such wording", () => {
+    render(<DecisionBanner open={[rec]} now={130} raisedAgain={null} onReview={vi.fn()} />);
+    render(<RecommendationCard rec={rec} now={130} raisedAgain={null} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.queryByText(/Raised again/)).toBeNull();
+  });
+
+  it("counts up the ordinals", () => {
+    expect([1, 2, 3, 4, 11, 12, 21, 22].map(ordinal)).toEqual(["1st", "2nd", "3rd", "4th", "11th", "12th", "21st", "22nd"]);
+  });
+});
+
+describe("ExpiredNotice (issue 112)", () => {
+  const expiredRec = { ...rec, vehicle_id: "uav2", command: "LAND" as const };
+  const decision = { recommendation_id: "r1", outcome: "EXPIRED" as const, decided_s: 160, operator: "system", note: "" };
+  const redNow = { vehicle_id: "uav2", stamp_s: 1, state: "RED" as const, reason: "INCONSISTENT_INNOVATION" as const, horizontal_bound_m: null, confidence: 0, headroom: 0 };
+
+  it("says nobody answered, that nothing was sent, and what the vehicle's state is now", () => {
+    render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={redNow} onSeen={vi.fn()} />);
+    expect(screen.getByText("Expired, nobody answered")).toBeTruthy();
+    expect(screen.getByText(/Nothing was sent to the vehicle/)).toBeTruthy();
+    expect(screen.getByText(/uav2 is now Not trusted/)).toBeTruthy();
+    expect(screen.queryByText(/denied/i)).toBeNull();
+  });
+
+  it("has a Seen control that works", () => {
+    const seen = vi.fn();
+    render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={redNow} onSeen={seen} />);
+    fireEvent.click(screen.getByRole("button", { name: "Seen" }));
+    expect(seen).toHaveBeenCalledTimes(1);
+  });
+
+  it("with no link, the vehicle's state is only the last known one and says so", () => {
+    render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={redNow} noLink onSeen={vi.fn()} />);
+    expect(screen.getByText(/uav2 has no link; its last known state was Not trusted/)).toBeTruthy();
+    expect(screen.queryByText(/is now/)).toBeNull();
+  });
+
+  it("does not claim a state it does not know", () => {
+    render(<ExpiredNotice rec={expiredRec} decision={decision} trustNow={undefined} onSeen={vi.fn()} />);
+    expect(screen.getByText(/uav2: state not known/)).toBeTruthy();
+  });
+});
+
+describe("ConfirmDialog: landing needs a deliberate hold (issue 113)", () => {
+  const land: Recommendation = { ...rec, command: "LAND" };
+  const retask: Recommendation = { ...rec, command: null };
+  const base = { operator: "daniel", demo: false, busy: false, onOperatorChange: vi.fn(), onCancel: vi.fn() };
+  const holdButton = () => screen.getByRole("button", { name: /Hold to confirm landing|Keep holding/ });
+
+  afterEach(() => vi.useRealTimers());
+
+  it("confirms only after the full hold", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.pointerDown(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS - 1);
+    expect(onConfirm).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("releasing early cancels the hold and leaves the dialog open", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.pointerDown(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS - 500);
+    fireEvent.pointerUp(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS * 2);
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeTruthy();
+  });
+
+  it("a plain click does not confirm a landing", () => {
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.click(holdButton());
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("holding Space on the keyboard works the same way, and releasing early cancels", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.keyDown(holdButton(), { key: " " });
+    vi.advanceTimersByTime(500);
+    fireEvent.keyUp(holdButton(), { key: " " });
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS * 2);
+    expect(onConfirm).not.toHaveBeenCalled();
+    fireEvent.keyDown(holdButton(), { key: " " });
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows that the hold is in progress", () => {
+    vi.useFakeTimers();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    expect(screen.queryByText("Keep holding...")).toBeNull();
+    fireEvent.pointerDown(holdButton());
+    expect(screen.getByText("Keep holding...")).toBeTruthy();
+    fireEvent.pointerUp(holdButton());
+    expect(screen.queryByText("Keep holding...")).toBeNull();
+  });
+
+  it("does not open with the confirm control focused", () => {
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    expect(document.activeElement).not.toBe(holdButton());
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Cancel" }));
+  });
+
+  it("tells assistive technology that the hold started, and that releasing cancelled it", () => {
+    vi.useFakeTimers();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    expect(screen.getByRole("status").textContent).toBe("");
+    fireEvent.pointerDown(holdButton());
+    expect(screen.getByRole("status").textContent).toMatch(/Holding/);
+    fireEvent.pointerUp(holdButton());
+    expect(screen.getByRole("status").textContent).toMatch(/Released. Nothing was approved/);
+  });
+
+  it("links the instruction to the button", () => {
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    const hint = document.getElementById(holdButton().getAttribute("aria-describedby") ?? "");
+    expect(hint?.textContent).toMatch(/Landing cannot be undone/);
+  });
+
+  it("clearing the operator name during a hold stops it from confirming", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    const { rerender } = render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.pointerDown(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS - 100);
+    rerender(<ConfirmDialog {...base} rec={land} operator="  " onConfirm={onConfirm} />);
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("a blank operator name disables the hold", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} operator="  " onConfirm={onConfirm} />);
+    fireEvent.pointerDown(holdButton());
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS * 2);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("a re-task with no vehicle command still confirms with one click and opens on Confirm", () => {
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={retask} onConfirm={onConfirm} />);
+    const confirm = screen.getByRole("button", { name: "Confirm approval" });
+    expect(document.activeElement).toBe(confirm);
+    fireEvent.click(confirm);
+    expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });
