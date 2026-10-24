@@ -72,3 +72,35 @@ in `tests/test_blind_land.py`). Rows are GNSS-off outages; each short-outage run
 - `SYS_HAS_NUM_GNSS` and `COM_GNSSLOSS_ACT` were not found to be overridden. The recordings show
   one GNSS stream per vehicle (`gps_info`), so PX4's two-receiver check probably cannot act, but
   the Gazebo model's receiver count was not checked.
+
+## Cutting the link in the simulator (issue 74)
+
+`sim/link_cut.py` puts a small UDP relay between PX4 and the scripts for one vehicle and drops
+datagrams on a schedule from a scenario file (`link_cut:` with `after`, `delay_s`, optional
+`duration_s` and `direction`). MAVSDK presents itself to PX4 as a ground station, so a silent
+MAVSDK link should be a lost link to PX4's data-link-loss failsafe.
+
+- **Ports.** For instance 1 PX4 sends to 14541 from 14581; with a cut, the relay takes 14541 and
+  the scripts listen on 14641 (`relay_ports`). Only `sim.record_run` is relayed.
+- **Direction.** `both` drops everything, as the issue asks, but then MAVSDK's telemetry stops
+  too: the recorder would not see PX4's mode change or the landing. `uplink` drops only what the
+  scripts send to PX4, so PX4 loses its ground station while the recording keeps hearing the
+  vehicle. The two baseline scenarios use `uplink` for that reason. Choose `both` for a run that
+  models the backend's own view (issue 75).
+- **Parameters.** On a run with a cut the recorder sets `NAV_DLL_ACT` and `COM_DL_LOSS_T`, reads
+  them back and writes a `failsafe_params` event, so the setting is evidence in the recording.
+  It also writes a `flight_mode` event on every mode change, plus `link_cut` and `link_restore`.
+- **Scenarios.** `scenarios/lost_link/link_only.yaml` (healthy GNSS) and `link_and_frozen.yaml`
+  (the frozen position of `stuck_position`, link cut 5 s later, no onboard monitor). They are in
+  their own folder, so `make eval` ignores them until issue 75 adds recordings and a table.
+- **Recording them** (simulator, about 6 to 7 minutes per run):
+  `SCENARIO_DIR=scenarios/lost_link OUT_DIR=eval/lost_link/recordings sim/record_all.sh`, then
+  `python -m eval.link_cut_timing` prints the mode changes and touchdown, in seconds after the
+  cut, from the recordings.
+
+What no test here shows, and a simulator run must: that PX4 really declares the data link lost
+when only the relayed link goes quiet (PX4 has a second MAVLink instance for a ground station on
+18571; nothing should be attached to it), that telemetry keeps flowing during an `uplink` cut,
+and that the run ends when the vehicle lands. The contingency wait-time rule for issue 76
+(wait shorter than `COM_DL_LOSS_T` plus the hold) should import `COM_DL_LOSS_T_S` from
+`sim/failsafe_params.py`.

@@ -4,7 +4,8 @@ PX4's data-link-loss failsafe fires when it stops hearing a ground station. MAVS
 itself as one, so dropping the UDP packets in both directions is a lost link to PX4. Nothing
 here touches the vehicle or the simulator: it only decides when, and drops datagrams.
 
-A recording of a run with a cut also has these events (navtrust/recording.py lists the rest):
+A recording of a run with a cut also has these events, on top of the ones listed in
+navtrust/recording.py (see docs/validation/px4-lost-link-parameters.md):
 `failsafe_params` (what the vehicle holds), `flight_mode` (PX4's mode on each change, which
 shows what acted), `link_cut` and `link_restore`.
 
@@ -21,12 +22,24 @@ from typing import Protocol
 
 from sim.scenario import LinkCut
 
+# PX4's MAVLink instance for MAVSDK sends to 14540 + instance from 14580 + instance. With a link
+# cut, scripts listen 100 ports higher and the relay takes 14540 + instance.
+RELAY_PX4_LOCAL_OFFSET = 40
+RELAY_SCRIPT_OFFSET = 100
+
+
+def relay_ports(system_address: str) -> tuple[int, int, int]:
+    """(relay listens, PX4 listens, scripts listen) for an address like udpin://0.0.0.0:14541."""
+    port = int(system_address.rsplit(":", 1)[1])
+    return port, port + RELAY_PX4_LOCAL_OFFSET, port + RELAY_SCRIPT_OFFSET
+
 
 class LinkCutSchedule:
     """Fed the moments a scenario cares about; `poll` says when to cut and restore, once each."""
 
     def __init__(self, cut: LinkCut) -> None:
         self._cut = cut
+        self.direction = cut.direction
         self._anchor_s: float | None = None
         self._cut_at_s: float | None = None
         self._restored = False
@@ -88,6 +101,7 @@ class UdpRelay:
         self._px4_side: asyncio.DatagramTransport | None = None
         self._script_side: asyncio.DatagramTransport | None = None
         self.is_cut = False
+        self._direction = "both"
 
     async def start(self) -> None:
         loop = asyncio.get_running_loop()
@@ -104,14 +118,17 @@ class UdpRelay:
             if side is not None:
                 side.close()
 
-    def cut(self) -> None:
+    def cut(self, direction: str = "both") -> None:
+        """Drop datagrams: "both" drops everything, "uplink" only what the scripts send to PX4."""
         self.is_cut = True
+        self._direction = direction
 
     def restore(self) -> None:
         self.is_cut = False
 
     def _from_px4(self, data: bytes) -> None:
-        if not self.is_cut and self._script_side is not None:
+        dropped = self.is_cut and self._direction == "both"
+        if not dropped and self._script_side is not None:
             self._script_side.sendto(data, self._script)
 
     def _from_script(self, data: bytes) -> None:
@@ -120,7 +137,7 @@ class UdpRelay:
 
 
 class Cuttable(Protocol):
-    def cut(self) -> None: ...
+    def cut(self, direction: str) -> None: ...
 
     def restore(self) -> None: ...
 
@@ -138,7 +155,7 @@ async def drive_link_cut(
     while True:
         action = schedule.poll(clock())
         if action == "cut":
-            relay.cut()
+            relay.cut(schedule.direction)
             write("link_cut")
         elif action == "restore":
             relay.restore()

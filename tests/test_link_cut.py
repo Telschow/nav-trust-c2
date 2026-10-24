@@ -4,7 +4,7 @@ import asyncio
 import contextlib
 import socket
 
-from sim.link_cut import LinkCutSchedule, UdpRelay, drive_link_cut
+from sim.link_cut import LinkCutSchedule, UdpRelay, drive_link_cut, relay_ports
 from sim.scenario import LinkCut
 
 
@@ -112,7 +112,7 @@ class FakeRelay:
     def __init__(self) -> None:
         self.calls: list[str] = []
 
-    def cut(self) -> None:
+    def cut(self, direction: str) -> None:
         self.calls.append("cut")
 
     def restore(self) -> None:
@@ -138,3 +138,42 @@ def test_the_driver_cuts_and_restores_the_relay_and_logs_each_once() -> None:
         asyncio.run(go())
     assert relay.calls == ["cut", "restore"]
     assert written == ["link_cut", "link_restore"]
+
+
+def test_an_uplink_only_cut_drops_commands_but_the_recorder_still_hears_the_vehicle() -> None:
+    async def scenario() -> list[object]:
+        px4_listen, px4_remote, script_port = free_port(), free_port(), free_port()
+        px4 = udp_socket(px4_remote)
+        script = udp_socket(script_port)
+        relay = UdpRelay(px4_listen, px4_remote, script_port)
+        await relay.start()
+        loop = asyncio.get_running_loop()
+        seen: list[object] = []
+        try:
+            await loop.sock_sendto(px4, b"telemetry", (HOST, px4_listen))
+            first = await received(script)
+            assert first is not None
+
+            relay.cut("uplink")
+            await loop.sock_sendto(px4, b"telemetry-2", (HOST, px4_listen))
+            during = await received(script)  # the failsafe stays visible in the recording
+            seen.append(during and during[0])
+            await loop.sock_sendto(script, b"heartbeat", first[1])
+            seen.append(await received(px4, 0.3))  # PX4 hears no ground station
+
+            relay.restore()
+            await loop.sock_sendto(script, b"heartbeat-2", first[1])
+            after = await received(px4)
+            seen.append(after and after[0])
+        finally:
+            await relay.stop()
+            px4.close()
+            script.close()
+        return seen
+
+    assert asyncio.run(scenario()) == [b"telemetry-2", None, b"heartbeat-2"]
+
+
+def test_the_relay_ports_follow_from_the_script_address() -> None:
+    # instance 1: PX4 sends to 14541 from 14581; scripts listen 100 higher
+    assert relay_ports("udpin://0.0.0.0:14541") == (14541, 14581, 14641)

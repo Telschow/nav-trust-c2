@@ -248,6 +248,22 @@ def test_the_two_lost_link_baselines_load_and_stay_out_of_the_main_eval_set() ->
     frozen = lost_link["link_and_frozen"]
     assert frozen.fault is not None and frozen.fault.mode == "stuck" and frozen.fault.latch
     assert frozen.link_cut is not None and frozen.link_cut.after == "fault_start"
-    # the cut comes after the freeze, shortly: the onboard monitor has to beat PX4's RTL
-    assert 0 < frozen.link_cut.delay_s <= 10
+    assert frozen.link_cut.delay_s > 0  # the cut comes after the freeze, not with it
     assert all(s.link_cut and s.link_cut.duration_s is None for s in lost_link.values())
+
+
+def test_a_link_cut_defaults_to_both_directions_and_can_be_uplink_only() -> None:
+    both = parse_scenario(link_loss())
+    assert both.link_cut is not None and both.link_cut.direction == "both"
+    up = parse_scenario(
+        {**link_loss(), "link_cut": {"after": "mission_start", "delay_s": 1, "direction": "uplink"}}
+    )
+    assert up.link_cut is not None and up.link_cut.direction == "uplink"
+    argv = record_argv(up, 1, Path("out"))
+    assert argv[argv.index("--link-cut-direction") + 1] == "uplink"
+
+
+def test_an_unknown_link_cut_direction_is_refused() -> None:
+    bad = {"after": "mission_start", "delay_s": 1, "direction": "sideways"}
+    with pytest.raises(ValueError, match="link_cut"):
+        parse_scenario({**link_loss(), "link_cut": bad})

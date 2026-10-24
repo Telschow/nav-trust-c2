@@ -13,8 +13,9 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:  # the simulator stack is optional; this module only needs a duck-typed drone
     from mavsdk_grpc import System
 
-NAV_DLL_ACT_RETURN = 2  # failsafe.h: Disabled 0, Hold 1, Return 2, Land 3
-COM_DL_LOSS_T_S = 10  # seconds without a ground station before the failsafe state is entered
+NAV_DLL_ACT_RETURN = 2  # proposal (ADR 0004); failsafe.h: Disabled 0, Hold 1, Return 2, Land 3
+COM_DL_LOSS_T_S = 10  # proposal: PX4's default; seconds without a ground station before the
+# failsafe is entered. A contingency's wait time (issue 76) must stay below this plus the hold.
 
 
 async def apply_failsafe_params(drone: System) -> dict[str, float]:

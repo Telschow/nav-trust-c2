@@ -15,6 +15,7 @@ import yaml
 CLASSES = ("nominal", "short_outage", "long_outage", "stuck_position", "wrong_fix", "link_loss")
 MODES = ("off", "stuck", "wrong")  # failure modes of PX4's `failure gps`
 LINK_CUT_AFTER = ("mission_start", "fault_start")
+LINK_CUT_DIRECTIONS = ("both", "uplink")
 
 
 @dataclass(frozen=True)
@@ -48,6 +49,9 @@ class LinkCut:
     after: str  # one of LINK_CUT_AFTER
     delay_s: float
     duration_s: float | None = None  # None: the link never comes back
+    # "uplink" drops only what the scripts send to PX4, so PX4 loses its ground station while the
+    # recorder keeps hearing the vehicle and can show what the failsafe did
+    direction: str = "both"
 
 
 @dataclass(frozen=True)
@@ -106,7 +110,10 @@ def parse_scenario(data: dict[str, Any]) -> Scenario:
         duration_s = float(c["duration_s"]) if c.get("duration_s") is not None else None
         if delay_s < 0 or (duration_s is not None and duration_s <= 0):
             raise ValueError(f"{name}: link_cut delay_s must be >= 0 and duration_s > 0")
-        link_cut = LinkCut(after, delay_s, duration_s)
+        direction = str(c.get("direction", "both"))
+        if direction not in LINK_CUT_DIRECTIONS:
+            raise ValueError(f"{name}: link_cut direction must be one of {LINK_CUT_DIRECTIONS}")
+        link_cut = LinkCut(after, delay_s, duration_s, direction)
     if (scenario_class == "link_loss") != (link_cut is not None):
         raise ValueError(f"{name}: only the link_loss class has a link_cut, and it needs one")
     if (scenario_class == "nominal") != (fault is None and link_cut is None):
