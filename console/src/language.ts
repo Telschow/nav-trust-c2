@@ -115,3 +115,13 @@ export function urgencyNote(rec: Recommendation): string | null {
   }
   return null;
 }
+
+/** What an operator must know before approving something for a vehicle that cannot be heard:
+ * what it does not know was delivered. A command may not arrive; a re-task may leave the vehicle
+ * flying the sectors that were taken from it. Null when nothing is sent to that vehicle. */
+export function noLinkWarning(rec: Recommendation): string | null {
+  if (rec.command !== null) return `${rec.vehicle_id} has no link. This command may not reach it.`;
+  if (rec.sector_moves.length === 0) return null;
+  const sectors = rec.sector_moves.map((m) => m.sector_id).join(", ");
+  return `${rec.vehicle_id} has no link and may keep flying ${sectors}.`;
+}

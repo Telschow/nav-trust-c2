@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { STATE_LABEL, actionsOf, contextNote, formatDuration, ordinal, reasonText, titleOf, urgencyNote } from "../language";
+import { STATE_LABEL, actionsOf, contextNote, formatDuration, noLinkWarning, ordinal, reasonText, titleOf, urgencyNote } from "../language";
 import type { RaisedAgain } from "../store";
 import { TONE, vehicleColor } from "../tone";
 import type { Decision, NavTrust, Recommendation } from "../types";
@@ -49,9 +49,7 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
           <span className="text-text">Why:</span> {reasonText(rec.reason)}.
         </p>
 
-        {noLink && rec.command !== null && (
-          <p className="mt-2 text-sm text-accent">{rec.vehicle_id} has no link. A command may not reach it.</p>
-        )}
+        {noLink && noLinkWarning(rec) && <p className="mt-2 text-sm text-accent">{noLinkWarning(rec)}</p>}
 
         {contextNote(rec) && <p className="mt-2 text-sm text-muted">{contextNote(rec)}</p>}
 

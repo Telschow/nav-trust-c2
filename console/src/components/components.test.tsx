@@ -327,7 +327,6 @@ describe("ExpiredNotice (issue 112)", () => {
 
 describe("a decision for a vehicle with no link (issue 128)", () => {
   const land: Recommendation = { ...rec, command: "LAND" };
-  const retask: Recommendation = { ...rec, command: null };
   const base = { operator: "daniel", demo: false, busy: false, onOperatorChange: vi.fn(), onCancel: vi.fn(), onConfirm: vi.fn() };
   const warning = /uav2 has no link\. This command may not reach it\./;
 
@@ -349,11 +348,6 @@ describe("a decision for a vehicle with no link (issue 128)", () => {
     rerender(<ConfirmDialog {...base} rec={land} noLink />);
     expect(screen.getByText(warning)).toBeTruthy();
     rerender(<ConfirmDialog {...base} rec={land} />);
-    expect(screen.queryByText(warning)).toBeNull();
-  });
-
-  it("a re-task alone sends no command to the vehicle, so there is nothing to warn about", () => {
-    render(<ConfirmDialog {...base} rec={retask} noLink />);
     expect(screen.queryByText(warning)).toBeNull();
   });
 
@@ -506,5 +500,33 @@ describe("an open decision marked seen (issue 115)", () => {
     render(<DecisionBanner open={[rec]} now={130} onReview={vi.fn()} />);
     expect(screen.getByText("Decision required")).toBeTruthy();
     expect(screen.queryByText(/Seen, waiting/)).toBeNull();
+  });
+});
+
+describe("a re-task for a vehicle with no link (issue 134)", () => {
+  const retask: Recommendation = { ...rec, command: null, sector_moves: [{ sector_id: "S2", to_vehicle: "uav3" }, { sector_id: "S4", to_vehicle: "uav1" }] };
+  const base = { operator: "daniel", demo: false, busy: false, onOperatorChange: vi.fn(), onCancel: vi.fn(), onConfirm: vi.fn() };
+  const warning = /uav2 has no link and may keep flying S2, S4/;
+
+  it("the confirmation names the sectors the vehicle may keep flying", () => {
+    render(<ConfirmDialog {...base} rec={retask} noLink />);
+    expect(screen.getByText(warning)).toBeTruthy();
+    expect(screen.queryByText(/This command may not reach it/)).toBeNull();
+  });
+
+  it("the open decision carries the same warning, and can still be approved", () => {
+    render(<RecommendationCard rec={retask} now={130} disabled={false} noLink onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.getByText(warning)).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Approve/ }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("a vehicle that can be heard shows no warning", () => {
+    render(<ConfirmDialog {...base} rec={retask} />);
+    expect(screen.queryByText(/no link/)).toBeNull();
+  });
+
+  it("a command keeps its own wording", () => {
+    render(<ConfirmDialog {...base} rec={{ ...retask, command: "LAND" }} noLink />);
+    expect(screen.getByText(/uav2 has no link\. This command may not reach it\./)).toBeTruthy();
   });
 });

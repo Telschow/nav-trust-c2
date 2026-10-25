@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { actionsOf, titleOf } from "../language";
+import { actionsOf, noLinkWarning, titleOf } from "../language";
 import type { Recommendation } from "../types";
 
 /** How long the confirm control must be held to approve a landing (a proposal, to be tested with
@@ -103,10 +103,8 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, onOpe
             : "These commands are sent to the vehicles and the decision is recorded in the audit log."}
         </p>
 
-        {noLink && rec.command !== null && (
-          <p className="mt-4 border border-accent/60 px-3 py-2 text-sm text-accent">
-            {rec.vehicle_id} has no link. This command may not reach it.
-          </p>
+        {noLink && noLinkWarning(rec) && (
+          <p className="mt-4 border border-accent/60 px-3 py-2 text-sm text-accent">{noLinkWarning(rec)}</p>
         )}
 
         {landing && (
