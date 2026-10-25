@@ -187,7 +187,8 @@ export function MapView({ state, now, focus }: Props) {
     return () => {
       map.off("render", declutter);
     };
-  }, [ready]);
+    // also after the labels or tags change, which can happen without the map being redrawn
+  }, [ready, sectorFeatures, state.doneSectors, state.positions, state.vehicles, state.links, tickNow]);
 
   // focus a vehicle when its card is clicked
   useEffect(() => {
