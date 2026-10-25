@@ -1,5 +1,5 @@
 import { WifiOff } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DecisionError, postDecision } from "./api";
 import { ActivityLog } from "./components/ActivityLog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
@@ -8,6 +8,7 @@ import { Header } from "./components/Header";
 import { MapView } from "./components/MapView";
 import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/RecommendationCard";
 import { VehicleRow } from "./components/VehicleRow";
+import { announce, loadSoundChoice, saveSoundChoice, webAudioPlayer } from "./cues";
 import { useConsole, useServerNow } from "./hooks";
 import { decidedHistory, expiredWithoutLink, isNoLink, isSeen, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
@@ -28,7 +29,11 @@ interface Toast {
 }
 
 export function App() {
-  const { state, dispatch } = useConsole();
+  const [soundOn, setSoundOn] = useState(loadSoundChoice);
+  const soundRef = useRef(soundOn);
+  soundRef.current = soundOn;
+  const player = useMemo(webAudioPlayer, []);
+  const { state, dispatch } = useConsole((cues) => announce(cues, soundRef.current, player));
   const now = useServerNow(state);
   const [operator, setOperator] = useState(storedOperator);
   const [confirming, setConfirming] = useState<Recommendation | null>(null);
@@ -42,6 +47,14 @@ export function App() {
   const demo = state.source !== "live";
 
   const counts = useMemo(() => trustCounts(state), [state]);
+
+  const toggleSound = () => {
+    const on = !soundOn;
+    setSoundOn(on);
+    saveSoundChoice(on);
+    // the click is the browser's permission for audio: confirm with the decision tone
+    if (on) player.play("decision-required");
+  };
 
   const changeOperator = (name: string) => {
     setOperator(name);
@@ -96,7 +109,7 @@ export function App() {
       <a href="#decisions" className="skip-link">
         Skip to decisions
       </a>
-      <Header connected={state.connected} source={state.source} counts={counts} now={now} />
+      <Header connected={state.connected} source={state.source} counts={counts} now={now} soundOn={soundOn} onToggleSound={toggleSound} />
       <DecisionBanner open={open} now={now} raisedAgain={open[0] ? raisedAgain(state, open[0]) : null} seen={open[0] ? isSeen(state, open[0].id) : false} onReview={review} />
 
       {!state.connected && (

@@ -530,3 +530,22 @@ describe("a re-task for a vehicle with no link (issue 134)", () => {
     expect(screen.getByText(/uav2 has no link\. This command may not reach it\./)).toBeTruthy();
   });
 });
+
+describe("the sound control in the header (issue 116)", () => {
+  const counts = { GREEN: 1, AMBER: 0, RED: 0, noLink: 0 };
+
+  it("always shows whether sound is on, and says off in words", () => {
+    render(<Header connected source="live" counts={counts} now={10} soundOn={false} onToggleSound={vi.fn()} />);
+    const button = screen.getByRole("button", { name: /Sound off/ });
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("shows on, and toggles", () => {
+    const toggle = vi.fn();
+    render(<Header connected source="live" counts={counts} now={10} soundOn onToggleSound={toggle} />);
+    const button = screen.getByRole("button", { name: /Sound on/ });
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(button);
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+});
