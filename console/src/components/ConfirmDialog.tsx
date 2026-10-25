@@ -45,12 +45,14 @@ interface Props {
   operator: string;
   demo: boolean;
   busy: boolean;
+  /** the vehicle cannot be heard now, so a command to it may not arrive */
+  noLink?: boolean;
   onOperatorChange: (name: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onCancel, onConfirm }: Props) {
+export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, onOperatorChange, onCancel, onConfirm }: Props) {
   const landing = rec.command === "LAND";
   const confirmRef = useRef<HTMLButtonElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
@@ -100,6 +102,12 @@ export function ConfirmDialog({ rec, operator, demo, busy, onOperatorChange, onC
             ? "Demo mode: no command is sent to any vehicle. The decision is still recorded."
             : "These commands are sent to the vehicles and the decision is recorded in the audit log."}
         </p>
+
+        {noLink && rec.command !== null && (
+          <p className="mt-4 border border-accent/60 px-3 py-2 text-sm text-accent">
+            {rec.vehicle_id} has no link. This command may not reach it.
+          </p>
+        )}
 
         {landing && (
           <p id="hold-hint" className="mt-4 border border-bad/60 px-3 py-2 text-sm font-medium text-bad">
