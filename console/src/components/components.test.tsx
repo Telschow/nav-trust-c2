@@ -226,6 +226,22 @@ describe("VehicleRow with no link (LL-01, issue 73: a trust state is never shown
     expect(screen.getByText("Last heard: unknown")).toBeTruthy();
   });
 
+  describe("the red row tint, which says 'not trusted now'", () => {
+    const red = { ...green, state: "RED" as const, reason: "INCONSISTENT_INNOVATION" as const, horizontal_bound_m: null, confidence: 0, headroom: 0 };
+    const tinted = () => screen.getByRole("button").className.includes("bg-bad/10");
+
+    it("is shown for a RED vehicle that can be heard", () => {
+      render(<VehicleRow {...props} trust={red} link={{ state: "LINK_OK", lastHeardAt_s: 29 }} />);
+      expect(tinted()).toBe(true);
+    });
+
+    it("is not shown when there is no link, because the state is only the last known", () => {
+      render(<VehicleRow {...props} trust={red} link={noLink} />);
+      expect(tinted()).toBe(false);
+      expect(screen.getByText("Last known")).toBeTruthy(); // the dashed chip still says what it was
+    });
+  });
+
   it.each([
     ["nothing known about the link", undefined],
     ["the link up", { state: "LINK_OK" as const, lastHeardAt_s: 29 }],

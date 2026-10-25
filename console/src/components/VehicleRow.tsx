@@ -61,7 +61,8 @@ export function VehicleRow({
       className={clsx(
         "block w-full border-b border-line-soft px-4 py-3 text-left hover:bg-panel-2",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
-        trust.state === "RED" && "bg-bad/10 hover:bg-bad/14",
+        // a red tint says "not trusted now"; with no link that is only the last state known
+        trust.state === "RED" && !noLink && "bg-bad/10 hover:bg-bad/14",
       )}
       aria-label={
         noLink
