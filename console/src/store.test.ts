@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, expiredWithoutLink, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
+import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, backendLost, expiredWithoutLink, isSeen, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -404,5 +404,69 @@ describe("expired decisions stay visible until seen (issue 112)", () => {
     s = apply(s, ev({ type: "state", server_s: 300, data: snapshot }));
     expect(pinnedExpired(s)).toEqual([]);
     expect(s.seen).toEqual([]);
+  });
+});
+
+describe("an open decision marked seen (issue 115)", () => {
+  const rec2: Recommendation = { ...rec, id: "r2", created_s: 200, expires_s: 260 };
+  const opened = () => apply(initialState, ev({ type: "recommendation", data: rec }));
+
+  it("is seen once marked, and stays open", () => {
+    const s = reducer(opened(), { type: "seen", id: "r1" });
+    expect(isSeen(s, "r1")).toBe(true);
+    expect(openRecommendations(s).map((r) => r.id)).toEqual(["r1"]);
+  });
+
+  it("starts unseen", () => {
+    expect(isSeen(opened(), "r1")).toBe(false);
+  });
+
+  it("a re-raised recommendation starts unseen even if the previous one was seen", () => {
+    let s = reducer(opened(), { type: "seen", id: "r1" });
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "EXPIRED", decided_s: 160, operator: "system", note: "" } }));
+    s = apply(s, ev({ type: "recommendation", data: rec2 }));
+    expect(isSeen(s, "r2")).toBe(false);
+  });
+
+  it("approving or denying works as before after seen", () => {
+    let s = reducer(opened(), { type: "seen", id: "r1" });
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "APPROVED", decided_s: 120, operator: "o", note: "" } }));
+    expect(openRecommendations(s)).toEqual([]);
+    expect(s.decisions.r1?.outcome).toBe("APPROVED");
+  });
+
+  it("one marked seen while open still appears as an unseen expiry when it expires", () => {
+    let s = reducer(opened(), { type: "seen", id: "r1" });
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "EXPIRED", decided_s: 160, operator: "system", note: "" } }));
+    expect(pinnedExpired(s).map((p) => p.rec.id)).toEqual(["r1"]);
+    expect(isSeen(s, "r1")).toBe(false);
+  });
+
+  it("a fresh snapshot starts with nothing seen", () => {
+    const s = apply(reducer(opened(), { type: "seen", id: "r1" }), ev({ type: "state", server_s: 50, data: snapshot }));
+    expect(isSeen(s, "r1")).toBe(false);
+  });
+});
+
+describe("losing the backend (issue 120)", () => {
+  const live = () => apply(apply(initialState, ev({ type: "state", server_s: 50, data: snapshot })), ev({ type: "navtrust", server_s: 60, data: trust("uav1", "GREEN") }));
+  const connected = (s: ConsoleState, on: boolean) => reducer(s, { type: "connection", connected: on });
+
+  it("is not lost while connected and synced", () => {
+    expect(backendLost(connected(live(), true))).toBe(false);
+  });
+
+  it("is lost as soon as the connection drops", () => {
+    expect(backendLost(connected(live(), false))).toBe(true);
+  });
+
+  it("stays lost after the connection returns until a fresh snapshot arrives", () => {
+    const back = connected(connected(live(), false), true);
+    expect(backendLost(back)).toBe(true);
+    expect(backendLost(apply(back, ev({ type: "state", server_s: 90, data: snapshot })))).toBe(false);
+  });
+
+  it("remembers when the backend was last heard, on the server clock", () => {
+    expect(live().lastBackendAt_s).toBe(60);
   });
 });

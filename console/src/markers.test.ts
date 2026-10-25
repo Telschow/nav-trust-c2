@@ -76,3 +76,22 @@ describe("age on the map for a vehicle with no link (issue 114)", () => {
     expect([tickWhileNoLink(down, 30), tickWhileNoLink(down, 31)]).toEqual([30, 31]);
   });
 });
+
+describe("map marker while the backend is lost (issue 120)", () => {
+  it("is never drawn in a trust colour, and says last known", () => {
+    for (const state of ["GREEN", "AMBER", "RED"] as const) {
+      const view = markerView("uav1", trust(state), false, null, true);
+      expect(Object.values(TONE).map((t) => t.hex)).not.toContain(view.tone);
+      expect(view.tag).toBe("uav1 · LAST KNOWN");
+      expect(view.dashed).toBe(true);
+    }
+  });
+
+  it("a vehicle with no link keeps its own wording", () => {
+    expect(markerView("uav1", trust("GREEN"), true, 4, true).tag).toContain("NO LINK");
+  });
+
+  it("is the same as before while the backend is not lost", () => {
+    expect(markerView("uav1", trust("RED"), false, null, false)).toEqual(markerView("uav1", trust("RED"), false));
+  });
+});

@@ -1,5 +1,5 @@
 import { WifiOff } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { DecisionError, postDecision } from "./api";
 import { ActivityLog } from "./components/ActivityLog";
 import { ConfirmDialog } from "./components/ConfirmDialog";
@@ -8,8 +8,9 @@ import { Header } from "./components/Header";
 import { MapView } from "./components/MapView";
 import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/RecommendationCard";
 import { VehicleRow } from "./components/VehicleRow";
+import { announce, loadSoundChoice, saveSoundChoice, webAudioPlayer } from "./cues";
 import { useConsole, useServerNow } from "./hooks";
-import { decidedHistory, expiredWithoutLink, isNoLink, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
+import { backendLost as isBackendLost, decidedHistory, expiredWithoutLink, isNoLink, isSeen, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
@@ -28,7 +29,11 @@ interface Toast {
 }
 
 export function App() {
-  const { state, dispatch } = useConsole();
+  const [soundOn, setSoundOn] = useState(loadSoundChoice);
+  const soundRef = useRef(soundOn);
+  soundRef.current = soundOn;
+  const player = useMemo(webAudioPlayer, []);
+  const { state, dispatch } = useConsole((cues) => announce(cues, soundRef.current, player));
   const now = useServerNow(state);
   const [operator, setOperator] = useState(storedOperator);
   const [confirming, setConfirming] = useState<Recommendation | null>(null);
@@ -36,12 +41,21 @@ export function App() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [focus, setFocus] = useState<{ vehicleId: string; n: number } | null>(null);
 
+  const backendLost = isBackendLost(state);
   const open = openRecommendations(state);
   const decided = decidedHistory(state).slice(0, 4);
   const vehicleIds = Object.keys(state.vehicles).sort();
   const demo = state.source !== "live";
 
   const counts = useMemo(() => trustCounts(state), [state]);
+
+  const toggleSound = () => {
+    const on = !soundOn;
+    setSoundOn(on);
+    saveSoundChoice(on);
+    // the click is the browser's permission for audio: confirm with the decision tone
+    if (on) player.play("decision-required");
+  };
 
   const changeOperator = (name: string) => {
     setOperator(name);
@@ -96,8 +110,8 @@ export function App() {
       <a href="#decisions" className="skip-link">
         Skip to decisions
       </a>
-      <Header connected={state.connected} source={state.source} counts={counts} now={now} />
-      <DecisionBanner open={open} now={now} raisedAgain={open[0] ? raisedAgain(state, open[0]) : null} onReview={review} />
+      <Header connected={state.connected} source={state.source} counts={counts} now={now} backendLost={backendLost} soundOn={soundOn} onToggleSound={toggleSound} />
+      <DecisionBanner open={open} now={now} raisedAgain={open[0] ? raisedAgain(state, open[0]) : null} seen={open[0] ? isSeen(state, open[0].id) : false} onReview={review} />
 
       {!state.connected && (
         <div role="alert" className="flex items-center gap-2 border-b border-bad/50 bg-bad/10 px-4 py-2 text-sm text-bad">
@@ -127,6 +141,8 @@ export function App() {
               history={state.history[id] ?? []}
               calibration={state.calibration}
               link={state.links[id]}
+              backendLost={backendLost}
+              backendLastHeardAt_s={state.lastBackendAt_s}
               onFocus={() => setFocus((f) => ({ vehicleId: id, n: (f?.n ?? 0) + 1 }))}
             />
           ))}
@@ -158,6 +174,7 @@ export function App() {
                   decision={decision}
                   trustNow={state.vehicles[rec.vehicle_id]}
                   noLink={expiredWithoutLink(state, rec.id)}
+                  backendLost={backendLost}
                   onSeen={() => dispatch({ type: "seen", id: rec.id })}
                 />
               ))}
@@ -169,6 +186,9 @@ export function App() {
                   raisedAgain={raisedAgain(state, rec)}
                   disabled={busy}
                   noLink={isNoLink(state, rec.vehicle_id)}
+                  seen={isSeen(state, rec.id)}
+                  backendLost={backendLost}
+                  onSeen={() => dispatch({ type: "seen", id: rec.id })}
                   onApprove={() => setConfirming(rec)}
                   onDeny={() => void decide(rec, "DENIED")}
                 />
@@ -203,6 +223,7 @@ export function App() {
           demo={demo}
           busy={busy}
           noLink={isNoLink(state, confirming.vehicle_id)}
+          backendLost={backendLost}
           onOperatorChange={changeOperator}
           onCancel={() => setConfirming(null)}
           onConfirm={() => void decide(confirming, "APPROVED")}

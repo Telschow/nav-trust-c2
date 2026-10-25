@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import { Unlink, WifiOff } from "lucide-react";
+import { Unlink, Volume2, VolumeX, WifiOff } from "lucide-react";
 import { formatDuration } from "../language";
 import { TONE } from "../tone";
 import type { FleetCounts } from "../store";
@@ -9,9 +9,14 @@ interface Props {
   source: string;
   counts: FleetCounts;
   now: number | null;
+  /** whether tones are on, and the control to change it; always shown, so it never has to be guessed */
+  /** the console cannot reach the backend: the fleet's states are not shown as current */
+  backendLost?: boolean;
+  soundOn?: boolean;
+  onToggleSound?: () => void;
 }
 
-export function Header({ connected, source, counts, now }: Props) {
+export function Header({ connected, source, counts, now, backendLost = false, soundOn = false, onToggleSound }: Props) {
   const live = source === "live";
   const total = counts.GREEN + counts.AMBER + counts.RED + counts.noLink;
   return (
@@ -24,8 +29,8 @@ export function Header({ connected, source, counts, now }: Props) {
       <div className="flex items-center gap-4">
         {total > 0 && (
           <div className="hidden items-center gap-4 text-xs text-muted md:flex" aria-label="Fleet summary">
-            <span>{total} vehicles</span>
-            {(["GREEN", "AMBER", "RED"] as const).map(
+            <span>{backendLost ? `${total} vehicles, last known` : `${total} vehicles`}</span>
+            {!backendLost && (["GREEN", "AMBER", "RED"] as const).map(
               (s) =>
                 counts[s] > 0 && (
                   <span key={s} className="flex items-center gap-1.5">
@@ -34,13 +39,28 @@ export function Header({ connected, source, counts, now }: Props) {
                   </span>
                 ),
             )}
-            {counts.noLink > 0 && (
+            {!backendLost && counts.noLink > 0 && (
               <span className="flex items-center gap-1.5 text-accent">
                 <Unlink className="size-3" aria-hidden />
                 {counts.noLink} no link
               </span>
             )}
           </div>
+        )}
+        {onToggleSound && (
+          <button
+            type="button"
+            onClick={onToggleSound}
+            aria-pressed={soundOn}
+            title={soundOn ? "Tones announce decisions and lost links. Click to turn off." : "Click to turn on tones for decisions and lost links."}
+            className={clsx(
+              "inline-flex items-center gap-1.5 rounded-[2px] border px-2 py-0.5 text-[11px] font-medium focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent",
+              soundOn ? "border-line text-text" : "border-warn/60 text-warn",
+            )}
+          >
+            {soundOn ? <Volume2 className="size-3" aria-hidden /> : <VolumeX className="size-3" aria-hidden />}
+            {soundOn ? "Sound on" : "Sound off"}
+          </button>
         )}
         <span
           title={live ? "Live data" : "Recorded trust data replayed with synthetic positions. Not a live flight."}

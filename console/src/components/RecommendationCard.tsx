@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { STATE_LABEL, actionsOf, contextNote, formatDuration, ordinal, reasonText, titleOf, urgencyNote } from "../language";
+import { STATE_LABEL, actionsOf, contextNote, formatDuration, noLinkWarning, ordinal, reasonText, titleOf, urgencyNote } from "../language";
 import type { RaisedAgain } from "../store";
 import { TONE, vehicleColor } from "../tone";
 import type { Decision, NavTrust, Recommendation } from "../types";
@@ -13,11 +13,16 @@ interface OpenProps {
   disabled: boolean;
   /** the vehicle cannot be heard now, so a command to it may not arrive */
   noLink?: boolean;
+  /** the operator has marked this seen: it stays open and counts down */
+  seen?: boolean;
+  /** the console cannot reach the backend, so no answer can be sent */
+  backendLost?: boolean;
   onApprove: () => void;
   onDeny: () => void;
+  onSeen?: () => void;
 }
 
-export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = false, onApprove, onDeny }: OpenProps) {
+export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = false, seen = false, backendLost = false, onApprove, onDeny, onSeen }: OpenProps) {
   const remaining = now === null ? null : rec.expires_s - now;
   const total = rec.expires_s - rec.created_s;
   const expired = remaining !== null && remaining <= 0;
@@ -36,6 +41,7 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
 
       <div className="px-4 pb-4 pt-3">
         <h3 className="text-[17px] font-semibold leading-tight">{titleOf(rec)}</h3>
+        {seen && <p className="mt-1 text-xs font-medium text-muted">Seen, waiting for decision</p>}
         {raisedAgain && (
           <p className="mt-2 border-l-2 border-warn pl-3 text-sm">
             {`Raised again, ${ordinal(raisedAgain.nth)} time. The previous one expired unanswered at T+${formatDuration(raisedAgain.previousExpiredAt_s)}.`}
@@ -45,9 +51,7 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
           <span className="text-text">Why:</span> {reasonText(rec.reason)}.
         </p>
 
-        {noLink && rec.command !== null && (
-          <p className="mt-2 text-sm text-accent">{rec.vehicle_id} has no link. A command may not reach it.</p>
-        )}
+        {noLink && noLinkWarning(rec) && <p className="mt-2 text-sm text-accent">{noLinkWarning(rec)}</p>}
 
         {contextNote(rec) && <p className="mt-2 text-sm text-muted">{contextNote(rec)}</p>}
 
@@ -84,7 +88,7 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
           <button
             type="button"
             onClick={onDeny}
-            disabled={disabled || expired}
+            disabled={disabled || expired || backendLost}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-[3px] border border-line text-sm font-medium text-text hover:bg-panel-2 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <X className="size-4" aria-hidden /> Deny
@@ -92,12 +96,23 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
           <button
             type="button"
             onClick={onApprove}
-            disabled={disabled || expired}
+            disabled={disabled || expired || backendLost}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-[3px] bg-accent text-sm font-semibold text-[#08121d] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <Check className="size-4" aria-hidden /> Approve...
           </button>
         </div>
+        {backendLost && <p className="mt-2 text-xs text-bad">No connection to the backend: nothing can be sent.</p>}
+        {!seen && !expired && onSeen && (
+          <button
+            type="button"
+            onClick={onSeen}
+            disabled={backendLost}
+            className="mt-2 h-8 w-full rounded-[3px] border border-line-soft text-xs font-medium text-muted hover:bg-panel-2 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            Seen
+          </button>
+        )}
       </div>
     </article>
   );
@@ -110,6 +125,7 @@ export function ExpiredNotice({
   decision,
   trustNow,
   noLink = false,
+  backendLost = false,
   onSeen,
 }: {
   rec: Recommendation;
@@ -117,6 +133,7 @@ export function ExpiredNotice({
   trustNow: NavTrust | undefined;
   /** the vehicle could not be heard when this expired, so its trust state was only the last one known */
   noLink?: boolean;
+  backendLost?: boolean;
   onSeen: () => void;
 }) {
   return (
@@ -137,7 +154,9 @@ export function ExpiredNotice({
       <button
         type="button"
         onClick={onSeen}
-        className="mt-2.5 h-8 rounded-[3px] border border-line px-3 text-xs font-medium hover:bg-panel-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        disabled={backendLost}
+        title={backendLost ? "No connection to the backend" : undefined}
+        className="mt-2.5 h-8 rounded-[3px] border border-line px-3 text-xs font-medium hover:bg-panel-2 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         Seen
       </button>

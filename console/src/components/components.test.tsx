@@ -327,7 +327,6 @@ describe("ExpiredNotice (issue 112)", () => {
 
 describe("a decision for a vehicle with no link (issue 128)", () => {
   const land: Recommendation = { ...rec, command: "LAND" };
-  const retask: Recommendation = { ...rec, command: null };
   const base = { operator: "daniel", demo: false, busy: false, onOperatorChange: vi.fn(), onCancel: vi.fn(), onConfirm: vi.fn() };
   const warning = /uav2 has no link\. This command may not reach it\./;
 
@@ -349,11 +348,6 @@ describe("a decision for a vehicle with no link (issue 128)", () => {
     rerender(<ConfirmDialog {...base} rec={land} noLink />);
     expect(screen.getByText(warning)).toBeTruthy();
     rerender(<ConfirmDialog {...base} rec={land} />);
-    expect(screen.queryByText(warning)).toBeNull();
-  });
-
-  it("a re-task alone sends no command to the vehicle, so there is nothing to warn about", () => {
-    render(<ConfirmDialog {...base} rec={retask} noLink />);
     expect(screen.queryByText(warning)).toBeNull();
   });
 
@@ -475,5 +469,152 @@ describe("ConfirmDialog: landing needs a deliberate hold (issue 113)", () => {
     expect(document.activeElement).toBe(confirm);
     fireEvent.click(confirm);
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("an open decision marked seen (issue 115)", () => {
+  it("has a Seen control that works from the keyboard", () => {
+    const onSeen = vi.fn();
+    render(<RecommendationCard rec={rec} now={130} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} onSeen={onSeen} />);
+    const button = screen.getByRole("button", { name: "Seen" });
+    expect(button.tagName).toBe("BUTTON");
+    fireEvent.click(button);
+    expect(onSeen).toHaveBeenCalledTimes(1);
+  });
+
+  it("once seen, says so in words, still counts down and can still be approved", () => {
+    render(<RecommendationCard rec={rec} now={130} disabled={false} seen onApprove={vi.fn()} onDeny={vi.fn()} onSeen={vi.fn()} />);
+    expect(screen.getByText(/Seen, waiting for decision/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Seen" })).toBeNull();
+    expect(screen.getByText("Expires in 0:30")).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Approve/ }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("the band reads 'Seen, waiting for decision' and keeps its countdown", () => {
+    render(<DecisionBanner open={[rec]} now={130} seen onReview={vi.fn()} />);
+    expect(screen.getByText("Seen, waiting for decision")).toBeTruthy();
+    expect(screen.getByText(/expires in 0:30/)).toBeTruthy();
+  });
+
+  it("the band is unchanged while unseen", () => {
+    render(<DecisionBanner open={[rec]} now={130} onReview={vi.fn()} />);
+    expect(screen.getByText("Decision required")).toBeTruthy();
+    expect(screen.queryByText(/Seen, waiting/)).toBeNull();
+  });
+});
+
+describe("a re-task for a vehicle with no link (issue 134)", () => {
+  const retask: Recommendation = { ...rec, command: null, sector_moves: [{ sector_id: "S2", to_vehicle: "uav3" }, { sector_id: "S4", to_vehicle: "uav1" }] };
+  const base = { operator: "daniel", demo: false, busy: false, onOperatorChange: vi.fn(), onCancel: vi.fn(), onConfirm: vi.fn() };
+  const warning = /uav2 has no link and may keep flying S2, S4/;
+
+  it("the confirmation names the sectors the vehicle may keep flying", () => {
+    render(<ConfirmDialog {...base} rec={retask} noLink />);
+    expect(screen.getByText(warning)).toBeTruthy();
+    expect(screen.queryByText(/This command may not reach it/)).toBeNull();
+  });
+
+  it("the open decision carries the same warning, and can still be approved", () => {
+    render(<RecommendationCard rec={retask} now={130} disabled={false} noLink onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.getByText(warning)).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Approve/ }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("a vehicle that can be heard shows no warning", () => {
+    render(<ConfirmDialog {...base} rec={retask} />);
+    expect(screen.queryByText(/no link/)).toBeNull();
+  });
+
+  it("a command keeps its own wording", () => {
+    render(<ConfirmDialog {...base} rec={{ ...retask, command: "LAND" }} noLink />);
+    expect(screen.getByText(/uav2 has no link\. This command may not reach it\./)).toBeTruthy();
+  });
+});
+
+describe("the sound control in the header (issue 116)", () => {
+  const counts = { GREEN: 1, AMBER: 0, RED: 0, noLink: 0 };
+
+  it("always shows whether sound is on, and says off in words", () => {
+    render(<Header connected source="live" counts={counts} now={10} soundOn={false} onToggleSound={vi.fn()} />);
+    const button = screen.getByRole("button", { name: /Sound off/ });
+    expect(button.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("shows on, and toggles", () => {
+    const toggle = vi.fn();
+    render(<Header connected source="live" counts={counts} now={10} soundOn onToggleSound={toggle} />);
+    const button = screen.getByRole("button", { name: /Sound on/ });
+    expect(button.getAttribute("aria-pressed")).toBe("true");
+    fireEvent.click(button);
+    expect(toggle).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("while the backend is lost (issue 120)", () => {
+  const green = {
+    vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
+    horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
+  };
+  const props = { vehicleId: "uav1", trust: green, since: 0, now: 30, sectors: [], doneSectors: [], history: [], calibration: null, onFocus: vi.fn() };
+  const noLink = { state: "NO_LINK" as const, lastHeardAt_s: 18 };
+  const redTrust = { ...green, state: "RED" as const, reason: "INCONSISTENT_INNOVATION" as const, horizontal_bound_m: null, confidence: 0, headroom: 0 };
+  const lost = { backendLost: true, backendLastHeardAt_s: 100 };
+
+  it("a row presents nothing as current", () => {
+    render(<VehicleRow {...props} {...lost} now={160} />);
+    expect(screen.getByText("Last known")).toBeTruthy();
+    expect(screen.getAllByText("not current")).toHaveLength(2); // position error and time in state
+    expect(screen.getByText(/Margin to alert: not current/)).toBeTruthy();
+    expect(screen.queryByText(/within 3 m/)).toBeNull();
+    expect(screen.queryByText(/Comfortable/)).toBeNull();
+    expect(screen.getByText(/Connection to the backend was lost. Last heard from it at T\+1:40/)).toBeTruthy();
+  });
+
+  it("the history strip is dimmed, since its latest colour is only the last state received", () => {
+    const { container } = render(<VehicleRow {...props} {...lost} now={160} />);
+    expect(container.querySelector("[data-last-known]")).not.toBeNull();
+  });
+
+  it("a RED row loses its red tint", () => {
+    render(<VehicleRow {...props} {...lost} trust={redTrust} now={160} />);
+    expect(screen.getByRole("button").className.includes("bg-bad/10")).toBe(false);
+  });
+
+  it("a vehicle with no link keeps its own wording, and is still told apart", () => {
+    render(<VehicleRow {...props} {...lost} link={noLink} now={160} />);
+    expect(screen.getByText("No link")).toBeTruthy();
+    expect(screen.getByText(/Last heard .* ago/)).toBeTruthy();
+  });
+
+  it("the header does not present the fleet's states as current", () => {
+    render(<Header connected={false} source="live" counts={{ GREEN: 2, AMBER: 0, RED: 1, noLink: 0 }} now={160} backendLost />);
+    expect(screen.getByText(/3 vehicles, last known/)).toBeTruthy();
+    expect(screen.queryByText(/not trusted/)).toBeNull();
+  });
+
+  it("Approve, Deny and Seen are disabled and say why", () => {
+    render(<RecommendationCard rec={rec} now={130} disabled={false} backendLost onApprove={vi.fn()} onDeny={vi.fn()} onSeen={vi.fn()} />);
+    for (const name of [/Approve/, /Deny/, "Seen"]) {
+      expect((screen.getByRole("button", { name }) as HTMLButtonElement).disabled).toBe(true);
+    }
+    expect(screen.getByText(/no connection to the backend/i)).toBeTruthy();
+    expect(screen.getByText("Expires in 0:30")).toBeTruthy(); // the countdown keeps counting
+  });
+
+  it("an expired notice cannot be marked seen either, and says why", () => {
+    const decision = { recommendation_id: "r1", outcome: "EXPIRED" as const, decided_s: 160, operator: "system", note: "" };
+    render(<ExpiredNotice rec={rec} decision={decision} trustNow={undefined} backendLost onSeen={vi.fn()} />);
+    expect((screen.getByRole("button", { name: "Seen" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("an open confirmation cannot be confirmed", () => {
+    render(<ConfirmDialog operator="daniel" demo={false} busy={false} backendLost onOperatorChange={vi.fn()} onCancel={vi.fn()} onConfirm={vi.fn()} rec={{ ...rec, command: "LAND" }} />);
+    expect((screen.getByRole("button", { name: /Hold to confirm landing/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/no connection to the backend/i)).toBeTruthy();
+  });
+
+  it("is back to normal when the backend is not lost", () => {
+    render(<VehicleRow {...props} now={160} />);
+    expect(screen.queryByText("Last known")).toBeNull();
   });
 });

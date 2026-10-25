@@ -1,6 +1,6 @@
 import { formatDuration } from "./language";
 import type { LinkInfo } from "./store";
-import { LINK_TONE, TONE } from "./tone";
+import { LAST_KNOWN_TONE, LINK_TONE, TONE } from "./tone";
 import type { NavTrust } from "./types";
 
 export interface MarkerView {
@@ -31,6 +31,7 @@ export function markerView(
   trust: NavTrust | undefined,
   noLink: boolean,
   ageS?: number | null,
+  backendLost = false,
 ): MarkerView {
   if (noLink) {
     // the age goes on a second line: a long one-line tag runs off the edge of the map and hides
@@ -38,6 +39,7 @@ export function markerView(
     const heard = ageS == null ? "" : `\nlast heard ${formatDuration(ageS)}`;
     return { tone: LINK_TONE, dashed: true, tag: `${vehicleId} · NO LINK${heard}` };
   }
+  if (backendLost) return { tone: LAST_KNOWN_TONE, dashed: true, tag: `${vehicleId} · LAST KNOWN` };
   const flagged = trust !== undefined && trust.state !== "GREEN";
   return {
     tone: TONE[trust?.state ?? "AMBER"].hex,

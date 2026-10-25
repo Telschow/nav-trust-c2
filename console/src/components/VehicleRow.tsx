@@ -25,6 +25,10 @@ interface Props {
   calibration: Calibration | null;
   /** undefined: the backend says nothing about the link, so none is shown */
   link?: LinkInfo | undefined;
+  /** the console cannot reach the backend: everything here is the last thing received */
+  backendLost?: boolean;
+  /** server_s of the last message from the backend */
+  backendLastHeardAt_s?: number | null | undefined;
   onFocus: () => void;
 }
 
@@ -38,16 +42,20 @@ export function VehicleRow({
   history,
   calibration,
   link,
+  backendLost = false,
+  backendLastHeardAt_s = null,
   onFocus,
 }: Props) {
   const noLink = link?.state === "NO_LINK";
+  // a vehicle's own no-link wording wins; otherwise a lost backend makes the state last known too
+  const lastKnown = noLink || backendLost;
   // with no link, everything below the vehicle's name is the last thing it reported, not now
-  const inState = noLink
+  const inState = lastKnown
     ? "not current"
     : since !== undefined && now !== null
       ? formatDuration(now - since)
       : "-";
-  const positionError = noLink
+  const positionError = lastKnown
     ? { value: "not current" }
     : {
         value: formatBound(trust.horizontal_bound_m),
@@ -62,12 +70,14 @@ export function VehicleRow({
         "block w-full border-b border-line-soft px-4 py-3 text-left hover:bg-panel-2",
         "focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent",
         // a red tint says "not trusted now"; with no link that is only the last state known
-        trust.state === "RED" && !noLink && "bg-bad/10 hover:bg-bad/14",
+        trust.state === "RED" && !lastKnown && "bg-bad/10 hover:bg-bad/14",
       )}
       aria-label={
         noLink
           ? `${vehicleId}, ${trust.state} (last known), no link. Show on map`
-          : `${vehicleId}, ${trust.state}. Show on map`
+          : backendLost
+            ? `${vehicleId}, ${trust.state} (last known), no connection to the backend. Show on map`
+            : `${vehicleId}, ${trust.state}. Show on map`
       }
     >
       <div className="flex items-center justify-between gap-3">
@@ -81,7 +91,7 @@ export function VehicleRow({
         </span>
         <span className="flex items-center gap-1.5">
           {noLink && <LinkBadge />}
-          <StateChip state={trust.state} lastKnown={noLink} />
+          <StateChip state={trust.state} lastKnown={lastKnown} />
         </span>
       </div>
 
@@ -93,8 +103,16 @@ export function VehicleRow({
         </p>
       )}
 
+      {!noLink && backendLost && (
+        <p className="mt-1 text-xs text-accent">
+          {backendLastHeardAt_s !== null
+            ? `Connection to the backend was lost. Last heard from it at T+${formatDuration(backendLastHeardAt_s)}`
+            : "Connection to the backend was lost."}
+        </p>
+      )}
+
       <p className={clsx("mt-1 text-[13px] leading-snug", trust.state === "GREEN" ? "text-muted" : "text-text")}>
-        {noLink ? `Last known: ${reasonText(trust.reason)}` : reasonText(trust.reason)}
+        {lastKnown ? `Last known: ${reasonText(trust.reason)}` : reasonText(trust.reason)}
       </p>
 
       <dl className="mt-2 grid grid-cols-[1.25fr_0.75fr_1fr] divide-x divide-line-soft border-y border-line-soft text-xs">
@@ -108,14 +126,15 @@ export function VehicleRow({
       </dl>
 
       <div className="mt-2">
-        {noLink ? (
-          <p className="text-xs text-faint">Margin to alert: not current, no link.</p>
+        {lastKnown ? (
+          <p className="text-xs text-faint">Margin to alert: not current, {noLink ? "no link" : "no connection to the backend"}.</p>
         ) : (
           <Headroom trust={trust} />
         )}
       </div>
 
-      <div className="mt-2">
+      {/* the strip's latest colour is only the last state received while the backend is lost */}
+      <div className={clsx("mt-2", backendLost && "opacity-40")} data-last-known={backendLost ? "" : undefined}>
         <TrustStrip history={history} now={now} />
       </div>
     </button>
