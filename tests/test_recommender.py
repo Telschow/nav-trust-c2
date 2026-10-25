@@ -68,13 +68,14 @@ def test_stale_is_treated_like_loss() -> None:
 
 
 def test_one_recommendation_per_episode_and_a_new_one_after_recovery() -> None:
-    r, f, _ = make()
+    r, f, clock = make()
     red = msg("uav2", TrustState.RED, ReasonCode.GNSS_LOSS)
     assert len(r.observe(red, f)) == 1
     assert r.observe(red, f) == []
     assert r.observe(msg("uav2", TrustState.AMBER, ReasonCode.GNSS_LOSS), f) == []
     assert r.observe(red, f) == []  # still the same episode: never went GREEN
     green(r, f, "uav2")
+    clock.t += 61.0  # the first one has lapsed; while it is open a flip does not raise another
     assert len(r.observe(red, f)) == 1
 
 
@@ -142,3 +143,15 @@ def test_a_denied_or_approved_recommendation_is_not_repeated() -> None:
     for outcome in (Outcome.DENIED, Outcome.APPROVED):
         r.on_decision(Decision(rec.id, outcome, 60.0, "daniel"), "uav2")
         assert r.observe(red, f) == []
+
+
+def test_a_flapping_vehicle_does_not_stack_open_recommendations() -> None:
+    """Two sources reporting for one vehicle make it flip GREEN/RED; the operator must still
+    see one open decision for it, not one per flip."""
+    r, f, _ = make()
+    red = msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION)
+    raised = []
+    for _ in range(5):
+        raised += r.observe(red, f)
+        green(r, f, "uav2")
+    assert len(raised) == 1
