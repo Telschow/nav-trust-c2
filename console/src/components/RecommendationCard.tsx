@@ -15,12 +15,14 @@ interface OpenProps {
   noLink?: boolean;
   /** the operator has marked this seen: it stays open and counts down */
   seen?: boolean;
+  /** the console cannot reach the backend, so no answer can be sent */
+  backendLost?: boolean;
   onApprove: () => void;
   onDeny: () => void;
   onSeen?: () => void;
 }
 
-export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = false, seen = false, onApprove, onDeny, onSeen }: OpenProps) {
+export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = false, seen = false, backendLost = false, onApprove, onDeny, onSeen }: OpenProps) {
   const remaining = now === null ? null : rec.expires_s - now;
   const total = rec.expires_s - rec.created_s;
   const expired = remaining !== null && remaining <= 0;
@@ -86,7 +88,7 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
           <button
             type="button"
             onClick={onDeny}
-            disabled={disabled || expired}
+            disabled={disabled || expired || backendLost}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-[3px] border border-line text-sm font-medium text-text hover:bg-panel-2 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <X className="size-4" aria-hidden /> Deny
@@ -94,17 +96,19 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
           <button
             type="button"
             onClick={onApprove}
-            disabled={disabled || expired}
+            disabled={disabled || expired || backendLost}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-[3px] bg-accent text-sm font-semibold text-[#08121d] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             <Check className="size-4" aria-hidden /> Approve...
           </button>
         </div>
+        {backendLost && <p className="mt-2 text-xs text-bad">No connection to the backend: nothing can be sent.</p>}
         {!seen && !expired && onSeen && (
           <button
             type="button"
             onClick={onSeen}
-            className="mt-2 h-8 w-full rounded-[3px] border border-line-soft text-xs font-medium text-muted hover:bg-panel-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            disabled={backendLost}
+            className="mt-2 h-8 w-full rounded-[3px] border border-line-soft text-xs font-medium text-muted hover:bg-panel-2 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >
             Seen
           </button>
@@ -121,6 +125,7 @@ export function ExpiredNotice({
   decision,
   trustNow,
   noLink = false,
+  backendLost = false,
   onSeen,
 }: {
   rec: Recommendation;
@@ -128,6 +133,7 @@ export function ExpiredNotice({
   trustNow: NavTrust | undefined;
   /** the vehicle could not be heard when this expired, so its trust state was only the last one known */
   noLink?: boolean;
+  backendLost?: boolean;
   onSeen: () => void;
 }) {
   return (
@@ -148,7 +154,9 @@ export function ExpiredNotice({
       <button
         type="button"
         onClick={onSeen}
-        className="mt-2.5 h-8 rounded-[3px] border border-line px-3 text-xs font-medium hover:bg-panel-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        disabled={backendLost}
+        title={backendLost ? "No connection to the backend" : undefined}
+        className="mt-2.5 h-8 rounded-[3px] border border-line px-3 text-xs font-medium hover:bg-panel-2 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
       >
         Seen
       </button>

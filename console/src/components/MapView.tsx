@@ -8,7 +8,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { localToLonLat, sectorRing } from "../geo";
 import { coveredByVehicleTag } from "../labelPlacement";
 import { heardAgeS, markerView, tickWhileNoLink } from "../markers";
-import { isNoLink } from "../store";
+import { backendLost, isNoLink } from "../store";
 import type { ConsoleState } from "../store";
 import { LINK_TONE, TONE, vehicleColor } from "../tone";
 
@@ -149,6 +149,7 @@ export function MapView({ state, now, focus }: Props) {
         state.vehicles[vehicleId],
         isNoLink(state, vehicleId),
         heardAgeS(state.links[vehicleId], tickNow),
+        backendLost(state),
       );
       let entry = markers.current.get(vehicleId);
       if (!entry) {
@@ -167,7 +168,7 @@ export function MapView({ state, now, focus }: Props) {
         tag.setAttribute("data-lines", String(view.tag.split("\n").length));
       }
     }
-  }, [state.positions, state.vehicles, state.links, tickNow, ready]);
+  }, [state.positions, state.vehicles, state.links, state.connected, state.resync, tickNow, ready]);
 
   // a sector label a vehicle tag would partly cover is hidden whole, so none is left clipped
   useEffect(() => {

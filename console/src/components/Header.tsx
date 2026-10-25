@@ -10,11 +10,13 @@ interface Props {
   counts: FleetCounts;
   now: number | null;
   /** whether tones are on, and the control to change it; always shown, so it never has to be guessed */
+  /** the console cannot reach the backend: the fleet's states are not shown as current */
+  backendLost?: boolean;
   soundOn?: boolean;
   onToggleSound?: () => void;
 }
 
-export function Header({ connected, source, counts, now, soundOn = false, onToggleSound }: Props) {
+export function Header({ connected, source, counts, now, backendLost = false, soundOn = false, onToggleSound }: Props) {
   const live = source === "live";
   const total = counts.GREEN + counts.AMBER + counts.RED + counts.noLink;
   return (
@@ -27,8 +29,8 @@ export function Header({ connected, source, counts, now, soundOn = false, onTogg
       <div className="flex items-center gap-4">
         {total > 0 && (
           <div className="hidden items-center gap-4 text-xs text-muted md:flex" aria-label="Fleet summary">
-            <span>{total} vehicles</span>
-            {(["GREEN", "AMBER", "RED"] as const).map(
+            <span>{backendLost ? `${total} vehicles, last known` : `${total} vehicles`}</span>
+            {!backendLost && (["GREEN", "AMBER", "RED"] as const).map(
               (s) =>
                 counts[s] > 0 && (
                   <span key={s} className="flex items-center gap-1.5">
@@ -37,7 +39,7 @@ export function Header({ connected, source, counts, now, soundOn = false, onTogg
                   </span>
                 ),
             )}
-            {counts.noLink > 0 && (
+            {!backendLost && counts.noLink > 0 && (
               <span className="flex items-center gap-1.5 text-accent">
                 <Unlink className="size-3" aria-hidden />
                 {counts.noLink} no link

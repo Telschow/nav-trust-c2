@@ -37,6 +37,10 @@ export interface LinkInfo {
 
 export interface ConsoleState {
   connected: boolean;
+  /** the connection dropped and no fresh snapshot has arrived since: what is on screen is old */
+  resync: boolean;
+  /** server_s of the latest message from the backend, to say how old the screen is */
+  lastBackendAt_s: number | null;
   /** server clock minus client clock (seconds); null until the first message */
   clockOffset: number | null;
   source: string;
@@ -62,6 +66,8 @@ export interface ConsoleState {
 
 export const initialState: ConsoleState = {
   connected: false,
+  resync: false,
+  lastBackendAt_s: null,
   clockOffset: null,
   source: "live",
   origin: null,
@@ -155,7 +161,7 @@ function applyPosition(s: ConsoleState, pos: Position): ConsoleState {
 export function reducer(s: ConsoleState, action: Action): ConsoleState {
   switch (action.type) {
     case "connection":
-      return { ...s, connected: action.connected };
+      return { ...s, connected: action.connected, resync: action.connected ? s.resync : true };
     case "fleet":
       return { ...s, fleet: action.fleet, doneSectors: action.done };
     case "calibration":
@@ -166,7 +172,12 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
       return { ...s, decisions: { ...s.decisions, [action.decision.recommendation_id]: action.decision } };
     case "server": {
       const { event, clientNow } = action;
-      const base: ConsoleState = { ...s, clockOffset: event.server_s - clientNow };
+      const base: ConsoleState = {
+        ...s,
+        clockOffset: event.server_s - clientNow,
+        lastBackendAt_s: event.server_s,
+        resync: event.type === "state" ? false : s.resync,
+      };
       switch (event.type) {
         case "state": {
           const snap = event.data;
@@ -240,6 +251,12 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
 /** The backend has not heard from this vehicle: its trust state is only the last one known. */
 export function isNoLink(s: ConsoleState, vehicleId: string): boolean {
   return s.links[vehicleId]?.state === "NO_LINK";
+}
+
+/** The console cannot reach the backend, or has not yet been given a fresh snapshot since it could
+ * not. Every state on screen is then only the last one received. */
+export function backendLost(s: ConsoleState): boolean {
+  return !s.connected || s.resync;
 }
 
 /** Whether the operator has marked a recommendation seen. A re-raised recommendation is a new id,

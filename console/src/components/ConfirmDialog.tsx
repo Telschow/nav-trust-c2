@@ -47,16 +47,18 @@ interface Props {
   busy: boolean;
   /** the vehicle cannot be heard now, so a command to it may not arrive */
   noLink?: boolean;
+  /** the console cannot reach the backend, so nothing can be sent */
+  backendLost?: boolean;
   onOperatorChange: (name: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, onOperatorChange, onCancel, onConfirm }: Props) {
+export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backendLost = false, onOperatorChange, onCancel, onConfirm }: Props) {
   const landing = rec.command === "LAND";
   const confirmRef = useRef<HTMLButtonElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
-  const canConfirm = !busy && operator.trim() !== "";
+  const canConfirm = !busy && !backendLost && operator.trim() !== "";
   const hold = useHold(HOLD_TO_CONFIRM_MS, onConfirm, canConfirm);
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
@@ -102,6 +104,12 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, onOpe
             ? "Demo mode: no command is sent to any vehicle. The decision is still recorded."
             : "These commands are sent to the vehicles and the decision is recorded in the audit log."}
         </p>
+
+        {backendLost && (
+          <p role="alert" className="mt-4 border border-bad/60 px-3 py-2 text-sm text-bad">
+            No connection to the backend: this cannot be sent now.
+          </p>
+        )}
 
         {noLink && noLinkWarning(rec) && (
           <p className="mt-4 border border-accent/60 px-3 py-2 text-sm text-accent">{noLinkWarning(rec)}</p>

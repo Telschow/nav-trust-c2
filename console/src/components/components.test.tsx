@@ -549,3 +549,67 @@ describe("the sound control in the header (issue 116)", () => {
     expect(toggle).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("while the backend is lost (issue 120)", () => {
+  const green = {
+    vehicle_id: "uav1", stamp_s: 1, state: "GREEN" as const, reason: null,
+    horizontal_bound_m: 3, confidence: 0.99, headroom: 0.9,
+  };
+  const props = { vehicleId: "uav1", trust: green, since: 0, now: 30, sectors: [], doneSectors: [], history: [], calibration: null, onFocus: vi.fn() };
+  const noLink = { state: "NO_LINK" as const, lastHeardAt_s: 18 };
+  const redTrust = { ...green, state: "RED" as const, reason: "INCONSISTENT_INNOVATION" as const, horizontal_bound_m: null, confidence: 0, headroom: 0 };
+  const lost = { backendLost: true, backendLastHeardAt_s: 100 };
+
+  it("a row presents nothing as current", () => {
+    render(<VehicleRow {...props} {...lost} now={160} />);
+    expect(screen.getByText("Last known")).toBeTruthy();
+    expect(screen.getAllByText("not current")).toHaveLength(2); // position error and time in state
+    expect(screen.getByText(/Margin to alert: not current/)).toBeTruthy();
+    expect(screen.queryByText(/within 3 m/)).toBeNull();
+    expect(screen.queryByText(/Comfortable/)).toBeNull();
+    expect(screen.getByText(/Connection to the backend was lost. Last heard from it at T\+1:40/)).toBeTruthy();
+  });
+
+  it("a RED row loses its red tint", () => {
+    render(<VehicleRow {...props} {...lost} trust={redTrust} now={160} />);
+    expect(screen.getByRole("button").className.includes("bg-bad/10")).toBe(false);
+  });
+
+  it("a vehicle with no link keeps its own wording, and is still told apart", () => {
+    render(<VehicleRow {...props} {...lost} link={noLink} now={160} />);
+    expect(screen.getByText("No link")).toBeTruthy();
+    expect(screen.getByText(/Last heard .* ago/)).toBeTruthy();
+  });
+
+  it("the header does not present the fleet's states as current", () => {
+    render(<Header connected={false} source="live" counts={{ GREEN: 2, AMBER: 0, RED: 1, noLink: 0 }} now={160} backendLost />);
+    expect(screen.getByText(/3 vehicles, last known/)).toBeTruthy();
+    expect(screen.queryByText(/not trusted/)).toBeNull();
+  });
+
+  it("Approve, Deny and Seen are disabled and say why", () => {
+    render(<RecommendationCard rec={rec} now={130} disabled={false} backendLost onApprove={vi.fn()} onDeny={vi.fn()} onSeen={vi.fn()} />);
+    for (const name of [/Approve/, /Deny/, "Seen"]) {
+      expect((screen.getByRole("button", { name }) as HTMLButtonElement).disabled).toBe(true);
+    }
+    expect(screen.getByText(/no connection to the backend/i)).toBeTruthy();
+    expect(screen.getByText("Expires in 0:30")).toBeTruthy(); // the countdown keeps counting
+  });
+
+  it("an expired notice cannot be marked seen either, and says why", () => {
+    const decision = { recommendation_id: "r1", outcome: "EXPIRED" as const, decided_s: 160, operator: "system", note: "" };
+    render(<ExpiredNotice rec={rec} decision={decision} trustNow={undefined} backendLost onSeen={vi.fn()} />);
+    expect((screen.getByRole("button", { name: "Seen" }) as HTMLButtonElement).disabled).toBe(true);
+  });
+
+  it("an open confirmation cannot be confirmed", () => {
+    render(<ConfirmDialog operator="daniel" demo={false} busy={false} backendLost onOperatorChange={vi.fn()} onCancel={vi.fn()} onConfirm={vi.fn()} rec={{ ...rec, command: "LAND" }} />);
+    expect((screen.getByRole("button", { name: /Hold to confirm landing/ }) as HTMLButtonElement).disabled).toBe(true);
+    expect(screen.getByText(/no connection to the backend/i)).toBeTruthy();
+  });
+
+  it("is back to normal when the backend is not lost", () => {
+    render(<VehicleRow {...props} now={160} />);
+    expect(screen.queryByText("Last known")).toBeNull();
+  });
+});

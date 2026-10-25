@@ -10,7 +10,7 @@ import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/Reco
 import { VehicleRow } from "./components/VehicleRow";
 import { announce, loadSoundChoice, saveSoundChoice, webAudioPlayer } from "./cues";
 import { useConsole, useServerNow } from "./hooks";
-import { decidedHistory, expiredWithoutLink, isNoLink, isSeen, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
+import { backendLost as isBackendLost, decidedHistory, expiredWithoutLink, isNoLink, isSeen, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
@@ -41,6 +41,7 @@ export function App() {
   const [toast, setToast] = useState<Toast | null>(null);
   const [focus, setFocus] = useState<{ vehicleId: string; n: number } | null>(null);
 
+  const backendLost = isBackendLost(state);
   const open = openRecommendations(state);
   const decided = decidedHistory(state).slice(0, 4);
   const vehicleIds = Object.keys(state.vehicles).sort();
@@ -109,7 +110,7 @@ export function App() {
       <a href="#decisions" className="skip-link">
         Skip to decisions
       </a>
-      <Header connected={state.connected} source={state.source} counts={counts} now={now} soundOn={soundOn} onToggleSound={toggleSound} />
+      <Header connected={state.connected} source={state.source} counts={counts} now={now} backendLost={backendLost} soundOn={soundOn} onToggleSound={toggleSound} />
       <DecisionBanner open={open} now={now} raisedAgain={open[0] ? raisedAgain(state, open[0]) : null} seen={open[0] ? isSeen(state, open[0].id) : false} onReview={review} />
 
       {!state.connected && (
@@ -140,6 +141,8 @@ export function App() {
               history={state.history[id] ?? []}
               calibration={state.calibration}
               link={state.links[id]}
+              backendLost={backendLost}
+              backendLastHeardAt_s={state.lastBackendAt_s}
               onFocus={() => setFocus((f) => ({ vehicleId: id, n: (f?.n ?? 0) + 1 }))}
             />
           ))}
@@ -171,6 +174,7 @@ export function App() {
                   decision={decision}
                   trustNow={state.vehicles[rec.vehicle_id]}
                   noLink={expiredWithoutLink(state, rec.id)}
+                  backendLost={backendLost}
                   onSeen={() => dispatch({ type: "seen", id: rec.id })}
                 />
               ))}
@@ -183,6 +187,7 @@ export function App() {
                   disabled={busy}
                   noLink={isNoLink(state, rec.vehicle_id)}
                   seen={isSeen(state, rec.id)}
+                  backendLost={backendLost}
                   onSeen={() => dispatch({ type: "seen", id: rec.id })}
                   onApprove={() => setConfirming(rec)}
                   onDeny={() => void decide(rec, "DENIED")}
@@ -218,6 +223,7 @@ export function App() {
           demo={demo}
           busy={busy}
           noLink={isNoLink(state, confirming.vehicle_id)}
+          backendLost={backendLost}
           onOperatorChange={changeOperator}
           onCancel={() => setConfirming(null)}
           onConfirm={() => void decide(confirming, "APPROVED")}

@@ -18,3 +18,7 @@ export function vehicleColor(vehicleId: string): string {
   const index = Number.isFinite(n) ? Math.max(0, n - 1) : 0;
   return VEHICLE_HUES[index % VEHICLE_HUES.length]!;
 }
+
+/** A marker whose state is only the last one received, because the console lost the backend. Not a
+ * trust colour: nothing here is known to be current. */
+export const LAST_KNOWN_TONE = "var(--color-faint)";
