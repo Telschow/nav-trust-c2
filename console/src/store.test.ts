@@ -435,6 +435,13 @@ describe("an open decision marked seen (issue 115)", () => {
     expect(s.decisions.r1?.outcome).toBe("APPROVED");
   });
 
+  it("one marked seen while open still appears as an unseen expiry when it expires", () => {
+    let s = reducer(opened(), { type: "seen", id: "r1" });
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "EXPIRED", decided_s: 160, operator: "system", note: "" } }));
+    expect(pinnedExpired(s).map((p) => p.rec.id)).toEqual(["r1"]);
+    expect(isSeen(s, "r1")).toBe(false);
+  });
+
   it("a fresh snapshot starts with nothing seen", () => {
     const s = apply(reducer(opened(), { type: "seen", id: "r1" }), ev({ type: "state", server_s: 50, data: snapshot }));
     expect(isSeen(s, "r1")).toBe(false);

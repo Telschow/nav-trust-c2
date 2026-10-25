@@ -133,7 +133,8 @@ export function VehicleRow({
         )}
       </div>
 
-      <div className="mt-2">
+      {/* the strip's latest colour is only the last state received while the backend is lost */}
+      <div className={clsx("mt-2", backendLost && "opacity-40")} data-last-known={backendLost ? "" : undefined}>
         <TrustStrip history={history} now={now} />
       </div>
     </button>

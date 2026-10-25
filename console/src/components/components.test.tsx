@@ -570,6 +570,11 @@ describe("while the backend is lost (issue 120)", () => {
     expect(screen.getByText(/Connection to the backend was lost. Last heard from it at T\+1:40/)).toBeTruthy();
   });
 
+  it("the history strip is dimmed, since its latest colour is only the last state received", () => {
+    const { container } = render(<VehicleRow {...props} {...lost} now={160} />);
+    expect(container.querySelector("[data-last-known]")).not.toBeNull();
+  });
+
   it("a RED row loses its red tint", () => {
     render(<VehicleRow {...props} {...lost} trust={redTrust} now={160} />);
     expect(screen.getByRole("button").className.includes("bg-bad/10")).toBe(false);

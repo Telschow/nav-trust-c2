@@ -237,6 +237,8 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
               ...base,
               decisions: { ...base.decisions, [d.recommendation_id]: { ...base.decisions[d.recommendation_id], ...d } },
               expiredWithoutLink: lostAtExpiry ? [...base.expiredWithoutLink, d.recommendation_id] : base.expiredWithoutLink,
+              // an earlier "Seen" was about the open decision; the expiry is news again
+              seen: d.outcome === "EXPIRED" ? base.seen.filter((id) => id !== d.recommendation_id) : base.seen,
             },
             event.server_s,
             tone,
