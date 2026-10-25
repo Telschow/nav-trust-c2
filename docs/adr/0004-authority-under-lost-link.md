@@ -61,10 +61,12 @@ unbounded for fast faults, and no source in the research note uses it.
    text said "plus any hold", about 15 s, which disagreed with the parameters note and issue 76.)
 4. **PX4 underneath.** The simulated vehicles' airframe already sets the data-link-loss action to
    Return (`NAV_DLL_ACT` 2), so no parameter change is needed (see
-   `docs/validation/px4-lost-link-parameters.md`). RTL while navigation is healthy is unmeasured
-   until the baseline runs of issue 97 exist. The onboard monitor overrides it to LAND on a
-   position inconsistency that matches an entry. (Amended 2026-10-24: the first text said the
-   action had to be set explicitly because it defaults to Disabled.)
+   `docs/validation/px4-lost-link-parameters.md`). RTL while navigation is healthy was recorded in
+   2 runs (`eval/lost_link/recordings/link_only-*.jsonl`, issue 97): HOLD about 12 s and RTL about 17 s
+   after the cut, touchdown about 102 s after it. That is 2 runs in one simulator, not a rate. The
+   onboard monitor overrides it to LAND on a position inconsistency that matches an entry. (Amended
+   2026-10-24 and 2026-10-25: the first text said the action had to be set explicitly because it
+   defaults to Disabled, and that RTL while healthy was unmeasured.)
 5. **Recording.** The policy is approved once per mission as an audited approval. The vehicle
    accepts a policy only if it matches that audit row's id and hash, and only up to a fixed
    maximum age. There is no revocation, because the link may be down when one is wanted. This is
