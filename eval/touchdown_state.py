@@ -4,7 +4,8 @@ Evaluation only. Distances are metres from the first truth sample. The speed is 
 displacement between the first truth sample at or below `LOW_ALT_M` and the touchdown sample,
 divided by the time between them, so it is a mean over that window and the window is reported.
 A window of zero length gives no speed. Touchdown is the first truth sample at or below
-`TOUCHDOWN_M` after the link cut, or after the first sample when the run has no cut.
+`TOUCHDOWN_M` once the vehicle has been above `LOW_ALT_M`, counted from the link cut or, with no
+cut, from the first sample.
 
     python -m eval.touchdown_state eval/lost_link/recordings
 """
@@ -41,12 +42,17 @@ def measure_touchdown(recording: Recording) -> TouchdownState | None:
         return None
     cut = recording.first("link_cut")
     after = cut["t_s"] if cut else truth[0]["t_s"] - 1.0
-    down = next(
-        (i for i, r in enumerate(truth) if r["t_s"] > after and r["alt_m"] <= TOUCHDOWN_M), None
+    # The vehicle has to have been airborne first, or the ground samples before takeoff would
+    # count as a touchdown.
+    flying = next(
+        (i for i, r in enumerate(truth) if r["t_s"] > after and r["alt_m"] > LOW_ALT_M), None
     )
+    if flying is None:
+        return None
+    down = next((i for i in range(flying, len(truth)) if truth[i]["alt_m"] <= TOUCHDOWN_M), None)
     if down is None:
         return None
-    low = next(i for i, r in enumerate(truth) if r["t_s"] > after and r["alt_m"] <= LOW_ALT_M)
+    low = next(i for i in range(flying, len(truth)) if truth[i]["alt_m"] <= LOW_ALT_M)
     window = truth[down]["t_s"] - truth[low]["t_s"]
     speed = _horizontal(truth[low], truth[down]) / window if window > 0 else None
     return TouchdownState(

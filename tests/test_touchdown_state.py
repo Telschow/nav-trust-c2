@@ -93,3 +93,10 @@ def test_the_table_lists_each_recording_and_says_when_there_is_no_touchdown(tmp_
 def test_main_prints_the_table(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     assert main([str(tmp_path)]) == 0
     assert "| Recording |" in capsys.readouterr().out
+
+
+def test_ground_samples_before_takeoff_are_not_a_touchdown() -> None:
+    taking_off = [(0.0, 0.0, 0.0, 0.0), (1.0, 0.0, 0.0, 0.0), *FLIGHT[1:]]
+    state = measure_touchdown(rec(taking_off))
+    assert state is not None and state.touchdown_from_start_m == pytest.approx(220.0)
+    assert state.speed_m_s == pytest.approx(30.0)
