@@ -170,3 +170,30 @@ class TestRecoveryAfterAnOutage:
         hub.ingest_navtrust(report())
         hub.ingest_navtrust(report())
         assert of_type(events, "outage_summary") == []
+
+
+class TestEdgesOfAnOutage:
+    def test_a_second_outage_before_the_first_is_reconciled_keeps_what_the_first_saw(self) -> None:
+        hub, _, clock, events = make()
+        hub.ingest_navtrust(report())
+        hub.add_recommendation(rec())
+        clock.t = 110.0
+        hub.sweep()  # first outage
+        clock.t = 112.0
+        hub.ingest_position("uav2", 47.0, 8.0, 30.0)  # back, but only a position
+        clock.t = 120.0
+        hub.sweep()  # gone again before any trust report
+        clock.t = 125.0
+        hub.ingest_navtrust(report(TrustState.AMBER, ReasonCode.STALE))
+        assert [d["outcome"] for d in of_type(events, "decision")] == ["SUPERSEDED"]
+        assert len(of_type(events, "outage_summary")) == 1
+
+    def test_nothing_is_superseded_when_there_was_no_trust_to_compare_with(self) -> None:
+        hub, _, clock, events = make()
+        hub.ingest_position("uav2", 47.0, 8.0, 30.0)  # heard, but never a trust report
+        hub.add_recommendation(rec())
+        clock.t = 110.0
+        hub.sweep()
+        clock.t = 112.0
+        hub.ingest_navtrust(report(*RED))
+        assert of_type(events, "decision") == []

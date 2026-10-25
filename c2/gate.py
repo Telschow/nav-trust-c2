@@ -127,16 +127,19 @@ class CommandGate:
         vehicle has accepted it. Audited as sent, then acknowledged or not."""
         payload = {"recommendation_id": recommendation_id, "action": action}
         self._hub.audit.append(self._hub.now(), "command_sent", vehicle_id, payload)
-        try:
-            await asyncio.wait_for(call, self._ack_timeout_s)
-        except TimeoutError as err:
+        task = asyncio.ensure_future(call)
+        # not wait_for: a TimeoutError raised by the executor itself is a failure, not silence
+        await asyncio.wait({task}, timeout=self._ack_timeout_s)
+        if not task.done():
+            task.cancel()
             self._hub.audit.append(
                 self._hub.now(),
                 "command_not_acknowledged",
                 vehicle_id,
                 {**payload, "timeout_s": self._ack_timeout_s},
             )
-            raise NotAcknowledged(f"{action} had no answer in {self._ack_timeout_s:g} s") from err
+            raise NotAcknowledged(f"{action} had no answer in {self._ack_timeout_s:g} s")
+        task.result()  # the executor's own error, if any, is a failure
         self._hub.audit.append(self._hub.now(), "command_acknowledged", vehicle_id, payload)
 
     def _blocked(self, recommendation_id: str, vehicle_id: str | None, reason: str) -> GateResult:

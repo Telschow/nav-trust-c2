@@ -488,6 +488,13 @@ describe("recovery after an outage (issue 77)", () => {
     expect(decidedHistory(s).map((d) => d.decision.outcome)).toEqual(["SUPERSEDED"]);
   });
 
+  it("the log says the situation changed, not that an operator did it", () => {
+    let s = apply(initialState, ev({ type: "recommendation", data: rec }));
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "SUPERSEDED", decided_s: 90, operator: "system", note: "" } }));
+    expect(s.log[0]?.text).toContain("superseded, the situation changed");
+    expect(s.log[0]?.text).not.toContain("by system");
+  });
+
   it("the summary is logged with how long the link was down and what it closed", () => {
     const s = apply(initialState, summary(["r1"]));
     const text = s.log[0]?.text ?? "";

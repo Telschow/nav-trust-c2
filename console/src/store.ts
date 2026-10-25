@@ -230,7 +230,12 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
           const rec = base.recommendations[d.recommendation_id];
           const tone = d.outcome === "APPROVED" ? "good" : d.outcome === "DENIED" ? "info" : "warn";
           const what = rec ? titleOf(rec) : d.recommendation_id;
-          const who = d.outcome === "EXPIRED" ? "expired unanswered" : `${d.outcome.toLowerCase()} by ${d.operator}`;
+          const who =
+            d.outcome === "EXPIRED"
+              ? "expired unanswered"
+              : d.outcome === "SUPERSEDED"
+                ? "superseded, the situation changed"
+                : `${d.outcome.toLowerCase()} by ${d.operator}`;
           return withLog(
             {
               ...base,

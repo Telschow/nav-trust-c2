@@ -229,3 +229,21 @@ def test_the_acknowledgement_timeout_must_be_positive() -> None:
     fleet = FleetState(assign(split_area(900, 900, 3), ["uav1", "uav2", "uav3"]))
     with pytest.raises(ValueError):
         CommandGate(hub, fleet, FakeExecutor(), ack_timeout_s=0)
+
+
+class TimeoutExecutor(FakeExecutor):
+    """An executor that itself raises TimeoutError: that is a failure, not a missing answer."""
+
+    async def land(self, vehicle_id: str) -> None:
+        raise TimeoutError("gRPC deadline")
+
+
+def test_a_timeout_raised_by_the_executor_is_a_failure_not_a_missing_acknowledgement() -> None:
+    hub, _, gate, _, _ = setup(TimeoutExecutor())
+    hub.add_recommendation(rec(command=Command.LAND, moves=False))
+    hub.decide("r1", Outcome.APPROVED, "daniel")
+    result = run(gate)
+    assert not result.executed and result.reason is not None
+    assert result.reason.startswith("failed")
+    assert "command_not_acknowledged" not in audit_kinds(hub)
+    assert "command_failed" in audit_kinds(hub)

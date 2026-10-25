@@ -263,10 +263,14 @@ class Hub:
         previous = self._link[vehicle_id]
         self._link[vehicle_id] = state
         if state is LinkState.NO_LINK:
-            latest = self._trust.get(vehicle_id)
-            self._outage[vehicle_id] = _Outage(
-                self._clock(), _situation(latest) if latest is not None else None
-            )
+            pending = self._outage.get(vehicle_id)
+            if pending is not None:  # gone again before a trust report closed the last outage
+                pending.ended_s = None
+            else:
+                latest = self._trust.get(vehicle_id)
+                self._outage[vehicle_id] = _Outage(
+                    self._clock(), _situation(latest) if latest is not None else None
+                )
         elif vehicle_id in self._outage:
             self._outage[vehicle_id].ended_s = self._clock()
             self._outage[vehicle_id].duration_s = last_report_age_s
@@ -297,7 +301,8 @@ class Hub:
         changed. A recommendation raised before the outage is superseded if the vehicle's trust
         state or reason is no longer what it was; the recommender raises a new one if needed."""
         del self._outage[vehicle_id]
-        changed = outage.trust_at_loss is None or outage.trust_at_loss != _situation(latest)
+        # with no earlier trust report there is nothing to say has changed
+        changed = outage.trust_at_loss is not None and outage.trust_at_loss != _situation(latest)
         superseded: list[str] = []
         if changed:
             for rec in list(self._recs.values()):

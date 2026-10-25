@@ -105,16 +105,19 @@ GLOSSARY.md "No link"). It is measured on the backend's own clock from the arriv
   the vehicle still needs it. If a position report ends the outage, the summary waits for the
   next trust report. The same summary is an `outage_summary` audit row.
 
+- The backend sweeps for silent vehicles every 0.5 s, so a fleet that has gone completely quiet
+  is noticed.
+
 ## Command acknowledgement (issue 77)
 The gate sends each approved command and waits for the vehicle to accept it: an executor call
 returns when the vehicle has answered. Audit rows, per command, in order: `command_sent`
 (`recommendation_id`, `action`), then `command_acknowledged`, or `command_not_acknowledged`
-(also `timeout_s`; default 5 s, a proposal). A command never acknowledged is audited, not resent:
-its approval is spent, so the operator decides again. The decision's `execution` reports it as not
-executed with reason `not_acknowledged: ...`. Whether the vehicle received it anyway is unknown,
+(also `timeout_s`; `--ack-timeout`, default 5 s, a proposal). A command never acknowledged is
+audited, not resent: its approval is spent. The recommender does not repeat an answered
+recommendation, so nothing is raised again automatically. The decision's `execution` reports it as
+not executed with reason `not_acknowledged: ...`. An error raised by the executor itself is a
+failure (`command_failed`), not a missing answer. Whether the vehicle received it anyway is unknown,
 so a re-task is not rolled back.
-- The backend sweeps for silent vehicles every 0.5 s, so a fleet that has gone completely quiet
-  is noticed.
 
 ## Audit log
 Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendation`,
