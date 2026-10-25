@@ -43,8 +43,14 @@ describe("map marker for a vehicle with no link (LL-01: a state last known is no
 
 describe("age on the map for a vehicle with no link (issue 114)", () => {
   it("the no-link tag says how long ago the vehicle was last heard", () => {
-    expect(markerView("uav1", trust("GREEN"), true, 42).tag).toBe("uav1 · NO LINK, last heard 0:42");
-    expect(markerView("uav1", trust("RED"), true, 75).tag).toBe("uav1 · NO LINK, last heard 1:15");
+    expect(markerView("uav1", trust("GREEN"), true, 42).tag).toBe("uav1 · NO LINK\nlast heard 0:42");
+    expect(markerView("uav1", trust("RED"), true, 75).tag).toBe("uav1 · NO LINK\nlast heard 1:15");
+  });
+
+  it("keeps the vehicle's name on the first line, so a narrow tag at the map's edge still says which vehicle", () => {
+    const [first] = markerView("uav3", trust("GREEN"), true, 16).tag.split("\n");
+    expect(first).toBe("uav3 · NO LINK");
+    expect(first!.length).toBeLessThanOrEqual("uav3 · NO LINK".length);
   });
 
   it("invents no age before the server clock is known", () => {

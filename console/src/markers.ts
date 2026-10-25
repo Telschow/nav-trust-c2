@@ -33,7 +33,9 @@ export function markerView(
   ageS?: number | null,
 ): MarkerView {
   if (noLink) {
-    const heard = ageS == null ? "" : `, last heard ${formatDuration(ageS)}`;
+    // the age goes on a second line: a long one-line tag runs off the edge of the map and hides
+    // the vehicle's name
+    const heard = ageS == null ? "" : `\nlast heard ${formatDuration(ageS)}`;
     return { tone: LINK_TONE, dashed: true, tag: `${vehicleId} · NO LINK${heard}` };
   }
   const flagged = trust !== undefined && trust.state !== "GREEN";

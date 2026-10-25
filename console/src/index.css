@@ -152,7 +152,12 @@ button:not(:disabled):active {
   border: 1px solid var(--tone);
   padding: 3px 6px;
   border-radius: 2px;
-  white-space: nowrap;
+  /* no wrapping, but keep a line break the tag text asks for (the no-link age) */
+  white-space: pre;
+  text-align: center;
+}
+.vehicle-marker .tag[data-lines="2"] {
+  line-height: 1.35;
 }
 /* a dashed ring means: do not rely on this position */
 .vehicle-marker.untrusted .dot::before {
