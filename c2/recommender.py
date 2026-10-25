@@ -60,6 +60,7 @@ class Recommender:
         self._link_ok = link_ok
         self._latest: dict[str, TrustState] = {}
         self._issued: dict[str, ReasonCode] = {}  # vehicle -> reason of the open episode
+        self._open: dict[str, tuple[ReasonCode, float]] = {}  # vehicle -> its open recommendation
         self._counter = 0
 
     def observe(self, msg: NavTrust, fleet: FleetState) -> list[Recommendation]:
@@ -72,15 +73,21 @@ class Recommender:
             return []
         if self._issued.get(msg.vehicle_id) == msg.reason:
             return []
+        # a vehicle flipping GREEN/RED (two sources reporting for it) keeps one open decision
+        open_rec = self._open.get(msg.vehicle_id)
+        if open_rec is not None and open_rec[0] is msg.reason and open_rec[1] > self._clock():
+            return []
 
         rec = self._build(msg, fleet)
         if rec is not None:
             self._issued[msg.vehicle_id] = msg.reason
+            self._open[msg.vehicle_id] = (msg.reason, rec.expires_s)
         return [rec] if rec is not None else []
 
     def on_decision(self, decision: Decision, vehicle_id: str) -> None:
         """Tell the recommender how a recommendation ended. An expired one is allowed to be
         issued again if the vehicle is still RED; an answered one is not repeated."""
+        self._open.pop(vehicle_id, None)
         if decision.outcome is Outcome.EXPIRED:
             self._issued.pop(vehicle_id, None)
 
