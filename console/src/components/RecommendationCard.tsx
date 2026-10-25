@@ -13,11 +13,14 @@ interface OpenProps {
   disabled: boolean;
   /** the vehicle cannot be heard now, so a command to it may not arrive */
   noLink?: boolean;
+  /** the operator has marked this seen: it stays open and counts down */
+  seen?: boolean;
   onApprove: () => void;
   onDeny: () => void;
+  onSeen?: () => void;
 }
 
-export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = false, onApprove, onDeny }: OpenProps) {
+export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = false, seen = false, onApprove, onDeny, onSeen }: OpenProps) {
   const remaining = now === null ? null : rec.expires_s - now;
   const total = rec.expires_s - rec.created_s;
   const expired = remaining !== null && remaining <= 0;
@@ -36,6 +39,7 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
 
       <div className="px-4 pb-4 pt-3">
         <h3 className="text-[17px] font-semibold leading-tight">{titleOf(rec)}</h3>
+        {seen && <p className="mt-1 text-xs font-medium text-muted">Seen, waiting for decision</p>}
         {raisedAgain && (
           <p className="mt-2 border-l-2 border-warn pl-3 text-sm">
             {`Raised again, ${ordinal(raisedAgain.nth)} time. The previous one expired unanswered at T+${formatDuration(raisedAgain.previousExpiredAt_s)}.`}
@@ -98,6 +102,15 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
             <Check className="size-4" aria-hidden /> Approve...
           </button>
         </div>
+        {!seen && !expired && onSeen && (
+          <button
+            type="button"
+            onClick={onSeen}
+            className="mt-2 h-8 w-full rounded-[3px] border border-line-soft text-xs font-medium text-muted hover:bg-panel-2 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+          >
+            Seen
+          </button>
+        )}
       </div>
     </article>
   );

@@ -477,3 +477,34 @@ describe("ConfirmDialog: landing needs a deliberate hold (issue 113)", () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 });
+
+describe("an open decision marked seen (issue 115)", () => {
+  it("has a Seen control that works from the keyboard", () => {
+    const onSeen = vi.fn();
+    render(<RecommendationCard rec={rec} now={130} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} onSeen={onSeen} />);
+    const button = screen.getByRole("button", { name: "Seen" });
+    expect(button.tagName).toBe("BUTTON");
+    fireEvent.click(button);
+    expect(onSeen).toHaveBeenCalledTimes(1);
+  });
+
+  it("once seen, says so in words, still counts down and can still be approved", () => {
+    render(<RecommendationCard rec={rec} now={130} disabled={false} seen onApprove={vi.fn()} onDeny={vi.fn()} onSeen={vi.fn()} />);
+    expect(screen.getByText(/Seen, waiting for decision/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Seen" })).toBeNull();
+    expect(screen.getByText("Expires in 0:30")).toBeTruthy();
+    expect((screen.getByRole("button", { name: /Approve/ }) as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it("the band reads 'Seen, waiting for decision' and keeps its countdown", () => {
+    render(<DecisionBanner open={[rec]} now={130} seen onReview={vi.fn()} />);
+    expect(screen.getByText("Seen, waiting for decision")).toBeTruthy();
+    expect(screen.getByText(/expires in 0:30/)).toBeTruthy();
+  });
+
+  it("the band is unchanged while unseen", () => {
+    render(<DecisionBanner open={[rec]} now={130} onReview={vi.fn()} />);
+    expect(screen.getByText("Decision required")).toBeTruthy();
+    expect(screen.queryByText(/Seen, waiting/)).toBeNull();
+  });
+});

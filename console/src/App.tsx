@@ -9,7 +9,7 @@ import { MapView } from "./components/MapView";
 import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/RecommendationCard";
 import { VehicleRow } from "./components/VehicleRow";
 import { useConsole, useServerNow } from "./hooks";
-import { decidedHistory, expiredWithoutLink, isNoLink, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
+import { decidedHistory, expiredWithoutLink, isNoLink, isSeen, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
@@ -97,7 +97,7 @@ export function App() {
         Skip to decisions
       </a>
       <Header connected={state.connected} source={state.source} counts={counts} now={now} />
-      <DecisionBanner open={open} now={now} raisedAgain={open[0] ? raisedAgain(state, open[0]) : null} onReview={review} />
+      <DecisionBanner open={open} now={now} raisedAgain={open[0] ? raisedAgain(state, open[0]) : null} seen={open[0] ? isSeen(state, open[0].id) : false} onReview={review} />
 
       {!state.connected && (
         <div role="alert" className="flex items-center gap-2 border-b border-bad/50 bg-bad/10 px-4 py-2 text-sm text-bad">
@@ -169,6 +169,8 @@ export function App() {
                   raisedAgain={raisedAgain(state, rec)}
                   disabled={busy}
                   noLink={isNoLink(state, rec.vehicle_id)}
+                  seen={isSeen(state, rec.id)}
+                  onSeen={() => dispatch({ type: "seen", id: rec.id })}
                   onApprove={() => setConfirming(rec)}
                   onDeny={() => void decide(rec, "DENIED")}
                 />

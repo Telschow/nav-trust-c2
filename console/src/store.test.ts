@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, expiredWithoutLink, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
+import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, expiredWithoutLink, isSeen, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -404,5 +404,39 @@ describe("expired decisions stay visible until seen (issue 112)", () => {
     s = apply(s, ev({ type: "state", server_s: 300, data: snapshot }));
     expect(pinnedExpired(s)).toEqual([]);
     expect(s.seen).toEqual([]);
+  });
+});
+
+describe("an open decision marked seen (issue 115)", () => {
+  const rec2: Recommendation = { ...rec, id: "r2", created_s: 200, expires_s: 260 };
+  const opened = () => apply(initialState, ev({ type: "recommendation", data: rec }));
+
+  it("is seen once marked, and stays open", () => {
+    const s = reducer(opened(), { type: "seen", id: "r1" });
+    expect(isSeen(s, "r1")).toBe(true);
+    expect(openRecommendations(s).map((r) => r.id)).toEqual(["r1"]);
+  });
+
+  it("starts unseen", () => {
+    expect(isSeen(opened(), "r1")).toBe(false);
+  });
+
+  it("a re-raised recommendation starts unseen even if the previous one was seen", () => {
+    let s = reducer(opened(), { type: "seen", id: "r1" });
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "EXPIRED", decided_s: 160, operator: "system", note: "" } }));
+    s = apply(s, ev({ type: "recommendation", data: rec2 }));
+    expect(isSeen(s, "r2")).toBe(false);
+  });
+
+  it("approving or denying works as before after seen", () => {
+    let s = reducer(opened(), { type: "seen", id: "r1" });
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "APPROVED", decided_s: 120, operator: "o", note: "" } }));
+    expect(openRecommendations(s)).toEqual([]);
+    expect(s.decisions.r1?.outcome).toBe("APPROVED");
+  });
+
+  it("a fresh snapshot starts with nothing seen", () => {
+    const s = apply(reducer(opened(), { type: "seen", id: "r1" }), ev({ type: "state", server_s: 50, data: snapshot }));
+    expect(isSeen(s, "r1")).toBe(false);
   });
 });

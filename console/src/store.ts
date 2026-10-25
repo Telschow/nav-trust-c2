@@ -242,6 +242,12 @@ export function isNoLink(s: ConsoleState, vehicleId: string): boolean {
   return s.links[vehicleId]?.state === "NO_LINK";
 }
 
+/** Whether the operator has marked a recommendation seen. A re-raised recommendation is a new id,
+ * so it starts unseen. */
+export function isSeen(s: ConsoleState, recommendationId: string): boolean {
+  return s.seen.includes(recommendationId);
+}
+
 /** Whether the vehicle of an expired recommendation could not be heard when it expired. */
 export function expiredWithoutLink(s: ConsoleState, recommendationId: string): boolean {
   return s.expiredWithoutLink.includes(recommendationId);
