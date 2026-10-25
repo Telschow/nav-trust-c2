@@ -1,7 +1,7 @@
 # ADR 0005: Where the onboard monitor gets its integrity input
 
-Status: proposed, 2026-10-25. Context and options written by Claude on the maintainer's instruction.
-The decision is the maintainer's to write. No code is written until it is.
+Status: accepted, 2026-10-25. Decided by the maintainer; context and options written by Claude on their
+instruction. The decision text below records the maintainer's choice and may be reworded by them.
 
 ## Context
 
@@ -69,19 +69,30 @@ project.
 
 ## Decision
 
-To be written by the maintainer.
+Option (c). The onboard monitor derives its integrity inputs from what PX4 provides (the estimator's
+accuracy figure and innovation test ratios, and the fix type), inside `navtrust`, and applies the
+same discipline the trust engine already applies to its bound: a claim is believed only as far as
+its coverage has been measured against ground truth. No integrity record crosses between this
+project and contested-nav, and the two keep sharing no code. contested-nav stays the source of the
+method and of the evidence that a filter can be confidently wrong (its ADR-0035 and ADR-0036), cited
+and not imported.
 
-## Consequences to weigh
+The monitor's inputs are real in the simulator, so results that use them say so. The EKF2 test
+ratios are named as what they are and are not called NIS.
 
-- **Contested-nav issue 166** adds a dead-reckoning horizon to the record as schema version 2,
-  with its own ADR. If the choice is (c) or (d), that field has no consumer here, and its
-  priority should be reconsidered.
-- **Issue 76** specifies a process that reads the local MAVLink stream. Options (a) and (c) fit
-  that; (b) changes it.
-- **Evidence wording.** Under (a), every result must say the integrity input was injected. Under
-  (c), the results can say they used PX4's own figures.
-- **The `usable` rule** in contested-nav is about aiding configuration and the NIS state. Whatever
-  is chosen, the trust side needs its own statement of when a position may be believed, and that
-  statement needs its own calibration evidence, as the bound has.
-- **What this ADR does not decide:** the contingency policy itself (ADR 0004), the alert limits for
-  a horizon, or whether vision is ever enabled (ADR-0036).
+## Consequences
+
+- **Contested-nav issue 166** (the dead-reckoning horizon) has no consumer here and is paused.
+  Issue 165, the integrity record, stays as the reference implementation of the rule. Issue 164 is
+  a tracking epic and can close when the cross-repository note is written.
+- **Issue 76** reads the figures `TrustEngine` already takes and adds no new schema and no ICD
+  change for an integrity record. It still waits for issue 81, the evidence that LAND is the right
+  action for a frozen position.
+- **Calibration.** The monitor needs its own statement of when a position may be believed, with its
+  own measurements against ground truth on held-out recordings, as the bound has. Until those exist,
+  no result may say the monitor's rule is calibrated.
+- **Evidence wording.** Results use PX4's own figures and say so. EKF2 test ratios are not the NIS
+  of contested-nav, and the semantics must not be blurred in the README or the results.
+- **README.** "The two share no code" stays true.
+- **What this ADR does not decide:** the contingency policy itself (ADR 0004), alert limits, or
+  whether vision is ever enabled in contested-nav (its ADR-0036).
