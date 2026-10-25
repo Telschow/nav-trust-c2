@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { ConfirmDialog, HOLD_TO_CONFIRM_MS } from "./ConfirmDialog";
 import { DecisionBanner } from "./DecisionBanner";
 import { ordinal, titleOf } from "../language";
-import { RecommendationCard } from "./RecommendationCard";
+import { DecidedRow, RecommendationCard } from "./RecommendationCard";
 import { Header } from "./Header";
 import { ExpiredNotice } from "./RecommendationCard";
 import { StateChip } from "./StateChip";
@@ -616,5 +616,14 @@ describe("while the backend is lost (issue 120)", () => {
   it("is back to normal when the backend is not lost", () => {
     render(<VehicleRow {...props} now={160} />);
     expect(screen.queryByText("Last known")).toBeNull();
+  });
+});
+
+describe("a superseded decision in the history (issue 77)", () => {
+  it("says superseded, not by an operator", () => {
+    const decision = { recommendation_id: "r1", outcome: "SUPERSEDED" as const, decided_s: 90, operator: "system", note: "" };
+    render(<ul><DecidedRow rec={rec} decision={decision} /></ul>);
+    expect(screen.getByText("Superseded")).toBeTruthy();
+    expect(screen.queryByText(/by system/)).toBeNull();
   });
 });

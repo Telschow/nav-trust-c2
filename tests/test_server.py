@@ -79,7 +79,7 @@ def test_approve_flow_and_audit(client: tuple[TestClient, Clock]) -> None:
 
 @pytest.mark.parametrize(
     ("prepare", "status"),
-    [("none", 404), ("decided", 409), ("expired", 410)],
+    [("none", 404), ("decided", 409), ("expired", 410), ("superseded", 410)],
 )
 def test_decision_errors_map_to_http_codes(
     client: tuple[TestClient, Clock], prepare: str, status: int
@@ -92,6 +92,12 @@ def test_decision_errors_map_to_http_codes(
         c.post("/decisions", json={**body, "outcome": "DENIED"})
     if prepare == "expired":
         clock.t = 131.0
+    if prepare == "superseded":  # heard, silent for 10 s, back with a different reason
+        c.post("/navtrust", json=NAVTRUST)
+        clock.t = 110.0
+        c.get("/state")
+        clock.t = 112.0
+        c.post("/navtrust", json={**NAVTRUST, "reason": "STALE"})
     assert c.post("/decisions", json=body).status_code == status
     assert c.get("/audit", params={"kind": "rejected_decision"}).json()
 

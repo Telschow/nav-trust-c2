@@ -7,6 +7,7 @@ log; a rejected decision attempt is logged too.
 from __future__ import annotations
 
 from collections.abc import Callable
+from dataclasses import dataclass, field
 from enum import StrEnum
 from typing import Any
 
@@ -19,7 +20,7 @@ from c2.messages import (
     navtrust_to_dict,
     recommendation_to_dict,
 )
-from navtrust.types import NavTrust
+from navtrust.types import NavTrust, ReasonCode, TrustState
 
 Event = dict[str, Any]
 
@@ -49,6 +50,10 @@ class ExpiredRecommendation(HubError):
     code = "expired"
 
 
+class SupersededRecommendation(HubError):
+    code = "superseded"
+
+
 class InvalidOutcome(HubError):
     code = "invalid_outcome"
 
@@ -59,6 +64,17 @@ class InvalidOperator(HubError):
 
 class DuplicateRecommendation(HubError):
     code = "duplicate_recommendation"
+
+
+@dataclass
+class _Outage:
+    """One stretch of a vehicle having no link, kept until the first trust report after it."""
+
+    detected_s: float
+    trust_at_loss: tuple[TrustState, ReasonCode | None] | None
+    ended_s: float | None = None
+    duration_s: float = 0.0
+    changes: list[dict[str, Any]] = field(default_factory=list)
 
 
 class Hub:
@@ -73,6 +89,7 @@ class Hub:
         self._link_timeout_s = link_timeout_s
         self._last_report_s: dict[str, float] = {}
         self._link: dict[str, LinkState] = {}
+        self._outage: dict[str, _Outage] = {}
         self._trust: dict[str, NavTrust] = {}
         self._recs: dict[str, Recommendation] = {}
         self._decisions: dict[str, Decision] = {}
@@ -102,6 +119,15 @@ class Hub:
         self._note_report(msg.vehicle_id)
         previous = self._trust.get(msg.vehicle_id)
         self._trust[msg.vehicle_id] = msg
+        outage = self._outage.get(msg.vehicle_id)
+        if outage is not None and (previous is None or _situation(previous) != _situation(msg)):
+            outage.changes.append(
+                {
+                    "server_s": self._clock(),
+                    "state": msg.state.value,
+                    "reason": msg.reason.value if msg.reason else None,
+                }
+            )
         if previous is None or (previous.state, previous.reason) != (msg.state, msg.reason):
             self._audit.append(
                 self._clock(),
@@ -113,6 +139,8 @@ class Hub:
                 },
             )
         self._publish({"type": "navtrust", "data": navtrust_to_dict(msg)})
+        if outage is not None and outage.ended_s is not None:
+            self._reconcile(msg.vehicle_id, outage, msg)
 
     def ingest_position(
         self, vehicle_id: str, lat_deg: float, lon_deg: float, alt_m: float
@@ -186,6 +214,8 @@ class Hub:
             if existing is not None:
                 if existing.outcome is Outcome.EXPIRED:
                     raise ExpiredRecommendation(recommendation_id)
+                if existing.outcome is Outcome.SUPERSEDED:
+                    raise SupersededRecommendation(recommendation_id)
                 raise AlreadyDecided(recommendation_id)
         except HubError as err:
             self._audit.append(
@@ -206,7 +236,8 @@ class Hub:
         expired = []
         for rec in self._recs.values():
             if rec.id not in self._decisions and now > rec.expires_s:
-                decision = Decision(rec.id, Outcome.EXPIRED, now, "system")
+                heard = self.is_reachable(rec.vehicle_id)
+                decision = Decision(rec.id, Outcome.EXPIRED, now, "system", vehicle_heard=heard)
                 self._record(decision, rec.vehicle_id)
                 expired.append(decision)
         return expired
@@ -231,6 +262,14 @@ class Hub:
         happened, so for LINK_OK it is the length of the silence that just ended."""
         previous = self._link[vehicle_id]
         self._link[vehicle_id] = state
+        if state is LinkState.NO_LINK:
+            latest = self._trust.get(vehicle_id)
+            self._outage[vehicle_id] = _Outage(
+                self._clock(), _situation(latest) if latest is not None else None
+            )
+        elif vehicle_id in self._outage:
+            self._outage[vehicle_id].ended_s = self._clock()
+            self._outage[vehicle_id].duration_s = last_report_age_s
         self._audit.append(
             self._clock(),
             "link_change",
@@ -252,6 +291,42 @@ class Hub:
                 },
             }
         )
+
+    def _reconcile(self, vehicle_id: str, outage: _Outage, latest: NavTrust) -> None:
+        """The first trust report after an outage: close what the outage made stale and say what
+        changed. A recommendation raised before the outage is superseded if the vehicle's trust
+        state or reason is no longer what it was; the recommender raises a new one if needed."""
+        del self._outage[vehicle_id]
+        changed = outage.trust_at_loss is None or outage.trust_at_loss != _situation(latest)
+        superseded: list[str] = []
+        if changed:
+            for rec in list(self._recs.values()):
+                if (
+                    rec.vehicle_id == vehicle_id
+                    and rec.id not in self._decisions
+                    and rec.created_s <= outage.detected_s
+                ):
+                    self._record(
+                        Decision(
+                            rec.id,
+                            Outcome.SUPERSEDED,
+                            self._clock(),
+                            "system",
+                            note="the situation changed while the link was down",
+                        ),
+                        vehicle_id,
+                    )
+                    superseded.append(rec.id)
+        summary = {
+            "vehicle_id": vehicle_id,
+            "duration_s": outage.duration_s,
+            "trust": navtrust_to_dict(latest),
+            "trust_changes": outage.changes,
+            "onboard_actions": [],  # filled when the onboard monitor exists (issue 76)
+            "superseded": superseded,
+        }
+        self._audit.append(self._clock(), "outage_summary", vehicle_id, summary)
+        self._publish({"type": "outage_summary", "data": summary})
 
     def _record(self, decision: Decision, vehicle_id: str) -> None:
         self._decisions[decision.recommendation_id] = decision
@@ -292,3 +367,8 @@ class Hub:
 
     def now(self) -> float:
         return self._clock()
+
+
+def _situation(msg: NavTrust) -> tuple[TrustState, ReasonCode | None]:
+    """What a recommendation was raised about: the trust state and its reason."""
+    return (msg.state, msg.reason)

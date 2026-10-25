@@ -55,8 +55,6 @@ export interface ConsoleState {
   decisions: Record<string, Decision>;
   /** ids of recommendations the operator has marked "Seen" */
   seen: string[];
-  /** ids of recommendations that expired while their vehicle could not be heard */
-  expiredWithoutLink: string[];
   fleet: Fleet;
   doneSectors: string[]; // ids of sectors the backend says have been flown
   calibration: Calibration | null;
@@ -80,7 +78,6 @@ export const initialState: ConsoleState = {
   recommendations: {},
   decisions: {},
   seen: [],
-  expiredWithoutLink: [],
   fleet: {},
   doneSectors: [],
   calibration: null,
@@ -206,7 +203,6 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
             recommendations: recs,
             decisions: {},
             seen: [],
-            expiredWithoutLink: [],
           };
         }
         case "navtrust":
@@ -215,6 +211,11 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
           return applyPosition(base, event.data);
         case "link":
           return applyLink(base, event.data, event.server_s);
+        case "outage_summary": {
+          const o = event.data;
+          const closed = o.superseded.length === 0 ? "nothing closed" : `${o.superseded.length} decision${o.superseded.length === 1 ? "" : "s"} closed`;
+          return withLog(base, event.server_s, "info", `${o.vehicle_id} link was down ${formatDuration(o.duration_s)}: ${closed}`);
+        }
         case "origin":
           return { ...base, origin: event.data };
         case "source":
@@ -230,13 +231,10 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
           const tone = d.outcome === "APPROVED" ? "good" : d.outcome === "DENIED" ? "info" : "warn";
           const what = rec ? titleOf(rec) : d.recommendation_id;
           const who = d.outcome === "EXPIRED" ? "expired unanswered" : `${d.outcome.toLowerCase()} by ${d.operator}`;
-          // what the notice says about the link is what was true now, not when it is read later
-          const lostAtExpiry = d.outcome === "EXPIRED" && rec !== undefined && isNoLink(base, rec.vehicle_id);
           return withLog(
             {
               ...base,
               decisions: { ...base.decisions, [d.recommendation_id]: { ...base.decisions[d.recommendation_id], ...d } },
-              expiredWithoutLink: lostAtExpiry ? [...base.expiredWithoutLink, d.recommendation_id] : base.expiredWithoutLink,
               // an earlier "Seen" was about the open decision; the expiry is news again
               seen: d.outcome === "EXPIRED" ? base.seen.filter((id) => id !== d.recommendation_id) : base.seen,
             },
@@ -267,9 +265,10 @@ export function isSeen(s: ConsoleState, recommendationId: string): boolean {
   return s.seen.includes(recommendationId);
 }
 
-/** Whether the vehicle of an expired recommendation could not be heard when it expired. */
+/** Whether the vehicle of an expired recommendation could not be heard when it expired, as the
+ * backend recorded it. An older backend sends no field: treated as heard. */
 export function expiredWithoutLink(s: ConsoleState, recommendationId: string): boolean {
-  return s.expiredWithoutLink.includes(recommendationId);
+  return s.decisions[recommendationId]?.vehicle_heard === false;
 }
 
 export interface FleetCounts extends Record<TrustState, number> {

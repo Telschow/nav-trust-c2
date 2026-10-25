@@ -40,7 +40,7 @@ export interface Recommendation {
   rationale: string;
 }
 
-export type Outcome = "APPROVED" | "DENIED" | "EXPIRED";
+export type Outcome = "APPROVED" | "DENIED" | "EXPIRED" | "SUPERSEDED";
 
 export interface Decision {
   recommendation_id: string;
@@ -49,6 +49,8 @@ export interface Decision {
   operator: string;
   note: string;
   execution?: { executed: boolean; reason: string | null; actions: string[] };
+  /** EXPIRED only: whether the backend could hear the vehicle when it expired. Absent from an older backend. */
+  vehicle_heard?: boolean;
 }
 
 export interface Position {
@@ -85,6 +87,17 @@ export interface Sector {
 
 export type Fleet = Record<string, Sector[]>;
 
+/** What the backend says when a link returns (ICD: Link health, recovery). */
+export interface OutageSummary {
+  vehicle_id: string;
+  duration_s: number;
+  trust: NavTrust;
+  trust_changes: { server_s: number; state: TrustState; reason: Reason | null }[];
+  onboard_actions: string[];
+  /** ids of recommendations the backend closed because the situation changed */
+  superseded: string[];
+}
+
 /** Messages from the backend WebSocket. `server_s` is the backend clock. */
 export type ServerEvent =
   | { type: "state"; server_s: number; data: StateSnapshot }
@@ -93,6 +106,7 @@ export type ServerEvent =
   | { type: "recommendation"; server_s: number; data: Recommendation }
   | { type: "decision"; server_s: number; data: Decision }
   | { type: "link"; server_s: number; data: LinkStatus }
+  | { type: "outage_summary"; server_s: number; data: OutageSummary }
   | { type: "origin"; server_s: number; data: Origin }
   | { type: "source"; server_s: number; data: { label: string } };
 

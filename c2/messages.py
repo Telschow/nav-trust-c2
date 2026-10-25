@@ -20,6 +20,9 @@ class Outcome(StrEnum):
     APPROVED = "APPROVED"
     DENIED = "DENIED"
     EXPIRED = "EXPIRED"
+    SUPERSEDED = (
+        "SUPERSEDED"  # closed by the backend: the situation changed while the link was down
+    )
 
 
 @dataclass(frozen=True)
@@ -53,6 +56,8 @@ class Decision:
     decided_s: float
     operator: str
     note: str = field(default="")
+    # EXPIRED only: whether the vehicle could be heard at that moment (None: not an expiry)
+    vehicle_heard: bool | None = None
 
 
 def navtrust_to_dict(msg: NavTrust) -> dict[str, Any]:
@@ -112,10 +117,13 @@ def recommendation_from_dict(d: dict[str, Any]) -> Recommendation:
 
 
 def decision_to_dict(d: Decision) -> dict[str, Any]:
-    return {
+    out: dict[str, Any] = {
         "recommendation_id": d.recommendation_id,
         "outcome": d.outcome.value,
         "decided_s": d.decided_s,
         "operator": d.operator,
         "note": d.note,
     }
+    if d.vehicle_heard is not None:
+        out["vehicle_heard"] = d.vehicle_heard
+    return out

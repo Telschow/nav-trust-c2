@@ -85,10 +85,10 @@ class Recommender:
         return [rec] if rec is not None else []
 
     def on_decision(self, decision: Decision, vehicle_id: str) -> None:
-        """Tell the recommender how a recommendation ended. An expired one is allowed to be
-        issued again if the vehicle is still RED; an answered one is not repeated."""
+        """Tell the recommender how a recommendation ended. An expired or superseded one is
+        allowed to be issued again if the vehicle is still RED; an answered one is not repeated."""
         self._open.pop(vehicle_id, None)
-        if decision.outcome is Outcome.EXPIRED:
+        if decision.outcome in (Outcome.EXPIRED, Outcome.SUPERSEDED):
             self._issued.pop(vehicle_id, None)
 
     def _build(self, msg: NavTrust, fleet: FleetState) -> Recommendation | None:

@@ -36,6 +36,7 @@ from c2.hub import (
     HubError,
     InvalidOperator,
     InvalidOutcome,
+    SupersededRecommendation,
     UnknownRecommendation,
 )
 from c2.messages import (
@@ -56,6 +57,7 @@ _STATUS = {
     AlreadyDecided: 409,
     DuplicateRecommendation: 409,
     ExpiredRecommendation: 410,
+    SupersededRecommendation: 410,
     InvalidOutcome: 422,
     InvalidOperator: 422,
 }
