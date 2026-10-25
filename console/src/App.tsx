@@ -9,7 +9,7 @@ import { MapView } from "./components/MapView";
 import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/RecommendationCard";
 import { VehicleRow } from "./components/VehicleRow";
 import { useConsole, useServerNow } from "./hooks";
-import { decidedHistory, isNoLink, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
+import { decidedHistory, expiredWithoutLink, isNoLink, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
@@ -157,7 +157,7 @@ export function App() {
                   rec={rec}
                   decision={decision}
                   trustNow={state.vehicles[rec.vehicle_id]}
-                  noLink={isNoLink(state, rec.vehicle_id)}
+                  noLink={expiredWithoutLink(state, rec.id)}
                   onSeen={() => dispatch({ type: "seen", id: rec.id })}
                 />
               ))}
@@ -168,6 +168,7 @@ export function App() {
                   now={now}
                   raisedAgain={raisedAgain(state, rec)}
                   disabled={busy}
+                  noLink={isNoLink(state, rec.vehicle_id)}
                   onApprove={() => setConfirming(rec)}
                   onDeny={() => void decide(rec, "DENIED")}
                 />
@@ -201,6 +202,7 @@ export function App() {
           operator={operator}
           demo={demo}
           busy={busy}
+          noLink={isNoLink(state, confirming.vehicle_id)}
           onOperatorChange={changeOperator}
           onCancel={() => setConfirming(null)}
           onConfirm={() => void decide(confirming, "APPROVED")}

@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
+import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, expiredWithoutLink, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -345,6 +345,30 @@ describe("expired decisions stay visible until seen (issue 112)", () => {
     let s = exp(initialState, "r1", "uav2", 100);
     s = exp(s, "r2", "uav3", 200);
     expect(pinnedExpired(s).map((p) => p.rec.id)).toEqual(["r2", "r1"]);
+  });
+
+  describe("whether the vehicle could be heard is fixed at the moment of expiry (issue 129)", () => {
+    const link = (s: ConsoleState, v: string, state: "LINK_OK" | "NO_LINK", at: number) =>
+      apply(s, ev({ type: "link", server_s: at, data: { vehicle_id: v, state, last_report_age_s: 3 } }));
+
+    it("an expiry while heard stays 'heard' after the link is lost", () => {
+      let s = exp(initialState, "r1", "uav2", 100);
+      s = link(s, "uav2", "NO_LINK", 200);
+      expect(expiredWithoutLink(s, "r1")).toBe(false);
+    });
+
+    it("an expiry with no link stays 'no link' after the link returns", () => {
+      let s = link(initialState, "uav2", "NO_LINK", 90);
+      s = exp(s, "r1", "uav2", 100);
+      s = link(s, "uav2", "LINK_OK", 200);
+      expect(expiredWithoutLink(s, "r1")).toBe(true);
+    });
+
+    it("is about the vehicle the recommendation was for", () => {
+      let s = link(initialState, "uav3", "NO_LINK", 90);
+      s = exp(s, "r1", "uav2", 100);
+      expect(expiredWithoutLink(s, "r1")).toBe(false);
+    });
   });
 
   it("stays pinned however many other events arrive", () => {

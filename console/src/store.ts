@@ -51,6 +51,8 @@ export interface ConsoleState {
   decisions: Record<string, Decision>;
   /** ids of recommendations the operator has marked "Seen" */
   seen: string[];
+  /** ids of recommendations that expired while their vehicle could not be heard */
+  expiredWithoutLink: string[];
   fleet: Fleet;
   doneSectors: string[]; // ids of sectors the backend says have been flown
   calibration: Calibration | null;
@@ -72,6 +74,7 @@ export const initialState: ConsoleState = {
   recommendations: {},
   decisions: {},
   seen: [],
+  expiredWithoutLink: [],
   fleet: {},
   doneSectors: [],
   calibration: null,
@@ -192,6 +195,7 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
             recommendations: recs,
             decisions: {},
             seen: [],
+            expiredWithoutLink: [],
           };
         }
         case "navtrust":
@@ -215,8 +219,14 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
           const tone = d.outcome === "APPROVED" ? "good" : d.outcome === "DENIED" ? "info" : "warn";
           const what = rec ? titleOf(rec) : d.recommendation_id;
           const who = d.outcome === "EXPIRED" ? "expired unanswered" : `${d.outcome.toLowerCase()} by ${d.operator}`;
+          // what the notice says about the link is what was true now, not when it is read later
+          const lostAtExpiry = d.outcome === "EXPIRED" && rec !== undefined && isNoLink(base, rec.vehicle_id);
           return withLog(
-            { ...base, decisions: { ...base.decisions, [d.recommendation_id]: { ...base.decisions[d.recommendation_id], ...d } } },
+            {
+              ...base,
+              decisions: { ...base.decisions, [d.recommendation_id]: { ...base.decisions[d.recommendation_id], ...d } },
+              expiredWithoutLink: lostAtExpiry ? [...base.expiredWithoutLink, d.recommendation_id] : base.expiredWithoutLink,
+            },
             event.server_s,
             tone,
             `${what}: ${who}`,
@@ -230,6 +240,11 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
 /** The backend has not heard from this vehicle: its trust state is only the last one known. */
 export function isNoLink(s: ConsoleState, vehicleId: string): boolean {
   return s.links[vehicleId]?.state === "NO_LINK";
+}
+
+/** Whether the vehicle of an expired recommendation could not be heard when it expired. */
+export function expiredWithoutLink(s: ConsoleState, recommendationId: string): boolean {
+  return s.expiredWithoutLink.includes(recommendationId);
 }
 
 export interface FleetCounts extends Record<TrustState, number> {

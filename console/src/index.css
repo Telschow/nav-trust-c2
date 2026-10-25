@@ -114,6 +114,10 @@ button:not(:disabled):active {
 .sector-tag {
   z-index: 1;
 }
+/* a vehicle tag would partly cover this label: hide it whole rather than leave it clipped */
+.sector-tag.covered {
+  visibility: hidden;
+}
 .vehicle-marker {
   z-index: 2;
 }

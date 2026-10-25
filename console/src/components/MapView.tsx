@@ -6,6 +6,7 @@ import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { Info, Maximize2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { localToLonLat, sectorRing } from "../geo";
+import { coveredByVehicleTag } from "../labelPlacement";
 import { heardAgeS, markerView, tickWhileNoLink } from "../markers";
 import { isNoLink } from "../store";
 import type { ConsoleState } from "../store";
@@ -167,6 +168,27 @@ export function MapView({ state, now, focus }: Props) {
       }
     }
   }, [state.positions, state.vehicles, state.links, tickNow, ready]);
+
+  // a sector label a vehicle tag would partly cover is hidden whole, so none is left clipped
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !ready) return;
+    const declutter = () => {
+      const labels = Array.from(map.getContainer().querySelectorAll<HTMLElement>(".sector-tag"));
+      const tags = Array.from(map.getContainer().querySelectorAll<HTMLElement>(".vehicle-marker .tag"));
+      const covered = coveredByVehicleTag(
+        labels.map((l) => l.getBoundingClientRect()),
+        tags.map((t) => t.getBoundingClientRect()),
+      );
+      labels.forEach((l, i) => l.classList.toggle("covered", covered[i] ?? false));
+    };
+    map.on("render", declutter);
+    declutter();
+    return () => {
+      map.off("render", declutter);
+    };
+    // also after the labels or tags change, which can happen without the map being redrawn
+  }, [ready, sectorFeatures, state.doneSectors, state.positions, state.vehicles, state.links, tickNow]);
 
   // focus a vehicle when its card is clicked
   useEffect(() => {

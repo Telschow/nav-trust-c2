@@ -11,11 +11,13 @@ interface OpenProps {
   /** set when this repeats a recommendation that expired unanswered */
   raisedAgain?: RaisedAgain | null | undefined;
   disabled: boolean;
+  /** the vehicle cannot be heard now, so a command to it may not arrive */
+  noLink?: boolean;
   onApprove: () => void;
   onDeny: () => void;
 }
 
-export function RecommendationCard({ rec, now, raisedAgain, disabled, onApprove, onDeny }: OpenProps) {
+export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = false, onApprove, onDeny }: OpenProps) {
   const remaining = now === null ? null : rec.expires_s - now;
   const total = rec.expires_s - rec.created_s;
   const expired = remaining !== null && remaining <= 0;
@@ -42,6 +44,10 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, onApprove,
         <p className="mt-2 text-sm text-muted">
           <span className="text-text">Why:</span> {reasonText(rec.reason)}.
         </p>
+
+        {noLink && rec.command !== null && (
+          <p className="mt-2 text-sm text-accent">{rec.vehicle_id} has no link. A command may not reach it.</p>
+        )}
 
         {contextNote(rec) && <p className="mt-2 text-sm text-muted">{contextNote(rec)}</p>}
 
@@ -109,7 +115,7 @@ export function ExpiredNotice({
   rec: Recommendation;
   decision: Decision;
   trustNow: NavTrust | undefined;
-  /** the vehicle cannot be heard, so its trust state is only the last one known */
+  /** the vehicle could not be heard when this expired, so its trust state was only the last one known */
   noLink?: boolean;
   onSeen: () => void;
 }) {
@@ -125,7 +131,7 @@ export function ExpiredNotice({
         {!trustNow
           ? `${rec.vehicle_id}: state not known.`
           : noLink
-            ? `${rec.vehicle_id} has no link; its last known state was ${STATE_LABEL[trustNow.state]}.`
+            ? `${rec.vehicle_id} had no link; its last known state was ${STATE_LABEL[trustNow.state]}.`
             : `${rec.vehicle_id} is now ${STATE_LABEL[trustNow.state]}.`}
       </p>
       <button
