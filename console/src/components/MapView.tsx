@@ -161,7 +161,10 @@ export function MapView({ state, now, focus }: Props) {
       entry.el.style.setProperty("--tone", view.tone);
       entry.el.classList.toggle("untrusted", view.dashed);
       const tag = entry.el.querySelector(".tag");
-      if (tag) tag.textContent = view.tag;
+      if (tag) {
+        tag.textContent = view.tag;
+        tag.setAttribute("data-lines", String(view.tag.split("\n").length));
+      }
     }
   }, [state.positions, state.vehicles, state.links, tickNow, ready]);
 
