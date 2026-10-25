@@ -56,11 +56,23 @@ _Avoid_: datalink, connection, comms
 The backend has not heard from a vehicle within the link timeout. Says nothing about the vehicle's navigation; the last trust state is shown as last known, with its age.
 _Avoid_: disconnected (reserved for the console losing the backend), offline
 
+**Outage**:
+One stretch of a vehicle having no link, from the last report heard to the first trust report after it. When it ends the backend says how long it was, what changed, and closes what it made stale.
+_Avoid_: disconnection
+
 ### Authority
 
 **Recommendation**:
 A proposed action, raised by the recommender, awaiting an operator decision. Never executes by itself.
 _Avoid_: suggestion, alert, command
+
+**Superseded**:
+A recommendation the backend closed because the vehicle's trust state or reason changed during an outage, so the operator is not asked to approve something about a situation that no longer holds. A new one is raised if the vehicle still needs it.
+_Avoid_: cancelled, withdrawn
+
+**Acknowledged**:
+A command the vehicle answered. A command with no answer in time is audited as not acknowledged and never resent.
+_Avoid_: delivered, confirmed
 
 **Approval**:
 A recorded operator decision to allow a recommendation. Spent once used.

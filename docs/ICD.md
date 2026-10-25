@@ -44,10 +44,15 @@ A recommendation with neither a command nor sector moves is rejected.
 | field | type | note |
 |---|---|---|
 | recommendation_id | string | |
-| outcome | APPROVED, DENIED | EXPIRED is written by the backend, never sent by a client |
+| outcome | APPROVED, DENIED | EXPIRED and SUPERSEDED are written by the backend, never sent by a client |
 | decided_s | float | stamped by the backend |
 | operator | string, not blank | a blank name is refused (422 `invalid_operator`) and the attempt is audited |
 | note | string, optional | |
+| vehicle_heard | boolean, EXPIRED only | whether the backend could hear the vehicle at the moment the recommendation expired; absent for every other outcome. A client of an older backend finds no field and treats it as heard |
+
+SUPERSEDED: closed by the backend when a link returns and the vehicle's trust state or reason
+is no longer what it was when the recommendation was raised (see Link health). A decision on a
+superseded recommendation is refused with 410 `superseded`, like an expired one.
 
 ## Position and origin (for the map; added with the console)
 `POST /positions` `{vehicle_id, lat_deg, lon_deg, alt_m}` is the latest vehicle position. It is
@@ -87,13 +92,38 @@ GLOSSARY.md "No link"). It is measured on the backend's own clock from the arriv
   for LINK_OK, the length of the silence that just ended.
 - While NO_LINK the vehicle's last `NavTrust` stays in `vehicles` and is only the last one
   known. The recommender hands it no work and offers it no command; a recommendation already
-  open is not withdrawn (issue 77).
+  open stays open while the link is down.
+- Recovery (issue 77). The first `navtrust` report after an outage closes what the outage made
+  stale and publishes an `outage_summary` event `{"type": "outage_summary", "data":
+  {vehicle_id, duration_s, trust, trust_changes, onboard_actions, superseded}, "server_s": ...}`:
+  `duration_s` is the length of the silence, `trust` the first report after it,
+  `trust_changes` the `{server_s, state, reason}` changes seen since the link was lost,
+  `onboard_actions` the actions the vehicle took on its own (always empty until the onboard
+  monitor exists, issue 76) and `superseded` the ids of recommendations closed. A recommendation
+  raised before the outage for that vehicle is closed as SUPERSEDED when its trust state or reason
+  changed; one raised while the link was down is left alone. The recommender raises a new one if
+  the vehicle still needs it. If a position report ends the outage, the summary waits for the
+  next trust report. The same summary is an `outage_summary` audit row.
+
 - The backend sweeps for silent vehicles every 0.5 s, so a fleet that has gone completely quiet
   is noticed.
 
+## Command acknowledgement (issue 77)
+The gate sends each approved command and waits for the vehicle to accept it: an executor call
+returns when the vehicle has answered. Audit rows, per command, in order: `command_sent`
+(`recommendation_id`, `action`), then `command_acknowledged`, or `command_not_acknowledged`
+(also `timeout_s`; `--ack-timeout`, default 5 s, a proposal). A command never acknowledged is
+audited, not resent: its approval is spent. The recommender does not repeat an answered
+recommendation, so nothing is raised again automatically. The decision's `execution` reports it as
+not executed with reason `not_acknowledged: ...`. An error raised by the executor itself is a
+failure (`command_failed`), not a missing answer. Whether the vehicle received it anyway is unknown,
+so a re-task is not rolled back.
+
 ## Audit log
 Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendation`,
-`decision`, `rejected_decision`, `link_change`), `vehicle_id`, JSON `payload`. Trust is logged on
+`decision`, `rejected_decision`, `link_change`, `outage_summary`, `command_sent`,
+`command_acknowledged`, `command_not_acknowledged`, `command_executed`, `command_failed`,
+`command_blocked`), `vehicle_id`, JSON `payload`. Trust is logged on
 state or reason changes, not on every message. A `link_change` row has the `state`,
 `previous_state`, `last_report_age_s` (as in the `link` event) and `link_timeout_s`; one row per
 change.

@@ -347,27 +347,32 @@ describe("expired decisions stay visible until seen (issue 112)", () => {
     expect(pinnedExpired(s).map((p) => p.rec.id)).toEqual(["r2", "r1"]);
   });
 
-  describe("whether the vehicle could be heard is fixed at the moment of expiry (issue 129)", () => {
-    const link = (s: ConsoleState, v: string, state: "LINK_OK" | "NO_LINK", at: number) =>
-      apply(s, ev({ type: "link", server_s: at, data: { vehicle_id: v, state, last_report_age_s: 3 } }));
+  describe("whether the vehicle could be heard comes from the backend's record of the expiry (issues 129, 135)", () => {
+    const expiry = (heard: boolean | undefined) => {
+      let s = apply(initialState, ev({ type: "recommendation", data: rec }));
+      const data = { recommendation_id: "r1", outcome: "EXPIRED" as const, decided_s: 160, operator: "system", note: "", ...(heard === undefined ? {} : { vehicle_heard: heard }) };
+      s = apply(s, ev({ type: "decision", data }));
+      return s;
+    };
+    const link = (s: ConsoleState, state: "LINK_OK" | "NO_LINK") =>
+      apply(s, ev({ type: "link", server_s: 200, data: { vehicle_id: "uav2", state, last_report_age_s: 3 } }));
 
-    it("an expiry while heard stays 'heard' after the link is lost", () => {
-      let s = exp(initialState, "r1", "uav2", 100);
-      s = link(s, "uav2", "NO_LINK", 200);
+    it("an expiry the backend says was heard stays heard after the link is lost", () => {
+      expect(expiredWithoutLink(link(expiry(true), "NO_LINK"), "r1")).toBe(false);
+    });
+
+    it("an expiry the backend says had no link stays so after the link returns", () => {
+      expect(expiredWithoutLink(link(expiry(false), "LINK_OK"), "r1")).toBe(true);
+    });
+
+    it("an event that arrives late is judged by the backend's field, not the link state now", () => {
+      const lostNow = link(apply(initialState, ev({ type: "recommendation", data: rec })), "NO_LINK");
+      const s = apply(lostNow, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "EXPIRED", decided_s: 160, operator: "system", note: "", vehicle_heard: true } }));
       expect(expiredWithoutLink(s, "r1")).toBe(false);
     });
 
-    it("an expiry with no link stays 'no link' after the link returns", () => {
-      let s = link(initialState, "uav2", "NO_LINK", 90);
-      s = exp(s, "r1", "uav2", 100);
-      s = link(s, "uav2", "LINK_OK", 200);
-      expect(expiredWithoutLink(s, "r1")).toBe(true);
-    });
-
-    it("is about the vehicle the recommendation was for", () => {
-      let s = link(initialState, "uav3", "NO_LINK", 90);
-      s = exp(s, "r1", "uav2", 100);
-      expect(expiredWithoutLink(s, "r1")).toBe(false);
+    it("an older backend sends no field: treated as heard", () => {
+      expect(expiredWithoutLink(expiry(undefined), "r1")).toBe(false);
     });
   });
 
@@ -468,5 +473,37 @@ describe("losing the backend (issue 120)", () => {
 
   it("remembers when the backend was last heard, on the server clock", () => {
     expect(live().lastBackendAt_s).toBe(60);
+  });
+});
+
+describe("recovery after an outage (issue 77)", () => {
+  const summary = (superseded: string[]) =>
+    ev({ type: "outage_summary", server_s: 90, data: { vehicle_id: "uav2", duration_s: 12, trust: trust("uav2", "AMBER", "STALE"), trust_changes: [{ server_s: 90, state: "AMBER", reason: "STALE" }], onboard_actions: [], superseded } });
+
+  it("a superseded recommendation closes, is not an unseen expiry, and is listed as decided", () => {
+    let s = apply(initialState, ev({ type: "recommendation", data: rec }));
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "SUPERSEDED", decided_s: 90, operator: "system", note: "" } }));
+    expect(openRecommendations(s)).toEqual([]);
+    expect(pinnedExpired(s)).toEqual([]);
+    expect(decidedHistory(s).map((d) => d.decision.outcome)).toEqual(["SUPERSEDED"]);
+  });
+
+  it("the log says the situation changed, not that an operator did it", () => {
+    let s = apply(initialState, ev({ type: "recommendation", data: rec }));
+    s = apply(s, ev({ type: "decision", data: { recommendation_id: "r1", outcome: "SUPERSEDED", decided_s: 90, operator: "system", note: "" } }));
+    expect(s.log[0]?.text).toContain("superseded, the situation changed");
+    expect(s.log[0]?.text).not.toContain("by system");
+  });
+
+  it("the summary is logged with how long the link was down and what it closed", () => {
+    const s = apply(initialState, summary(["r1"]));
+    const text = s.log[0]?.text ?? "";
+    expect(text).toContain("uav2");
+    expect(text).toContain("0:12");
+    expect(text).toContain("1 decision closed");
+  });
+
+  it("says plainly when the situation had not changed", () => {
+    expect(apply(initialState, summary([])).log[0]?.text).toContain("nothing closed");
   });
 });

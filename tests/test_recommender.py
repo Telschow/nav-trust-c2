@@ -2,7 +2,7 @@ import pytest
 
 from c2.allocator import assign, split_area
 from c2.fleet import FleetState
-from c2.messages import Command
+from c2.messages import Command, Decision, Outcome
 from c2.recommender import Recommender, RecommenderConfig
 from navtrust.types import NavTrust, ReasonCode, TrustState
 
@@ -123,8 +123,6 @@ def test_config_validation() -> None:
 
 
 def test_an_unanswered_recommendation_is_issued_again_while_the_vehicle_is_still_red() -> None:
-    from c2.messages import Decision, Outcome
-
     r, f, _ = make()
     red = msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION)
     [first] = r.observe(red, f)
@@ -155,3 +153,16 @@ def test_a_flapping_vehicle_does_not_stack_open_recommendations() -> None:
         raised += r.observe(red, f)
         green(r, f, "uav2")
     assert len(raised) == 1
+
+
+def test_a_superseded_recommendation_lets_the_still_red_vehicle_be_put_to_the_operator_again() -> (
+    None
+):
+    from c2.messages import Decision, Outcome
+
+    r, f, _ = make()
+    red = msg("uav2", TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION)
+    [first] = r.observe(red, f)
+    assert r.observe(red, f) == []  # still open: not raised again
+    r.on_decision(Decision(first.id, Outcome.SUPERSEDED, 120.0, "system"), "uav2")
+    assert len(r.observe(red, f)) == 1

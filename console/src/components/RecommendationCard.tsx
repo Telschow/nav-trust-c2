@@ -167,6 +167,7 @@ export function ExpiredNotice({
 export function DecidedRow({ rec, decision }: { rec: Recommendation; decision: Decision }) {
   const approved = decision.outcome === "APPROVED";
   const expired = decision.outcome === "EXPIRED";
+  const superseded = decision.outcome === "SUPERSEDED";
   const failed = approved && decision.execution && !decision.execution.executed;
   return (
     <li className="border-b border-line-soft py-2.5 last:border-b-0">
@@ -180,8 +181,8 @@ export function DecidedRow({ rec, decision }: { rec: Recommendation; decision: D
           {titleOf(rec)}
         </span>
         <span className={clsx("shrink-0 text-xs", approved ? (failed ? "text-bad" : "text-ok") : "text-muted")}>
-          {expired ? "Expired" : approved ? "Approved" : "Denied"}
-          {!expired && ` by ${decision.operator}`}
+          {superseded ? "Superseded" : expired ? "Expired" : approved ? "Approved" : "Denied"}
+          {!expired && !superseded && ` by ${decision.operator}`}
         </span>
       </div>
       {approved && decision.execution && (

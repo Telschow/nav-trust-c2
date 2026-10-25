@@ -137,7 +137,12 @@ def test_executor_failure_is_audited_and_the_fleet_is_restored() -> None:
     assert {v: [s.id for s in secs] for v, secs in fleet.assignment.items()} == before
     [event] = hub.audit.events("command_failed")
     assert event.payload["completed"] == ["HOLD uav2"] and "link lost" in event.payload["error"]
-    assert audit_kinds(hub) == ["command_failed"]
+    assert audit_kinds(hub) == [
+        "command_sent",
+        "command_acknowledged",  # the HOLD went through
+        "command_sent",
+        "command_failed",  # the retask did not
+    ]
 
 
 def test_invalid_sector_moves_change_nothing() -> None:
@@ -175,3 +180,70 @@ def test_land_is_executed_as_land() -> None:
     hub.decide("r1", Outcome.APPROVED, "daniel")
     result = run(gate)
     assert result.executed and result.actions == ["LAND uav2"] and ex.calls == ["land uav2"]
+
+
+class SlowExecutor(FakeExecutor):
+    """A vehicle that never answers: the command goes out and nothing comes back."""
+
+    async def land(self, vehicle_id: str) -> None:
+        self.calls.append(f"land {vehicle_id}")
+        await asyncio.sleep(3600)
+
+
+def slow_setup(
+    timeout_s: float = 0.05,
+) -> tuple[Hub, FleetState, CommandGate, SlowExecutor]:
+    ex = SlowExecutor()
+    hub = Hub(AuditLog(), Clock())
+    fleet = FleetState(assign(split_area(900, 900, 3), ["uav1", "uav2", "uav3"]))
+    return hub, fleet, CommandGate(hub, fleet, ex, ack_timeout_s=timeout_s), ex
+
+
+def test_a_command_is_audited_as_sent_and_then_acknowledged() -> None:
+    hub, _, gate, _, _ = setup()
+    hub.add_recommendation(rec(command=Command.LAND, moves=False))
+    hub.decide("r1", Outcome.APPROVED, "daniel")
+    assert run(gate).executed
+    assert audit_kinds(hub) == ["command_sent", "command_acknowledged", "command_executed"]
+    [sent] = hub.audit.events("command_sent")
+    assert sent.payload["action"] == "LAND uav2" and sent.vehicle_id == "uav2"
+
+
+def test_a_command_never_acknowledged_is_audited_not_retried() -> None:
+    hub, _, gate, ex = slow_setup()
+    hub.add_recommendation(rec(command=Command.LAND, moves=False))
+    hub.decide("r1", Outcome.APPROVED, "daniel")
+    result = run(gate)
+    assert not result.executed and result.reason is not None
+    assert result.reason.startswith("not_acknowledged")
+    assert audit_kinds(hub) == ["command_sent", "command_not_acknowledged"]
+    [row] = hub.audit.events("command_not_acknowledged")
+    assert row.payload["action"] == "LAND uav2" and row.payload["timeout_s"] == 0.05
+    again = run(gate)  # an approval is spent: it is never sent a second time
+    assert not again.executed and again.reason == "already_executed"
+    assert ex.calls == ["land uav2"]
+
+
+def test_the_acknowledgement_timeout_must_be_positive() -> None:
+    hub = Hub(AuditLog(), Clock())
+    fleet = FleetState(assign(split_area(900, 900, 3), ["uav1", "uav2", "uav3"]))
+    with pytest.raises(ValueError):
+        CommandGate(hub, fleet, FakeExecutor(), ack_timeout_s=0)
+
+
+class TimeoutExecutor(FakeExecutor):
+    """An executor that itself raises TimeoutError: that is a failure, not a missing answer."""
+
+    async def land(self, vehicle_id: str) -> None:
+        raise TimeoutError("gRPC deadline")
+
+
+def test_a_timeout_raised_by_the_executor_is_a_failure_not_a_missing_acknowledgement() -> None:
+    hub, _, gate, _, _ = setup(TimeoutExecutor())
+    hub.add_recommendation(rec(command=Command.LAND, moves=False))
+    hub.decide("r1", Outcome.APPROVED, "daniel")
+    result = run(gate)
+    assert not result.executed and result.reason is not None
+    assert result.reason.startswith("failed")
+    assert "command_not_acknowledged" not in audit_kinds(hub)
+    assert "command_failed" in audit_kinds(hub)
