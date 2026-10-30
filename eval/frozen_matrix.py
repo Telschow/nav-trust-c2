@@ -91,7 +91,7 @@ def _airborne_after(truth: list[dict[str, float]]) -> float:
     return next((r["t_s"] for r in truth if r["alt_m"] > 3.0), float("inf"))
 
 
-def _range(values: list[float]) -> tuple[float, float] | None:
+def range_of(values: list[float]) -> tuple[float, float] | None:
     return (min(values), max(values)) if values else None
 
 
@@ -103,7 +103,7 @@ def summarise(runs: list[Run]) -> list[Cell]:
     cells = []
     for action, speed, delay in keys:
         group = [r for r in runs if (r.action, r.speed, r.delay) == (action, speed, delay)]
-        farthest = _range([r.farthest_m for r in group])
+        farthest = range_of([r.farthest_m for r in group])
         assert farthest is not None
         cells.append(
             Cell(
@@ -114,14 +114,16 @@ def summarise(runs: list[Run]) -> list[Cell]:
                 sum(r.landed for r in group),
                 sum(r.controlled for r in group),
                 farthest,
-                _range(
+                range_of(
                     [
                         r.command_to_touchdown_s
                         for r in group
                         if r.command_to_touchdown_s is not None
                     ]
                 ),
-                _range([r.touchdown_speed_m_s for r in group if r.touchdown_speed_m_s is not None]),
+                range_of(
+                    [r.touchdown_speed_m_s for r in group if r.touchdown_speed_m_s is not None]
+                ),
             )  # fmt: skip
         )
     return cells
@@ -134,7 +136,7 @@ def by_action(runs: list[Run]) -> list[Cell]:
         group = [r for r in runs if r.action == action]
         if not group:
             continue
-        farthest = _range([r.farthest_m for r in group])
+        farthest = range_of([r.farthest_m for r in group])
         assert farthest is not None
         cells.append(
             Cell(
@@ -145,20 +147,22 @@ def by_action(runs: list[Run]) -> list[Cell]:
                 sum(r.landed for r in group),
                 sum(r.controlled for r in group),
                 farthest,
-                _range(
+                range_of(
                     [
                         r.command_to_touchdown_s
                         for r in group
                         if r.command_to_touchdown_s is not None
                     ]
                 ),
-                _range([r.touchdown_speed_m_s for r in group if r.touchdown_speed_m_s is not None]),
+                range_of(
+                    [r.touchdown_speed_m_s for r in group if r.touchdown_speed_m_s is not None]
+                ),
             )  # fmt: skip
         )
     return cells
 
 
-def _span(r: tuple[float, float] | None, digits: int = 0) -> str:
+def span(r: tuple[float, float] | None, digits: int = 0) -> str:
     if r is None:
         return "none"
     lo, hi = (f"{v:.{digits}f}" for v in r)
@@ -176,8 +180,8 @@ def _rows(cells: list[Cell]) -> list[str]:
         delay = "all" if c.delay is None else f"{c.delay:g}"
         rows.append(
             f"| {c.action} | {speed} | {delay} | {c.n} | {c.landed} | {c.controlled} "
-            f"| {_span(c.farthest_m)} | {_span(c.command_to_touchdown_s)} "
-            f"| {_span(c.touchdown_speed_m_s, 1)} |"
+            f"| {span(c.farthest_m)} | {span(c.command_to_touchdown_s)} "
+            f"| {span(c.touchdown_speed_m_s, 1)} |"
         )
     return rows
 

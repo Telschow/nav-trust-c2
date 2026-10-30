@@ -45,6 +45,8 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
 - Frozen-position matrix (issue 81): `sim/record_frozen_matrix.sh` (simulator, resumable),
   `python -m eval.frozen_matrix tests/replay/data/experiments/matrix`; the results note is
   `docs/validation/frozen-position-matrix.md` and a test checks it against the recordings.
+- LAND under a frozen position with PX4's flight modes (issue 141): `sim/record_land_diagnosis.sh`
+  (simulator, resumable), `python -m eval.land_diagnosis tests/replay/data/experiments/land-diagnosis`.
 - Fleet mission completion (M-04): `make record-fleet` (three vehicles, one lost, scripted
   operator; simulator, about 80 min), `make eval-fleet` writes `eval/fleet/results.md`; CI checks it.
 

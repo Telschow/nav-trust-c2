@@ -131,6 +131,7 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
             if args.operator_action
             else None
         ),
+        "flight_mode_log": args.log_flight_mode or bool(args.link_cut_after),
         "onboard_policy": (
             {
                 **experiment_approval(args.onboard_wait)["policy"],
@@ -191,6 +192,7 @@ async def run(args: argparse.Namespace) -> Path:
         await ensure_enabled(drone)
         if schedule is not None:
             log.write("failsafe_params", **await apply_failsafe_params(drone))
+        if schedule is not None or args.log_flight_mode:
             side_tasks.append(asyncio.create_task(log_flight_mode(drone, log)))
 
         def on_ready(origin: GeoPoint) -> list[asyncio.Task[None]]:
@@ -333,6 +335,11 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--latch-fault",
         action="store_true",
         help="once the fault starts it never clears, even if the vehicle leaves the zone",
+    )
+    p.add_argument(
+        "--log-flight-mode",
+        action="store_true",
+        help="record PX4's flight mode on each change (always on with a link cut)",
     )
     p.add_argument(
         "--no-ground-truth",
