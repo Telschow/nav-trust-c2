@@ -38,6 +38,10 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
   `scenarios/lost_link` into `eval/lost_link/recordings` (`make record-all` runs it after the main
   set); `make eval` also regenerates `eval/lost_link/results.md` (`python -m eval.link_loss`); CI
   fails if the committed table differs from the recordings.
+- Onboard monitor (issue 76): `python -m eval.onboard_replay eval/lost_link/recordings` replays
+  recordings through it (CI checks that it never acts in the nominal, jamming, stuck, wrong-fix and
+  link-only recordings); `sim/record_onboard_runs.sh` records `link_and_frozen` with the monitor
+  running (simulator, resumable) into `eval/lost_link/onboard`.
 - Frozen-position matrix (issue 81): `sim/record_frozen_matrix.sh` (simulator, resumable),
   `python -m eval.frozen_matrix tests/replay/data/experiments/matrix`; the results note is
   `docs/validation/frozen-position-matrix.md` and a test checks it against the recordings.
