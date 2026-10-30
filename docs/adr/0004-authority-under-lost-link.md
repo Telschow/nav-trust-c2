@@ -1,7 +1,7 @@
 # ADR 0004: Authority under lost link
 
-Status: accepted, 2026-10-24. Decided by the maintainer; context and options written by
-Claude on their instruction (issue 72).
+Status: accepted, 2026-10-24; items 2 and 3 amended 2026-10-30 after issue 81. Decided by the
+maintainer; context and options written by Claude on their instruction (issue 72).
 
 ## Context
 
@@ -18,7 +18,7 @@ The evidence that matters is ADR 0003. With a frozen GNSS position no PX4 failsa
 the vehicle runs away: 5320 m from its start (farthest point at the 220 s cut-off) with no
 action, against 450 m with LAND, which put it on the ground 9 s after the command. HOLD and RTL
 reached the ground at 31.7 and 24.6 m/s horizontal speed.
-That is one run per action in one simulator (issue 81 adds more).
+That is one run per action in one simulator. Issue 81 repeated it in 52 runs (see item 2).
 
 The cases, as a contingency matrix (rows are a proposal):
 
@@ -52,13 +52,18 @@ unbounded for fast faults, and no source in the research note uses it.
 1. **A contingency is an approval given in advance.** The operator approves, before the mission,
    a policy of entries that each pair a fault reason and a link condition with an action. Every
    vehicle command still traces to a recorded approval or to a PX4 failsafe.
-2. **The only action is LAND**, because ADR 0003 is the only evidence for any action under a
-   frozen position. A vehicle never decides anything about other vehicles.
+2. **The only action is LAND**, because ADR 0003 and its repetition in issue 81 show it is the
+   quickest way to the ground and no other action did better on any measure. It is not shown to
+   be a controlled landing: touchdown speed was above 5 m/s in 11 of 13 runs, and lowest with a
+   5 s delay at 5 m/s cruise. A vehicle never decides anything about other vehicles. (Amended
+   2026-10-30: the first text said ADR 0003 was the only evidence.)
 3. **When it acts.** Only when the link has been down longer than the policy's wait time and the
    trust reason matches an entry. Otherwise it does nothing and keeps reporting. The wait time
    must be shorter than PX4's `COM_DL_LOSS_T` (10 s in the simulated vehicles), so that the
    `COM_FAIL_ACT_T` hold and PX4's own action have not started. (Amended 2026-10-24: the first
    text said "plus any hold", about 15 s, which disagreed with the parameters note and issue 76.)
+   The data supports a short wait: LAND after a 5 s delay went 258 to 443 m, after 30 s 666 to
+   973 m (issue 81).
 4. **PX4 underneath.** The simulated vehicles' airframe already sets the data-link-loss action to
    Return (`NAV_DLL_ACT` 2), so no parameter change is needed (see
    `docs/validation/px4-lost-link-parameters.md`). RTL while navigation is healthy was recorded in
@@ -86,13 +91,15 @@ unbounded for fast faults, and no source in the research note uses it.
 
 - LL-01 to LL-03 in `docs/product/requirements.md` become real requirements (issues 73, 75, 76)
   and need evidence before any "met".
-- The decision rests on thin evidence: ADR 0003 is one run per action (issue 81 adds more), and
-  the research note (PR 92) found no public precedent for hashed or time-limited delegated
+- The decision rests on limited evidence: ADR 0003's single runs per action, repeated over speed
+  and delay in issue 81 (three runs per cell, one simulator), and the research note (PR 92) found no public precedent for hashed or time-limited delegated
   authority and could not reach the defence primary sources. The design is justified here, not by
   precedent.
 - A forged policy file is possible in the simulator (R17). The ADR claims record integrity only.
 - The simulated link is cut in both directions together (R16). Results say nothing about an
   asymmetric or delayed link.
-- If issue 81 contradicts ADR 0003, items 2 and 4 are reopened.
+- Issue 81 was run (`docs/validation/frozen-position-matrix.md`). It partly contradicts ADR 0003
+  (touchdown speed), but no other action did better, so items 2 and 4 stand with the amendments
+  above.
 - CONOPS vignette C, the `link_loss` scenario family and the onboard monitor follow this
   decision (issues 74 to 77).

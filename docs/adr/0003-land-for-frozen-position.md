@@ -1,7 +1,8 @@
 # ADR 0003: Recommend LAND for a vehicle whose GNSS position is inconsistent
 
 Status: accepted, 2026-10-10. Decided by the maintainer; written down by Claude on their
-instruction. Amends ADR 0002 (stuck-position class and recommender rule).
+instruction. Amends ADR 0002 (stuck-position class and recommender rule). Limits amended
+2026-10-30 after the repetition in issue 81.
 
 ## Context
 
@@ -61,3 +62,11 @@ and velocity together). Real frozen or spoofed GNSS may behave differently. HOLD
 not tried at other delays. A landing in place can itself be unsafe (people, terrain, water);
 the console states what it will do and the operator decides. Whether PX4 should be configured
 to stop such a vehicle without the operator is not examined.
+
+Amended 2026-10-30 (issue 81, accepted by the maintainer). Repeated in 52 runs over speed and
+delay: LAND reached the ground 8 to 12 s after the command in every run, but touched down at
+2.0 to 28.3 m/s; the 2.9 m/s above was the best case. With no action, 12 of 13 runs were still
+flying after 220 s, up to 8179 m away. Distance was set mostly by the operator delay: LAND reached
+258 to 443 m at a 5 s delay and 666 to 973 m at 30 s. LAND was no better than RTL on distance
+(236 to 909 m). The claim that LAND stops the vehicle is withdrawn; the claim that it is the
+quickest way to the ground stands. See `docs/validation/frozen-position-matrix.md`.
