@@ -137,7 +137,8 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
   the vehicle's clock. It is accepted only if that policy approval is in the audit log with the
   same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row). It is audited as
   `onboard_action`, published as an `onboard_action` WebSocket event with the same fields, and
-  listed in the `outage_summary` of the outage it falls in (`onboard_actions`).
+  listed in the `outage_summary` of the outage it falls in (`onboard_actions`) if it is reported
+  before that summary is published, which happens at the first trust report after the link returns.
 - A vehicle acts only when the C2 has been silent longer than `wait_s`, its own trust state is
   RED and its reason matches an entry, its trust report is recent and the approval is not older
   than `max_age_s`; then once. The monitor reads PX4's own figures through the trust engine (ADR

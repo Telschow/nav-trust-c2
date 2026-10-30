@@ -14,6 +14,16 @@ from navtrust.types import ReasonCode
 
 LINK_CONDITIONS = ("NO_LINK",)
 ACTIONS = ("LAND",)
+POLICY_MAX_AGE_S = 4 * 3600.0  # proposal: how long a vehicle may rely on an approved policy
+
+
+def land_on_inconsistent_position(wait_s: float) -> dict[str, Any]:
+    """The contingency of ADR 0004: LAND when the position is inconsistent and the link is down
+    for longer than wait_s."""
+    return {
+        "entries": [{"reason": "INCONSISTENT_INNOVATION", "link": "NO_LINK", "action": "LAND"}],
+        "wait_s": wait_s,
+    }
 
 
 def policy_sha256(policy: dict[str, Any]) -> str:

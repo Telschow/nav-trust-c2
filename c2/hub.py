@@ -12,7 +12,7 @@ from enum import StrEnum
 from typing import Any
 
 from c2.audit import AuditLog
-from c2.contingency import policy_sha256, validate_policy
+from c2.contingency import POLICY_MAX_AGE_S, policy_sha256, validate_policy
 from c2.messages import (
     Decision,
     Outcome,
@@ -24,8 +24,6 @@ from c2.messages import (
 from navtrust.types import NavTrust, ReasonCode, TrustState
 
 Event = dict[str, Any]
-
-POLICY_MAX_AGE_S = 4 * 3600.0  # proposal: how long a vehicle may rely on an approved policy
 
 
 class LinkState(StrEnum):

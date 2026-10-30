@@ -53,7 +53,6 @@ from c2.progress import SectorProgress, geo_to_local
 from c2.recommender import Recommender
 from navtrust.calibration import GREEN_BOUND
 from navtrust.types import TrustState
-from sim.failsafe_params import COM_DL_LOSS_T_S
 
 _STATUS = {
     UnknownRecommendation: 404,
@@ -198,6 +197,8 @@ def create_app(
     @app.post("/policy", status_code=201)
     async def post_policy(body: dict[str, Any] = Body(...)) -> dict[str, Any]:  # noqa: B008
         """The operator approves, before the mission, what a vehicle may do alone (ADR 0004)."""
+        from sim.failsafe_params import COM_DL_LOSS_T_S  # the limit lives with PX4's parameters
+
         try:
             policy = {"entries": body["entries"], "wait_s": body["wait_s"]}
             return hub.approve_policy(policy, body["operator"], max_wait_s=COM_DL_LOSS_T_S)

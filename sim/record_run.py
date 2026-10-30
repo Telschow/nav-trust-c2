@@ -20,6 +20,7 @@ from typing import Any
 
 from mavsdk_grpc import System
 
+from c2.contingency import POLICY_MAX_AGE_S
 from navtrust.recording import SCHEMA
 from sim.failsafe_params import apply_failsafe_params
 from sim.flight_mode_log import log_flight_mode
@@ -197,7 +198,9 @@ async def run(args: argparse.Namespace) -> Path:
                 tasks.append(asyncio.create_task(log_ground_truth(log, ["uav1"])))
             if args.onboard_wait is not None:
                 approval = experiment_approval(args.onboard_wait)
-                policy = load_policy(approval, now_s=approval["approved_s"], max_age_s=4 * 3600.0)
+                policy = load_policy(
+                    approval, now_s=approval["approved_s"], max_age_s=POLICY_MAX_AGE_S
+                )
                 monitor = OnboardMonitor("uav1", policy, started_s=time.monotonic())
                 # in the simulator the C2 link is the link-cut relay: down while it is cut
                 tasks.append(

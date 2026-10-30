@@ -15,18 +15,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from c2.contingency import policy_sha256
+from c2.contingency import POLICY_MAX_AGE_S, land_on_inconsistent_position
 from navtrust.engine import TrustEngine
 from navtrust.recording import load_recording
 from navtrust.replay import replay_engine
 from sim.onboard_monitor import OnboardMonitor
 from sim.onboard_policy import load_policy
+from sim.onboard_run import experiment_approval
 
-POLICY_DOC: dict[str, Any] = {
-    "entries": [{"reason": "INCONSISTENT_INNOVATION", "link": "NO_LINK", "action": "LAND"}],
-    "wait_s": 5.0,  # proposal: below COM_DL_LOSS_T (10 s)
-}
-MAX_AGE_S = 4 * 3600.0
+POLICY_DOC: dict[str, Any] = land_on_inconsistent_position(5.0)  # proposal: below COM_DL_LOSS_T
 
 
 @dataclass(frozen=True)
@@ -37,16 +34,8 @@ class ReplayResult:
 
 def replay(path: Path) -> ReplayResult:
     recording = load_recording(path)
-    policy = load_policy(
-        {
-            "audit_id": 0,
-            "approved_s": 0.0,
-            "sha256": policy_sha256(POLICY_DOC),
-            "policy": POLICY_DOC,
-        },
-        now_s=0.0,
-        max_age_s=MAX_AGE_S,
-    )
+    approval = experiment_approval(POLICY_DOC["wait_s"], now_s=0.0)
+    policy = load_policy(approval, now_s=0.0, max_age_s=POLICY_MAX_AGE_S)
     monitor = OnboardMonitor("uav1", policy, started_s=0.0)
     cut = recording.first("link_cut")
     restore = recording.first("link_restore")
