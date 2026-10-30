@@ -81,7 +81,7 @@ record-all:
 
 # The link_loss family (issue 75): link cuts, a link that flaps, an operator who never answers.
 record-lost-link:
-	SCENARIO_DIR=scenarios/lost_link OUT_DIR=eval/lost_link/recordings sim/record_all.sh
+	RESUME=1 SCENARIO_DIR=scenarios/lost_link OUT_DIR=eval/lost_link/recordings sim/record_all.sh
 
 # Regenerate the link_loss table from its recordings; CI fails if the committed one differs.
 eval-lost-link:
