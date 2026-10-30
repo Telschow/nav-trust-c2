@@ -20,6 +20,7 @@ from typing import Any
 
 from mavsdk_grpc import System
 
+from c2.contingency import POLICY_MAX_AGE_S
 from navtrust.recording import SCHEMA
 from sim.failsafe_params import apply_failsafe_params
 from sim.flight_mode_log import log_flight_mode
@@ -28,6 +29,9 @@ from sim.gnss_injector import MODES, ensure_enabled, inject_loop, log_gps_info
 from sim.ground_truth import gz_available, log_ground_truth
 from sim.interference import rectangle
 from sim.link_cut import LinkCutSchedule, UdpRelay, drive_link_cut, relay_ports
+from sim.onboard_monitor import OnboardMonitor
+from sim.onboard_policy import load_policy
+from sim.onboard_run import experiment_approval, run_monitor
 from sim.scenario import LINK_CUT_AFTER, LINK_CUT_DIRECTIONS, LinkCut
 from sim.survey import GeoPoint
 
@@ -125,6 +129,15 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
             if args.operator_action
             else None
         ),
+        "onboard_policy": (
+            {
+                **experiment_approval(args.onboard_wait)["policy"],
+                "audit_id": 0,
+                "note": "this experiment's own policy, not an operator approval",
+            }
+            if args.onboard_wait is not None
+            else None
+        ),
     }
 
 
@@ -183,6 +196,20 @@ async def run(args: argparse.Namespace) -> Path:
             ]
             if args.ground_truth:
                 tasks.append(asyncio.create_task(log_ground_truth(log, ["uav1"])))
+            if args.onboard_wait is not None:
+                approval = experiment_approval(args.onboard_wait)
+                policy = load_policy(
+                    approval, now_s=approval["approved_s"], max_age_s=POLICY_MAX_AGE_S
+                )
+                monitor = OnboardMonitor("uav1", policy, started_s=time.monotonic())
+                # in the simulator the C2 link is the link-cut relay: down while it is cut
+                tasks.append(
+                    asyncio.create_task(
+                        run_monitor(
+                            drone, monitor, lambda: relay is None or not relay.is_cut, log.write
+                        )
+                    )
+                )
             entered = asyncio.Event()
             if args.operator_action:
                 tasks.append(
@@ -279,6 +306,12 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--link-cut-after",
         choices=LINK_CUT_AFTER,
         help="cut the MAVLink link (both directions) for this vehicle after this event",
+    )
+    p.add_argument(
+        "--onboard-wait",
+        type=float,
+        help="run the onboard monitor with the ADR 0004 contingency (LAND on a position "
+        "inconsistency, link down longer than this many seconds; below COM_DL_LOSS_T)",
     )
     p.add_argument("--link-cut-delay", type=float, default=0.0, help="seconds after the event")
     p.add_argument(

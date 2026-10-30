@@ -49,3 +49,18 @@ def test_max_duration_defaults_to_unbounded_and_is_in_header() -> None:
 def test_ground_truth_is_off_when_asked_and_flagged_in_the_header() -> None:
     args = parse_args(["--scenario", "n", "--no-ground-truth"])
     assert args.ground_truth is False and build_header(args)["ground_truth"] is False
+
+
+def test_without_the_onboard_monitor_the_header_says_so() -> None:
+    args = parse_args(["--scenario", "n"])
+    assert args.onboard_wait is None and build_header(args)["onboard_policy"] is None
+
+
+def test_the_onboard_monitor_policy_is_in_the_header_as_the_experiments_own() -> None:
+    args = parse_args(["--scenario", "n", "--onboard-wait", "5"])
+    policy = build_header(args)["onboard_policy"]
+    assert policy["wait_s"] == 5.0 and policy["audit_id"] == 0
+    assert policy["entries"] == [
+        {"reason": "INCONSISTENT_INNOVATION", "link": "NO_LINK", "action": "LAND"}
+    ]
+    assert "not an operator approval" in policy["note"]

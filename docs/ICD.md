@@ -119,11 +119,36 @@ not executed with reason `not_acknowledged: ...`. An error raised by the executo
 failure (`command_failed`), not a missing answer. Whether the vehicle received it anyway is unknown,
 so a re-task is not rolled back.
 
+## Onboard contingencies (issue 76, ADR 0004)
+A contingency is an approval given in advance. The operator approves, before the mission, a
+policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached.
+
+- `POST /policy` `{operator, wait_s, entries}` with `entries` a list of `{reason, link, action}`
+  (`reason` a ReasonCode, `link` only `NO_LINK`, `action` only `LAND`). `wait_s` is how long the C2
+  must have been silent, above 0 and below PX4's data-link-loss time (`COM_DL_LOSS_T`, 10 s in the
+  simulated vehicles): a policy no vehicle would accept is refused with 422 `invalid_policy`. A
+  blank operator is refused like a blank decision. It answers 201 `{audit_id, approved_s, sha256,
+  max_age_s, policy}`; `sha256` is the hash of the policy as canonical JSON (sorted keys, no
+  spaces) and `max_age_s` (4 h, a proposal) is how long a vehicle may rely on it. The approval is
+  an audit row `policy_approved`. There is no revocation, because the link may be down when one is
+  wanted. This is integrity of the record, not authentication.
+- `POST /onboard-actions` `{vehicle_id, t_s, action, reason, link_down_s, policy_audit_id,
+  policy_sha256}` is a vehicle saying, once its link is back, what it did on its own. `t_s` is
+  the vehicle's clock. It is accepted only if that policy approval is in the audit log with the
+  same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row). It is audited as
+  `onboard_action`, published as an `onboard_action` WebSocket event with the same fields, and
+  listed in the `outage_summary` of the outage it falls in (`onboard_actions`) if it is reported
+  before that summary is published, which happens at the first trust report after the link returns.
+- A vehicle acts only when the C2 has been silent longer than `wait_s`, its own trust state is
+  RED and its reason matches an entry, its trust report is recent and the approval is not older
+  than `max_age_s`; then once. The monitor reads PX4's own figures through the trust engine (ADR
+  0005); its rule is not calibrated against ground truth and no result may say it is.
+
 ## Audit log
 Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendation`,
 `decision`, `rejected_decision`, `link_change`, `outage_summary`, `command_sent`,
 `command_acknowledged`, `command_not_acknowledged`, `command_executed`, `command_failed`,
-`command_blocked`), `vehicle_id`, JSON `payload`. Trust is logged on
+`command_blocked`, `policy_approved`, `onboard_action`, `rejected_onboard_action`), `vehicle_id`, JSON `payload`. Trust is logged on
 state or reason changes, not on every message. A `link_change` row has the `state`,
 `previous_state`, `last_report_age_s` (as in the `link` event) and `link_timeout_s`; one row per
 change.
