@@ -11,6 +11,8 @@
 # failed run never leaves a truncated file or overwrites a recording you already have.
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# shellcheck source=sim/sim_lock.sh
+source sim/sim_lock.sh
 
 IMAGE="${IMAGE:-nav-trust-c2-sim}"
 SCENARIO_DIR="${SCENARIO_DIR:-scenarios}"
@@ -28,7 +30,7 @@ while read -r name runs; do
     [ -n "${ONLY}" ] && [ "${ONLY}" != "${name}" ] && continue
     for run in $(seq 1 "${runs}"); do
         final="${OUT_DIR}/${name}-${run}.jsonl"
-        if [ -n "${RESUME}" ] && [ -s "${final}" ]; then
+        if [ -n "${RESUME}" ] && is_complete "${final}"; then
             echo "=== ${name} run ${run}/${runs} already recorded"
             continue
         fi
