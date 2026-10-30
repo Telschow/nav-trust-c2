@@ -11,6 +11,8 @@
 # Summary: python -m eval.land_diagnosis tests/replay/data/experiments/land-diagnosis
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# shellcheck source=sim/sim_lock.sh
+source sim/sim_lock.sh
 
 IMAGE="${IMAGE:-nav-trust-c2-sim}"
 OUT_DIR="${OUT_DIR:-tests/replay/data/experiments/land-diagnosis}"
@@ -29,19 +31,21 @@ for speed in ${SPEEDS}; do
         for run in $(seq 1 "${RUNS}"); do
             name="stuck-land-v${speed}-d${delay}-${run}"
             out="${OUT_DIR}/${name}.jsonl"
-            [ -s "${out}" ] && { echo "=== ${name} already recorded"; continue; }
+            is_complete "${out}" && { echo "=== ${name} already recorded"; continue; }
             echo "=== ${name}"
             docker restart "${IMAGE}" >/dev/null
             sleep 90
             if ! docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
-                python -m sim.record_run --scenario "${name}" --out "${out}" \
+                python -m sim.record_run --scenario "${name}" --out "${out}.partial" \
                 --mode stuck --zone 200 -50 280 150 --latch-fault \
                 --width 600 --height 100 --spacing 100 --altitude 30 --speed "${speed}" \
                 --max-duration "${MAX_DURATION}" --log-flight-mode \
                 --operator-action land --operator-delay "${delay}"; then
                 echo "!!! ${name} failed"
-                rm -f "${out}"
+                rm -f "${out}.partial"
                 failures+=("${name}")
+            else
+                mv "${out}.partial" "${out}"
             fi
         done
     done

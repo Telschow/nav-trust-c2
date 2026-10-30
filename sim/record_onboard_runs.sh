@@ -11,6 +11,8 @@
 # monitor does given that cut (docs/ICD.md, Onboard contingencies).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# shellcheck source=sim/sim_lock.sh
+source sim/sim_lock.sh
 
 IMAGE="${IMAGE:-nav-trust-c2-sim}"
 OUT_DIR="${OUT_DIR:-eval/lost_link/onboard}"
@@ -25,19 +27,21 @@ failures=()
 for run in $(seq 1 "${RUNS}"); do
     name="link_and_frozen_onboard-${run}"
     out="${OUT_DIR}/${name}.jsonl"
-    [ -s "${out}" ] && { echo "=== ${name} already recorded"; continue; }
+    is_complete "${out}" && { echo "=== ${name} already recorded"; continue; }
     echo "=== ${name}"
     docker restart "${IMAGE}" >/dev/null
     sleep 90
     if ! docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
-        python -m sim.record_run --scenario "${name}" --out "${out}" \
+        python -m sim.record_run --scenario "${name}" --out "${out}.partial" \
         --mode stuck --zone 200 -50 280 150 --latch-fault \
         --width 600 --height 100 --spacing 100 --altitude 30 --speed 10 \
         --max-duration 300 --link-cut-after fault_start --link-cut-delay 5 \
         --link-cut-direction uplink --onboard-wait "${WAIT}"; then
         echo "!!! ${name} failed"
-        rm -f "${out}"
+        rm -f "${out}.partial"
         failures+=("${name}")
+    else
+        mv "${out}.partial" "${out}"
     fi
 done
 

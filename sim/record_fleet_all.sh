@@ -7,6 +7,8 @@
 #   OPERATOR_DELAY=40 sim/record_fleet_all.sh   another operator delay (replaces the recordings)
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# shellcheck source=sim/sim_lock.sh
+source sim/sim_lock.sh
 
 IMAGE="${IMAGE:-nav-trust-c2-sim}"
 OUT_DIR="${OUT_DIR:-eval/fleet/recordings}"
