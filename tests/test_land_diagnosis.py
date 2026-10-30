@@ -49,8 +49,9 @@ def test_it_reports_when_px4_entered_land_and_how_fast_the_vehicle_was_moving() 
     assert run.command_to_land_mode_s == pytest.approx(0.4)
     assert run.mode_at_command == "MISSION"
     assert run.speed_at_command_m_s == pytest.approx(12.0)  # 12 m east in the second around it
+    assert run.speed_at_land_mode_m_s == pytest.approx(12.0)  # LAND mode entered at 20.4 s
     assert run.touchdown_speed_m_s is not None and run.touchdown_speed_m_s > 5.0
-    assert (run.action, run.speed, run.delay) == ("land", 12.0, 5.0)
+    assert (run.action, run.survey_speed, run.delay) == ("land", 12.0, 5.0)
 
 
 def test_without_flight_mode_events_the_mode_questions_are_unanswered_not_guessed() -> None:
@@ -62,6 +63,7 @@ def test_without_flight_mode_events_the_mode_questions_are_unanswered_not_guesse
 def test_a_vehicle_that_never_entered_land_has_no_time_to_land_mode() -> None:
     run = measure(recording(FAST, [(5.0, "MISSION")]))
     assert run.command_to_land_mode_s is None and run.mode_at_command == "MISSION"
+    assert run.speed_at_land_mode_m_s is None  # it never entered LAND
 
 
 def test_the_mode_a_vehicle_was_in_is_the_last_one_entered_before_the_command() -> None:
@@ -82,3 +84,16 @@ def test_a_cell_says_how_many_runs_had_flight_mode_events() -> None:
     runs = [measure(recording(FAST, MODES)), measure(recording(FAST, None))]
     [cell] = summarise(runs)
     assert (cell.n, cell.with_mode_events) == (2, 1)
+
+
+def test_the_per_run_table_lists_every_run_not_only_ranges(tmp_path: Any) -> None:
+    import json
+
+    from eval.land_diagnosis import table
+
+    rec = recording(FAST, MODES)
+    lines = "\n".join(json.dumps(r) for r in [rec.header, *rec.records]) + "\n"
+    for i in (1, 2):
+        (tmp_path / f"stuck-land-v12-d5-{i}.jsonl").write_text(lines, encoding="utf-8")
+    out = table(tmp_path)
+    assert "stuck-land-v12-d5-1" in out and "stuck-land-v12-d5-2" in out

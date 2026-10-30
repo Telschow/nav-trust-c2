@@ -7,8 +7,10 @@ them (`sim.record_run --log-flight-mode`). Per run:
 
 - mode at the command: the last PX4 flight mode entered at or before the command;
 - command to LAND mode: seconds from the command to PX4 entering LAND;
-- speed at the command: horizontal metres per second from the true position, over the samples
-  within one second of the command (the vehicle's momentum when LAND began);
+- speed at the command, and speed at LAND mode: horizontal metres per second from the true
+  position, over the samples within one second either side of that moment (the vehicle's momentum
+  when LAND was sent, and when PX4 actually began to land; a vehicle that has not slowed by then
+  is carrying its speed in, which the frozen position alone would not explain);
 - speed below 3 m and command to touchdown: as in `eval.frozen_matrix`.
 
 Counts and ranges only, never rates. This says what the recordings show; it does not say why PX4
@@ -25,7 +27,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from eval.frozen_matrix import measure_run
+from eval.frozen_matrix import measure_run, range_of, span
 from navtrust.recording import Recording, load_recording
 
 SPEED_WINDOW_S = 1.0  # proposal: samples this close to the command give its speed
@@ -34,11 +36,12 @@ SPEED_WINDOW_S = 1.0  # proposal: samples this close to the command give its spe
 @dataclass(frozen=True)
 class RunState:
     action: str
-    speed: float
+    survey_speed: float
     delay: float
     mode_at_command: str | None
     command_to_land_mode_s: float | None
     speed_at_command_m_s: float | None
+    speed_at_land_mode_m_s: float | None
     touchdown_speed_m_s: float | None
     command_to_touchdown_s: float | None
     has_mode_events: bool
@@ -47,13 +50,14 @@ class RunState:
 @dataclass(frozen=True)
 class Cell:
     action: str
-    speed: float
+    survey_speed: float
     delay: float
     n: int
     with_mode_events: int
     modes_at_command: tuple[str, ...]
     command_to_land_mode_s: tuple[float, float] | None
     speed_at_command_m_s: tuple[float, float] | None
+    speed_at_land_mode_m_s: tuple[float, float] | None
     touchdown_speed_m_s: tuple[float, float] | None
 
 
@@ -75,74 +79,84 @@ def measure(recording: Recording) -> RunState:
     entered = [m for m in modes if m["t_s"] <= command_s]
     land = next((m for m in modes if m["mode"] == "LAND" and m["t_s"] >= command_s), None)
     flown = measure_run(recording)
+    truth = recording.of("truth")
     return RunState(
         action=flown.action,
-        speed=flown.speed,
+        survey_speed=flown.speed,
         delay=flown.delay,
         mode_at_command=str(entered[-1]["mode"]) if entered else None,
         command_to_land_mode_s=float(land["t_s"]) - command_s if land else None,
-        speed_at_command_m_s=_speed_at(recording.of("truth"), command_s),
+        speed_at_command_m_s=_speed_at(truth, command_s),
+        speed_at_land_mode_m_s=_speed_at(recording.of("truth"), float(land["t_s"]))
+        if land
+        else None,
         touchdown_speed_m_s=flown.touchdown_speed_m_s,
         command_to_touchdown_s=flown.command_to_touchdown_s,
         has_mode_events=bool(modes),
     )
 
 
-def _range(values: list[float]) -> tuple[float, float] | None:
-    return (min(values), max(values)) if values else None
+def _range_of(group: list[RunState], field: str) -> tuple[float, float] | None:
+    return range_of([v for r in group if (v := getattr(r, field)) is not None])
 
 
 def summarise(runs: list[RunState]) -> list[Cell]:
-    keys = sorted({(r.action, r.speed, r.delay) for r in runs}, key=lambda k: (k[1], k[2]))
+    keys = sorted({(r.action, r.survey_speed, r.delay) for r in runs}, key=lambda k: (k[1], k[2]))
     cells = []
     for action, speed, delay in keys:
-        group = [r for r in runs if (r.action, r.speed, r.delay) == (action, speed, delay)]
+        group = [r for r in runs if (r.action, r.survey_speed, r.delay) == (action, speed, delay)]
         cells.append(
             Cell(
-                action,
-                speed,
-                delay,
-                len(group),
-                sum(r.has_mode_events for r in group),
-                tuple(sorted({r.mode_at_command for r in group if r.mode_at_command})),
-                _range(
-                    [
-                        r.command_to_land_mode_s
-                        for r in group
-                        if r.command_to_land_mode_s is not None
-                    ]
+                action=action,
+                survey_speed=speed,
+                delay=delay,
+                n=len(group),
+                with_mode_events=sum(r.has_mode_events for r in group),
+                modes_at_command=tuple(
+                    sorted({r.mode_at_command for r in group if r.mode_at_command})
                 ),
-                _range(
-                    [r.speed_at_command_m_s for r in group if r.speed_at_command_m_s is not None]
-                ),
-                _range([r.touchdown_speed_m_s for r in group if r.touchdown_speed_m_s is not None]),
-            )  # fmt: skip
+                command_to_land_mode_s=_range_of(group, "command_to_land_mode_s"),
+                speed_at_command_m_s=_range_of(group, "speed_at_command_m_s"),
+                speed_at_land_mode_m_s=_range_of(group, "speed_at_land_mode_m_s"),
+                touchdown_speed_m_s=_range_of(group, "touchdown_speed_m_s"),
+            )
         )
     return cells
 
 
-def _span(r: tuple[float, float] | None, digits: int = 1) -> str:
-    if r is None:
-        return "none"
-    lo, hi = (f"{v:.{digits}f}" for v in r)
-    return lo if lo == hi else f"{lo} to {hi}"
+def _num(value: float | None) -> str:
+    return "none" if value is None else f"{value:.1f}"
 
 
 def table(directory: Path) -> str:
-    runs = [measure(load_recording(p)) for p in sorted(directory.glob("*.jsonl"))]
-    rows = [
+    """Per run, then per cell as counts and ranges."""
+    paths = sorted(directory.glob("*.jsonl"))
+    runs = [measure(load_recording(p)) for p in paths]
+    per_run = [
+        "| Recording | Mode at command | Command to LAND mode (s) | Speed at command (m/s) "
+        "| Speed at LAND mode (m/s) | Speed below 3 m (m/s) |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    for path, r in zip(paths, runs, strict=True):
+        per_run.append(
+            f"| {path.stem} | {r.mode_at_command or 'not recorded'} "
+            f"| {_num(r.command_to_land_mode_s)} | {_num(r.speed_at_command_m_s)} "
+            f"| {_num(r.speed_at_land_mode_m_s)} | {_num(r.touchdown_speed_m_s)} |"
+        )
+    per_cell = [
         "| Action | Speed (m/s) | Delay (s) | Runs | With mode events | Mode at command "
-        "| Command to LAND mode (s) | Speed at command (m/s) | Speed below 3 m (m/s) |",
-        "|---|---:|---:|---:|---:|---|---:|---:|---:|",
+        "| Command to LAND mode (s) | Speed at command (m/s) | Speed at LAND mode (m/s) "
+        "| Speed below 3 m (m/s) |",
+        "|---|---:|---:|---:|---:|---|---:|---:|---:|---:|",
     ]
     for c in summarise(runs):
-        rows.append(
-            f"| {c.action} | {c.speed:g} | {c.delay:g} | {c.n} | {c.with_mode_events} "
+        per_cell.append(
+            f"| {c.action} | {c.survey_speed:g} | {c.delay:g} | {c.n} | {c.with_mode_events} "
             f"| {', '.join(c.modes_at_command) or 'not recorded'} "
-            f"| {_span(c.command_to_land_mode_s)} | {_span(c.speed_at_command_m_s)} "
-            f"| {_span(c.touchdown_speed_m_s)} |"
+            f"| {span(c.command_to_land_mode_s, 1)} | {span(c.speed_at_command_m_s, 1)} "
+            f"| {span(c.speed_at_land_mode_m_s, 1)} | {span(c.touchdown_speed_m_s, 1)} |"
         )
-    return "\n".join(rows) + "\n"
+    return "\n".join(per_run) + "\n\n" + "\n".join(per_cell) + "\n"
 
 
 def main() -> None:
