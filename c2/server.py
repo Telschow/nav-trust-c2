@@ -36,7 +36,9 @@ from c2.hub import (
     HubError,
     InvalidOperator,
     InvalidOutcome,
+    InvalidPolicy,
     SupersededRecommendation,
+    UnknownPolicy,
     UnknownRecommendation,
 )
 from c2.messages import (
@@ -51,6 +53,7 @@ from c2.progress import SectorProgress, geo_to_local
 from c2.recommender import Recommender
 from navtrust.calibration import GREEN_BOUND
 from navtrust.types import TrustState
+from sim.failsafe_params import COM_DL_LOSS_T_S
 
 _STATUS = {
     UnknownRecommendation: 404,
@@ -58,6 +61,8 @@ _STATUS = {
     DuplicateRecommendation: 409,
     ExpiredRecommendation: 410,
     SupersededRecommendation: 410,
+    InvalidPolicy: 422,
+    UnknownPolicy: 422,
     InvalidOutcome: 422,
     InvalidOperator: 422,
 }
@@ -189,6 +194,27 @@ def create_app(
         if recommender is not None and fleet is not None:
             for rec in recommender.observe(msg, fleet):
                 hub.add_recommendation(rec)
+
+    @app.post("/policy", status_code=201)
+    async def post_policy(body: dict[str, Any] = Body(...)) -> dict[str, Any]:  # noqa: B008
+        """The operator approves, before the mission, what a vehicle may do alone (ADR 0004)."""
+        try:
+            policy = {"entries": body["entries"], "wait_s": body["wait_s"]}
+            return hub.approve_policy(policy, body["operator"], max_wait_s=COM_DL_LOSS_T_S)
+        except HubError as err:
+            raise HTTPException(_STATUS[type(err)], err.code) from err
+        except (KeyError, ValueError, TypeError) as err:
+            raise bad_request(err) from err
+
+    @app.post("/onboard-actions", status_code=204)
+    async def post_onboard_action(body: dict[str, Any] = Body(...)) -> None:  # noqa: B008
+        """A vehicle reports what it did on its own once the link is back."""
+        try:
+            hub.report_onboard_action(body)
+        except HubError as err:
+            raise HTTPException(_STATUS[type(err)], err.code) from err
+        except (KeyError, ValueError, TypeError) as err:
+            raise bad_request(err) from err
 
     @app.post("/positions", status_code=204)
     async def post_position(body: dict[str, Any] = Body(...)) -> None:  # noqa: B008

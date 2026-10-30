@@ -12,6 +12,7 @@ from enum import StrEnum
 from typing import Any
 
 from c2.audit import AuditLog
+from c2.contingency import policy_sha256, validate_policy
 from c2.messages import (
     Decision,
     Outcome,
@@ -23,6 +24,8 @@ from c2.messages import (
 from navtrust.types import NavTrust, ReasonCode, TrustState
 
 Event = dict[str, Any]
+
+POLICY_MAX_AGE_S = 4 * 3600.0  # proposal: how long a vehicle may rely on an approved policy
 
 
 class LinkState(StrEnum):
@@ -48,6 +51,14 @@ class AlreadyDecided(HubError):
 
 class ExpiredRecommendation(HubError):
     code = "expired"
+
+
+class InvalidPolicy(HubError):
+    code = "invalid_policy"
+
+
+class UnknownPolicy(HubError):
+    code = "unknown_policy"
 
 
 class SupersededRecommendation(HubError):
@@ -90,6 +101,7 @@ class Hub:
         self._last_report_s: dict[str, float] = {}
         self._link: dict[str, LinkState] = {}
         self._outage: dict[str, _Outage] = {}
+        self._onboard_actions: list[tuple[float, dict[str, Any]]] = []  # (server_s, report)
         self._trust: dict[str, NavTrust] = {}
         self._recs: dict[str, Recommendation] = {}
         self._decisions: dict[str, Decision] = {}
@@ -189,6 +201,60 @@ class Hub:
             self._clock(), "recommendation", rec.vehicle_id, recommendation_to_dict(rec)
         )
         self._publish({"type": "recommendation", "data": recommendation_to_dict(rec)})
+
+    def approve_policy(
+        self, policy: dict[str, Any], operator: str, max_wait_s: float
+    ) -> dict[str, Any]:
+        """Record the operator's approval, before the mission, of a contingency policy (ADR 0004).
+
+        The approval is an audited row; the vehicle accepts the policy only with that row's id and
+        the policy's hash, and only up to POLICY_MAX_AGE_S. max_wait_s: PX4's data-link-loss time,
+        so a policy no vehicle would accept is refused here and not at the vehicle."""
+        if not isinstance(operator, str) or not operator.strip():
+            raise InvalidOperator(repr(operator))
+        try:
+            validate_policy(policy, max_wait_s)
+        except (ValueError, TypeError, AttributeError) as err:
+            raise InvalidPolicy(str(err)) from err
+        sha = policy_sha256(policy)
+        now = self._clock()
+        row = self._audit.append(
+            now,
+            "policy_approved",
+            None,
+            {"operator": operator.strip(), "policy": policy, "sha256": sha,
+             "max_age_s": POLICY_MAX_AGE_S},
+        )  # fmt: skip
+        return {
+            "audit_id": row.id,
+            "approved_s": now,
+            "sha256": sha,
+            "max_age_s": POLICY_MAX_AGE_S,
+            "policy": policy,
+        }
+
+    def report_onboard_action(self, report: dict[str, Any]) -> None:
+        """A vehicle says what it did on its own, citing the policy it did it under. Accepted only
+        if that policy approval is in the audit log with the same hash; audited either way."""
+        vehicle_id = str(report["vehicle_id"])
+        approved = [
+            e
+            for e in self._audit.events("policy_approved")
+            if e.id == report.get("policy_audit_id")
+            and e.payload["sha256"] == report.get("policy_sha256")
+        ]
+        if not approved:
+            self._audit.append(
+                self._clock(),
+                "rejected_onboard_action",
+                vehicle_id,
+                {**report, "rejected_because": UnknownPolicy.code},
+            )
+            raise UnknownPolicy(str(report.get("policy_audit_id")))
+        self._note_report(vehicle_id)  # hearing from the vehicle at all
+        self._audit.append(self._clock(), "onboard_action", vehicle_id, report)
+        self._onboard_actions.append((self._clock(), report))
+        self._publish({"type": "onboard_action", "data": report})
 
     def decide(
         self, recommendation_id: str, outcome: Outcome, operator: str, note: str = ""
@@ -327,7 +393,11 @@ class Hub:
             "duration_s": outage.duration_s,
             "trust": navtrust_to_dict(latest),
             "trust_changes": outage.changes,
-            "onboard_actions": [],  # filled when the onboard monitor exists (issue 76)
+            "onboard_actions": [
+                r
+                for at_s, r in self._onboard_actions
+                if r["vehicle_id"] == vehicle_id and at_s >= outage.detected_s
+            ],
             "superseded": superseded,
         }
         self._audit.append(self._clock(), "outage_summary", vehicle_id, summary)

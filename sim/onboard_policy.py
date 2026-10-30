@@ -12,26 +12,17 @@ Pure Python, no simulator dependency.
 
 from __future__ import annotations
 
-import hashlib
-import json
 from dataclasses import dataclass
 from typing import Any
 
-from navtrust.types import ReasonCode
+from c2.contingency import policy_sha256, validate_policy
 from sim.failsafe_params import COM_DL_LOSS_T_S
 
-LINK_CONDITIONS = ("NO_LINK",)  # the only condition a contingency can name (ADR 0004)
-ACTIONS = ("LAND",)  # the only action in v1
+__all__ = ["Policy", "PolicyEntry", "PolicyRejected", "load_policy", "policy_sha256"]
 
 
 class PolicyRejected(Exception):
     """The vehicle will not rely on this policy."""
-
-
-def policy_sha256(policy: dict[str, Any]) -> str:
-    """Hash of the policy in a canonical form, so key order and layout do not matter."""
-    canonical = json.dumps(policy, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -61,17 +52,6 @@ class Policy:
         return self.age_at_load_s + (local_s - loaded_local_s) <= self.max_age_s
 
 
-def _entry(raw: dict[str, Any]) -> PolicyEntry:
-    reason, link, action = raw.get("reason"), raw.get("link"), raw.get("action")
-    if reason not in {r.value for r in ReasonCode}:
-        raise PolicyRejected(f"unknown reason {reason!r}")
-    if link not in LINK_CONDITIONS:
-        raise PolicyRejected(f"unknown link condition {link!r}")
-    if action not in ACTIONS:
-        raise PolicyRejected(f"action {action!r} is not allowed: only LAND")
-    return PolicyEntry(str(reason), str(link), str(action))
-
-
 def load_policy(approval: dict[str, Any], now_s: float, max_age_s: float) -> Policy:
     """Check an approval record and return the policy, or raise PolicyRejected.
 
@@ -94,10 +74,9 @@ def load_policy(approval: dict[str, Any], now_s: float, max_age_s: float) -> Pol
         raise PolicyRejected("approval is dated in the future")
     if age_s > max_age_s:
         raise PolicyRejected(f"approval expired ({age_s:.0f} s old, limit {max_age_s:.0f} s)")
-    wait_s = float(policy.get("wait_s", 0))
-    if not 0 < wait_s < COM_DL_LOSS_T_S:
-        raise PolicyRejected(
-            f"wait {wait_s} s must be above 0 and below COM_DL_LOSS_T {COM_DL_LOSS_T_S} s"
-        )
-    entries = tuple(_entry(e) for e in policy.get("entries", []))
-    return Policy(entries, wait_s, audit_id, claimed, age_s, max_age_s)
+    try:
+        validate_policy(policy, COM_DL_LOSS_T_S)
+    except ValueError as err:
+        raise PolicyRejected(str(err)) from err
+    entries = tuple(PolicyEntry(e["reason"], e["link"], e["action"]) for e in policy["entries"])
+    return Policy(entries, float(policy["wait_s"]), audit_id, claimed, age_s, max_age_s)
