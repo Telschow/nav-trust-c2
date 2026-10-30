@@ -12,7 +12,15 @@ from typing import Any
 
 import yaml
 
-CLASSES = ("nominal", "short_outage", "long_outage", "stuck_position", "wrong_fix", "link_loss")
+CLASSES = (
+    "nominal",
+    "short_outage",
+    "long_outage",
+    "stuck_position",
+    "wrong_fix",
+    "link_loss",
+    "operator_unresponsive",  # a frozen position with the link up and nobody answering
+)
 MODES = ("off", "stuck", "wrong")  # failure modes of PX4's `failure gps`
 LINK_CUT_AFTER = ("mission_start", "fault_start")
 LINK_CUT_DIRECTIONS = ("both", "uplink")
@@ -52,6 +60,9 @@ class LinkCut:
     # "uplink" drops only what the scripts send to PX4, so PX4 loses its ground station while the
     # recorder keeps hearing the vehicle and can show what the failsafe did
     direction: str = "both"
+    # a link that drops and recovers repeatedly: `cycles` cuts of `duration_s`, `gap_s` apart
+    cycles: int = 1
+    gap_s: float | None = None
 
 
 @dataclass(frozen=True)
@@ -113,9 +124,17 @@ def parse_scenario(data: dict[str, Any]) -> Scenario:
         direction = str(c.get("direction", "both"))
         if direction not in LINK_CUT_DIRECTIONS:
             raise ValueError(f"{name}: link_cut direction must be one of {LINK_CUT_DIRECTIONS}")
-        link_cut = LinkCut(after, delay_s, duration_s, direction)
+        cycles = int(c.get("cycles", 1))
+        gap_s = float(c["gap_s"]) if c.get("gap_s") is not None else None
+        if cycles < 1:
+            raise ValueError(f"{name}: link_cut cycles must be >= 1")
+        if cycles > 1 and (duration_s is None or gap_s is None or gap_s <= 0):
+            raise ValueError(f"{name}: a repeating link_cut needs a duration_s and a gap_s > 0")
+        link_cut = LinkCut(after, delay_s, duration_s, direction, cycles, gap_s)
     if (scenario_class == "link_loss") != (link_cut is not None):
         raise ValueError(f"{name}: only the link_loss class has a link_cut, and it needs one")
+    if scenario_class == "operator_unresponsive" and (fault is None or link_cut is not None):
+        raise ValueError(f"{name}: operator_unresponsive needs a GNSS fault and no link cut")
     if (scenario_class == "nominal") != (fault is None and link_cut is None):
         raise ValueError(f"{name}: only the nominal class has no fault and no link cut")
 

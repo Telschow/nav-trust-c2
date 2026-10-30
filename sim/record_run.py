@@ -120,6 +120,8 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
                 "delay_s": args.link_cut_delay,
                 "duration_s": args.link_cut_duration,
                 "direction": args.link_cut_direction,
+                "cycles": args.link_cut_cycles,
+                "gap_s": args.link_cut_gap,
             }
             if args.link_cut_after
             else None
@@ -164,6 +166,8 @@ async def run(args: argparse.Namespace) -> Path:
             args.link_cut_delay,
             args.link_cut_duration,
             args.link_cut_direction,
+            args.link_cut_cycles,
+            args.link_cut_gap,
         )
         if args.link_cut_after
         else None
@@ -313,6 +317,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="run the onboard monitor with the ADR 0004 contingency (LAND on a position "
         "inconsistency, link down longer than this many seconds; below COM_DL_LOSS_T)",
     )
+    p.add_argument("--link-cut-cycles", type=int, default=1, help="cut and restore this many times")
+    p.add_argument("--link-cut-gap", type=float, help="seconds between a restore and the next cut")
     p.add_argument("--link-cut-delay", type=float, default=0.0, help="seconds after the event")
     p.add_argument(
         "--link-cut-direction",

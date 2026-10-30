@@ -19,6 +19,10 @@ def base() -> dict[str, object]:
     }
 
 
+def _BASE_LINK_LOSS() -> dict[str, object]:  # noqa: N802 - a fixture-like helper
+    return {**base(), "class": "link_loss", "link_cut": {"after": "mission_start"}}
+
+
 def test_all_committed_scenarios_load_and_cover_every_class() -> None:
     scenarios = load_all(SCENARIOS)
     assert {s.scenario_class for s in scenarios} == {
@@ -235,9 +239,15 @@ def test_a_scenario_without_a_link_cut_passes_no_link_flags() -> None:
     assert not any(a.startswith("--link-cut") for a in argv)
 
 
-def test_the_two_lost_link_baselines_load_and_stay_out_of_the_main_eval_set() -> None:
+def test_the_lost_link_family_loads_and_stays_out_of_the_main_eval_set() -> None:
     lost_link = {s.name: s for s in load_all(SCENARIOS / "lost_link")}
-    assert set(lost_link) == {"link_only", "link_and_frozen"}
+    assert set(lost_link) == {
+        "link_only",
+        "link_and_frozen",
+        "link_and_gnss_loss",
+        "link_intermittent",
+        "operator_unresponsive",
+    }
     assert {s.name for s in load_all(SCENARIOS)}.isdisjoint(lost_link)  # `make eval` ignores them
 
     only = lost_link["link_only"]
@@ -249,7 +259,7 @@ def test_the_two_lost_link_baselines_load_and_stay_out_of_the_main_eval_set() ->
     assert frozen.fault is not None and frozen.fault.mode == "stuck" and frozen.fault.latch
     assert frozen.link_cut is not None and frozen.link_cut.after == "fault_start"
     assert frozen.link_cut.delay_s > 0  # the cut comes after the freeze, not with it
-    assert all(s.link_cut and s.link_cut.duration_s is None for s in lost_link.values())
+    assert only.link_cut.duration_s is None and frozen.link_cut.duration_s is None
 
 
 def test_a_link_cut_defaults_to_both_directions_and_can_be_uplink_only() -> None:
@@ -267,3 +277,73 @@ def test_an_unknown_link_cut_direction_is_refused() -> None:
     bad = {"after": "mission_start", "delay_s": 1, "direction": "sideways"}
     with pytest.raises(ValueError, match="link_cut"):
         parse_scenario({**link_loss(), "link_cut": bad})
+
+
+def test_the_family_covers_each_row_of_the_contingency_matrix() -> None:
+    family = {s.name: s for s in load_all(SCENARIOS / "lost_link")}
+
+    gnss = family["link_and_gnss_loss"]  # the link is cut inside the interference zone
+    assert gnss.fault is not None and gnss.fault.mode == "off" and not gnss.fault.latch
+    assert gnss.link_cut is not None and gnss.link_cut.after == "fault_start"
+    assert gnss.link_cut.delay_s >= 0
+
+    flapping = family["link_intermittent"]  # drops and recovers repeatedly, GNSS healthy
+    assert flapping.fault is None and flapping.link_cut is not None
+    cut = flapping.link_cut
+    assert cut.duration_s is not None and cut.cycles >= 3 and cut.gap_s is not None
+    assert cut.duration_s < 10.0  # under COM_DL_LOSS_T: PX4's own failsafe never starts
+
+    silent = family["operator_unresponsive"]  # not a link fault: link up, nobody answers
+    assert silent.scenario_class == "operator_unresponsive" and silent.link_cut is None
+    assert silent.fault is not None and silent.fault.mode == "stuck" and silent.fault.latch
+
+
+def test_a_repeating_link_cut_is_read_and_passed_on_to_the_recorder() -> None:
+    data = {
+        **_BASE_LINK_LOSS(),
+        "link_cut": {
+            "after": "mission_start",
+            "delay_s": 40,
+            "duration_s": 6,
+            "cycles": 3,
+            "gap_s": 20,
+        },
+    }
+    s = parse_scenario(data)
+    assert s.link_cut is not None and (s.link_cut.cycles, s.link_cut.gap_s) == (3, 20.0)
+    argv = record_argv(s, 1, Path("out"))
+    assert argv[argv.index("--link-cut-cycles") + 1] == "3"
+    assert argv[argv.index("--link-cut-gap") + 1] == "20.0"
+
+
+@pytest.mark.parametrize(
+    "cut",
+    [
+        {"after": "mission_start", "cycles": 3, "gap_s": 20},  # a repeat needs a duration
+        {"after": "mission_start", "duration_s": 6, "cycles": 3},  # and a gap
+        {"after": "mission_start", "duration_s": 6, "cycles": 0},
+        {"after": "mission_start", "duration_s": 6, "cycles": 2, "gap_s": 0},
+    ],
+)
+def test_a_bad_repeating_link_cut_is_refused(cut: dict[str, object]) -> None:
+    with pytest.raises(ValueError, match="link_cut"):
+        parse_scenario({**_BASE_LINK_LOSS(), "link_cut": cut})
+
+
+def test_a_single_cut_has_one_cycle_and_passes_no_repeat_flags() -> None:
+    s = parse_scenario(
+        {**_BASE_LINK_LOSS(), "link_cut": {"after": "mission_start", "duration_s": 5}}
+    )
+    assert s.link_cut is not None and s.link_cut.cycles == 1
+    assert "--link-cut-cycles" not in record_argv(s, 1, Path("out"))
+
+
+def test_the_operator_unresponsive_class_needs_a_fault_and_no_link_cut() -> None:
+    base = {k: v for k, v in _BASE_LINK_LOSS().items() if k != "link_cut"}
+    base["class"] = "operator_unresponsive"
+    with pytest.raises(ValueError, match="operator_unresponsive"):
+        parse_scenario(base)  # no fault
+    fault = {"mode": "stuck", "zone": {"west": 0, "south": 0, "east": 10, "north": 10}}
+    with pytest.raises(ValueError, match="link_cut"):
+        parse_scenario({**base, "fault": fault, "link_cut": {"after": "mission_start"}})
+    assert parse_scenario({**base, "fault": fault}).scenario_class == "operator_unresponsive"

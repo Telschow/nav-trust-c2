@@ -43,6 +43,8 @@ def record_argv(s: Scenario, run: int, out_dir: Path) -> list[str]:
         if c.duration_s is not None:
             argv += ["--link-cut-duration", str(c.duration_s)]
         argv += ["--link-cut-direction", c.direction]
+        if c.cycles > 1:
+            argv += ["--link-cut-cycles", str(c.cycles), "--link-cut-gap", str(c.gap_s)]
     return argv
 
 

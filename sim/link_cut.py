@@ -35,14 +35,20 @@ def relay_ports(system_address: str) -> tuple[int, int, int]:
 
 
 class LinkCutSchedule:
-    """Fed the moments a scenario cares about; `poll` says when to cut and restore, once each."""
+    """Fed the moments a scenario cares about; `poll` says when to cut and restore.
+
+    A cut with no duration never returns. With a duration it is restored, and with `cycles` above
+    one the link is cut again `gap_s` after each restore, `cycles` times in all."""
 
     def __init__(self, cut: LinkCut) -> None:
+        if cut.cycles > 1 and (cut.duration_s is None or cut.gap_s is None):
+            raise ValueError("a link cut with cycles above 1 needs a duration_s and a gap_s")
         self._cut = cut
         self.direction = cut.direction
         self._anchor_s: float | None = None
-        self._cut_at_s: float | None = None
-        self._restored = False
+        self._cut_at_s: float | None = None  # when the cut now in force began
+        self._next_cut_s: float | None = None  # set after a restore, when more cycles remain
+        self._cuts = 0
 
     def mission_started(self, now_s: float) -> None:
         if self._cut.after == "mission_start":
@@ -61,16 +67,22 @@ class LinkCutSchedule:
         if self._anchor_s is None:
             return None
         if self._cut_at_s is None:
-            if now_s >= self._anchor_s + self._cut.delay_s:
+            if self._cuts >= self._cut.cycles:
+                return None
+            due_s = (
+                self._next_cut_s
+                if self._next_cut_s is not None
+                else self._anchor_s + self._cut.delay_s
+            )
+            if now_s >= due_s:
                 self._cut_at_s = now_s
+                self._cuts += 1
                 return "cut"
             return None
-        if (
-            self._cut.duration_s is not None
-            and not self._restored
-            and now_s >= self._cut_at_s + self._cut.duration_s
-        ):
-            self._restored = True
+        if self._cut.duration_s is not None and now_s >= self._cut_at_s + self._cut.duration_s:
+            self._cut_at_s = None
+            if self._cuts < self._cut.cycles and self._cut.gap_s is not None:
+                self._next_cut_s = now_s + self._cut.gap_s
             return "restore"
         return None
 
