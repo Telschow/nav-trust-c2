@@ -1,11 +1,13 @@
 IMAGE ?= nav-trust-c2-sim
 VEHICLES ?= 1
 
-.PHONY: scenario record-all eval help check lint typecheck test sim-build sim-up sim-down fly fleet backend console console-dev demo
+.PHONY: scenario record-all record-lost-link eval-lost-link eval help check lint typecheck test sim-build sim-up sim-down fly fleet backend console console-dev demo
 
 help:
 	@echo "scenario    record one scenario run in the running sim: make scenario NAME=stuck_position RUN=1"
-	@echo "record-all  record every run of every scenario (about 1.5 h, restarts the sim each run)"
+	@echo "record-all  record every run of every scenario, then the link_loss family (about 3 h, restarts the sim each run)"
+	@echo "record-lost-link  only the link_loss family, scenarios/lost_link (about 1.5 h)"
+	@echo "eval-lost-link    regenerate eval/lost_link/results.md from its recordings"
 	@echo "eval        regenerate eval/results.json and eval/results.md from the recordings"
 	@echo "check       ruff + mypy + pytest (no simulator needed)"
 	@echo "sim-build   build the PX4 SITL + Gazebo image (long, first time only)"
@@ -75,6 +77,15 @@ scenario:
 
 record-all:
 	sim/record_all.sh
+	$(MAKE) record-lost-link
+
+# The link_loss family (issue 75): link cuts, a link that flaps, an operator who never answers.
+record-lost-link:
+	SCENARIO_DIR=scenarios/lost_link OUT_DIR=eval/lost_link/recordings sim/record_all.sh
+
+# Regenerate the link_loss table from its recordings; CI fails if the committed one differs.
+eval-lost-link:
+	python -m eval.link_loss eval/lost_link/recordings --write eval/lost_link/results.md
 
 eval:
 	python -m eval.evaluate

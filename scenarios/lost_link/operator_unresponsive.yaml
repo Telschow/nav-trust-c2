@@ -1,0 +1,17 @@
+name: operator_unresponsive
+class: operator_unresponsive
+description: >
+  The frozen-position fault of stuck_position, latched, with the link up and no operator action
+  at all. Not a link fault: it stays in this family because it measures ADR 0004 option 3 (wait
+  for the operator), and the contingency matrix has a row for it. Nothing is sent to the vehicle
+  after the freeze. Not part of the main eval set.
+expected_px4: >
+  Proposal, to be checked by the recording: no PX4 failsafe fires for a frozen fix (ADR 0003), so
+  the vehicle keeps flying away from where it believes it is until the run is cut off.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+fault:
+  mode: stuck
+  zone: {west: 200, south: -50, east: 280, north: 150}
+  latch: true
+runs: 2
+max_duration_s: 220

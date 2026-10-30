@@ -1,0 +1,17 @@
+name: link_intermittent
+class: link_loss
+description: >
+  The survey flown with healthy GNSS while the MAVLink link drops and recovers: three cuts of 6 s,
+  20 s apart, starting 40 s after the mission starts. Each drop is shorter than PX4's
+  data-link-loss time, so PX4's own failsafe should never start. Only what the scripts send to
+  PX4 is dropped. The contingency matrix row "link flaps" (issue 75); also the recording the
+  reconnection work (issue 77) checks for a duplicate or stale command. Not part of the main eval
+  set.
+expected_px4: >
+  Proposal, to be checked by the recording: no failsafe fires and the mission completes, because
+  each 6 s drop is below COM_DL_LOSS_T (10 s). The vehicle should not land, hold or return.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+# duration_s, cycles and gap_s are proposals. Uplink only, so the recording still hears the vehicle.
+link_cut: {after: mission_start, delay_s: 40, duration_s: 6, cycles: 3, gap_s: 20, direction: uplink}
+runs: 2
+max_duration_s: 300

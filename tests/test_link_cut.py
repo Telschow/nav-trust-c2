@@ -194,3 +194,28 @@ def test_an_uplink_only_cut_drops_commands_but_the_recorder_still_hears_the_vehi
 def test_the_relay_ports_follow_from_the_script_address() -> None:
     # instance 1: PX4 sends to 14541 from 14581; scripts listen 100 higher
     assert relay_ports("udpin://0.0.0.0:14541") == (14541, 14581, 14641)
+
+
+def test_a_repeating_cut_drops_and_restores_the_link_the_given_number_of_times() -> None:
+    schedule = LinkCutSchedule(LinkCut("mission_start", 40.0, 6.0, cycles=3, gap_s=20.0))
+    schedule.mission_started(0.0)
+    seen = [(t, a) for t in range(0, 200) if (a := schedule.poll(float(t)))]
+    # cut at 40, restore at 46, then 20 s up, cut at 66, restore at 72, cut at 92, restore at 98
+    assert seen == [
+        (40, "cut"), (46, "restore"), (66, "cut"), (72, "restore"), (92, "cut"), (98, "restore"),
+    ]  # fmt: skip
+
+
+def test_the_next_cut_is_timed_from_the_restore_not_from_the_first_cut() -> None:
+    schedule = LinkCutSchedule(LinkCut("mission_start", 0.0, 6.0, cycles=2, gap_s=20.0))
+    schedule.mission_started(0.0)
+    assert schedule.poll(0.0) == "cut"
+    assert schedule.poll(6.5) == "restore"  # a late poll: the gap starts here
+    assert schedule.poll(26.0) is None
+    assert schedule.poll(26.5) == "cut"
+
+
+def test_a_single_cycle_behaves_as_before() -> None:
+    schedule = LinkCutSchedule(LinkCut("mission_start", 0.0, 5.0))
+    schedule.mission_started(0.0)
+    assert [schedule.poll(t) for t in (0.0, 5.0, 30.0, 100.0)] == ["cut", "restore", None, None]

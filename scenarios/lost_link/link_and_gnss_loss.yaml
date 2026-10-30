@@ -1,0 +1,19 @@
+name: link_and_gnss_loss
+class: link_loss
+description: >
+  GNSS is switched off inside a 300 m wide zone, as in long_outage, and the MAVLink link is cut
+  5 s after the vehicle enters the zone, so the vehicle is blind and out of contact together.
+  Only what the scripts send to PX4 is dropped, so the recording still hears the vehicle. The
+  contingency matrix row "link lost, GNSS lost" (issue 75). Not part of the main eval set.
+expected_px4: >
+  Proposal, to be checked by the recording: PX4's blind-land failsafe lands the vehicle in or near
+  the zone as in long_outage (ADR 0002), and the data-link-loss failsafe adds nothing the blind
+  landing has not already done. The recording shows which mode acted first.
+survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
+fault:
+  mode: "off"
+  zone: {west: 150, south: -50, east: 450, north: 150}
+# delay_s is a proposal. Uplink only, so the recording still hears the vehicle.
+link_cut: {after: fault_start, delay_s: 5, direction: uplink}
+runs: 2
+max_duration_s: 300
