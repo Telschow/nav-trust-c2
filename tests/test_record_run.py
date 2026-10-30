@@ -64,3 +64,10 @@ def test_the_onboard_monitor_policy_is_in_the_header_as_the_experiments_own() ->
         {"reason": "INCONSISTENT_INNOVATION", "link": "NO_LINK", "action": "LAND"}
     ]
     assert "not an operator approval" in policy["note"]
+
+
+def test_the_flight_mode_log_is_opt_in_and_named_in_the_header() -> None:
+    off = parse_args(["--scenario", "n"])
+    assert off.log_flight_mode is False and build_header(off)["flight_mode_log"] is False
+    on = parse_args(["--scenario", "n", "--log-flight-mode"])
+    assert on.log_flight_mode is True and build_header(on)["flight_mode_log"] is True
