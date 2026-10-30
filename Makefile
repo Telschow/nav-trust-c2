@@ -5,10 +5,10 @@ VEHICLES ?= 1
 
 help:
 	@echo "scenario    record one scenario run in the running sim: make scenario NAME=stuck_position RUN=1"
-	@echo "record-all  record every run of every scenario, then the link_loss family (about 3 h, restarts the sim each run)"
-	@echo "record-lost-link  only the link_loss family, scenarios/lost_link (about 1.5 h)"
+	@echo "record-all  record every run of every scenario, then the link_loss family (6 to 7 min per run, restarts the sim each run)"
+	@echo "record-lost-link  only the link_loss family, scenarios/lost_link"
 	@echo "eval-lost-link    regenerate eval/lost_link/results.md from its recordings"
-	@echo "eval        regenerate eval/results.json and eval/results.md from the recordings"
+	@echo "eval        regenerate eval/results.json and eval/results.md, and the link_loss table, from the recordings"
 	@echo "check       ruff + mypy + pytest (no simulator needed)"
 	@echo "sim-build   build the PX4 SITL + Gazebo image (long, first time only)"
 	@echo "sim-up      start headless SITL, VEHICLES=n"
@@ -89,6 +89,7 @@ eval-lost-link:
 
 eval:
 	python -m eval.evaluate
+	$(MAKE) eval-lost-link
 
 record-heldout:
 	SCENARIO_DIR=scenarios/heldout OUT_DIR=eval/heldout/recordings sim/record_all.sh

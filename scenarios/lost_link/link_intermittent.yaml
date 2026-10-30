@@ -9,7 +9,7 @@ description: >
   set.
 expected_px4: >
   Proposal, to be checked by the recording: no failsafe fires and the mission completes, because
-  each 6 s drop is below COM_DL_LOSS_T (10 s). The vehicle should not land, hold or return.
+  each 6 s drop is below COM_DL_LOSS_T (10 s, see docs/validation/px4-lost-link-parameters.md). The vehicle should not land, hold or return.
 survey: {width_m: 600, height_m: 100, spacing_m: 100, altitude_m: 30, speed_m_s: 10}
 # duration_s, cycles and gap_s are proposals. Uplink only, so the recording still hears the vehicle.
 link_cut: {after: mission_start, delay_s: 40, duration_s: 6, cycles: 3, gap_s: 20, direction: uplink}

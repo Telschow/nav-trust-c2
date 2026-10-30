@@ -219,3 +219,10 @@ def test_a_single_cycle_behaves_as_before() -> None:
     schedule = LinkCutSchedule(LinkCut("mission_start", 0.0, 5.0))
     schedule.mission_started(0.0)
     assert [schedule.poll(t) for t in (0.0, 5.0, 30.0, 100.0)] == ["cut", "restore", None, None]
+
+
+def test_a_repeating_cut_with_no_duration_is_refused_by_the_schedule_too() -> None:
+    import pytest
+
+    with pytest.raises(ValueError, match="cycles"):
+        LinkCutSchedule(LinkCut("mission_start", 0.0, None, cycles=2, gap_s=10.0))

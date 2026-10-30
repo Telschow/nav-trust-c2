@@ -41,6 +41,8 @@ class LinkCutSchedule:
     one the link is cut again `gap_s` after each restore, `cycles` times in all."""
 
     def __init__(self, cut: LinkCut) -> None:
+        if cut.cycles > 1 and (cut.duration_s is None or cut.gap_s is None):
+            raise ValueError("a link cut with cycles above 1 needs a duration_s and a gap_s")
         self._cut = cut
         self.direction = cut.direction
         self._anchor_s: float | None = None

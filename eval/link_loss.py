@@ -18,8 +18,10 @@ thresholds are proposals.
 - survey area: east 0 to the survey width, north 0 to its height from the first truth sample,
   plus `SURVEY_MARGIN_M`. The figure is how far outside that box the vehicle got, 0 if it stayed in.
 - authority: for each flight mode PX4 entered after the fault (other than MISSION and UNKNOWN),
-  the authority it ran under, read from the recording's own events: a scripted `operator_action`
-  or an `onboard_action` (a pre-authorised policy) in the 5 s before it, else a PX4 failsafe.
+  the authority it ran under. A recording carries no audit log (that belongs to the backend), so
+  this is read from the recording's own events: a scripted `operator_action` or an
+  `onboard_action` (a pre-authorised policy) in the 5 s before it; anything else is attributed to
+  a PX4 failsafe by elimination, so a command the recorder did not log would read as a failsafe.
 
     python -m eval.link_loss eval/lost_link/recordings
     python -m eval.link_loss eval/lost_link/recordings --write eval/lost_link/results.md
@@ -45,6 +47,7 @@ SURVEY_MARGIN_M = 50.0  # proposal
 AIRBORNE_M = 3.0
 ATTRIBUTION_WINDOW_S = 5.0  # a mode change this soon after a command is that command's
 IGNORED_MODES = ("MISSION", "UNKNOWN")
+_AUTHORITY = {"operator_action": "operator approval", "onboard_action": "pre-authorised policy"}
 
 
 @dataclass(frozen=True)
@@ -107,9 +110,6 @@ def authorities(records: list[dict[str, Any]], fault_s: float) -> list[str]:
         if entry not in out:
             out.append(entry)
     return out
-
-
-_AUTHORITY = {"operator_action": "operator approval", "onboard_action": "pre-authorised policy"}
 
 
 def _first_fault_s(recording: Recording) -> float:
