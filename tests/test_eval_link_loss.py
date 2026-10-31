@@ -99,3 +99,20 @@ def test_a_frozen_position_with_the_link_cut_does_not_end_in_a_controlled_stop()
 def test_the_committed_table_matches_the_recordings() -> None:
     """CI fails if the committed table differs from what the recordings give."""
     assert TABLE.read_text(encoding="utf-8") == table(RECORDINGS)
+
+
+def test_a_recording_with_no_ground_truth_is_named_in_the_error(tmp_path: Path) -> None:
+    import json
+
+    import pytest
+
+    header = {
+        "t_s": 0.0,
+        "event": "header",
+        "schema": 1,
+        "survey": {"width_m": 600, "height_m": 100},
+    }
+    path = tmp_path / "link_x-1.jsonl"
+    path.write_text(json.dumps(header) + "\n", encoding="utf-8")
+    with pytest.raises(ValueError, match=r"link_x-1.*no ground truth"):
+        table(tmp_path)
