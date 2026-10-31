@@ -45,6 +45,26 @@ def test_a_run_made_without_ground_truth_needs_none(tmp_path: Path) -> None:
     assert is_complete(write(tmp_path, {**HEADER, "ground_truth": False}, stop))
 
 
+@pytest.mark.parametrize(
+    ("field", "value", "event"),
+    [
+        ("zone", {"west": 0, "east": 1, "south": 0, "north": 1}, "gnss_enter"),
+        ("operator_action", {"action": "land", "delay_s": 5.0}, "operator_action"),
+        ("link_cut", {"delay_s": 40.0}, "link_cut"),
+    ],
+)
+def test_a_scheduled_fault_that_never_happened_is_not_complete(
+    tmp_path: Path, field: str, value: dict[str, Any], event: str
+) -> None:
+    """A slow simulator can end the run before the vehicle reaches the zone."""
+    stop = {"t_s": 9.0, "event": "recording_stopped", "reason": "max_duration"}
+    header = {**HEADER, field: value}
+    path = write(tmp_path, header, TRUTH, stop)
+    assert not is_complete(path)
+    assert event in str(incomplete_reason(path))
+    assert is_complete(write(tmp_path, header, TRUTH, {"t_s": 5.0, "event": event}, stop))
+
+
 @pytest.mark.parametrize("content", ["", "not json\n", '{"event": "position"}\n'])
 def test_an_empty_or_headerless_file_is_not_complete(tmp_path: Path, content: str) -> None:
     path = tmp_path / "bad.jsonl"
