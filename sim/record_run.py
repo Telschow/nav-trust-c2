@@ -144,20 +144,34 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+class GroundTruthMissing(RuntimeError):
+    """The run asked for Gazebo's true position and recorded none."""
+
+
 class _EventLog(JsonlLog):
-    """A log that tells the link-cut schedule when the mission starts and the fault begins."""
+    """A log that tells the link-cut schedule when the mission starts and the fault begins, and
+    counts what it wrote."""
 
     def __init__(self, path: Path, schedule: LinkCutSchedule | None) -> None:
         super().__init__(path)
         self._schedule = schedule
+        self.counts: dict[str, int] = {}
 
     def write(self, event: str, **fields: Any) -> None:
         super().write(event, **fields)
+        self.counts[event] = self.counts.get(event, 0) + 1
         if self._schedule is not None:
             if event == "mission_started":
                 self._schedule.mission_started(time.monotonic())
             elif event == "gnss_enter":
                 self._schedule.fault_started(time.monotonic())
+
+
+def ensure_ground_truth(log: _EventLog, requested: bool) -> None:
+    """Fail a run that was meant to carry ground truth and has none: the Gazebo stream can come up
+    empty, and a recording without it is useless for evaluation but looks like a success."""
+    if requested and log.counts.get("truth", 0) == 0:
+        raise GroundTruthMissing("ground truth was requested but no ground truth was recorded")
 
 
 async def run(args: argparse.Namespace) -> Path:
@@ -274,6 +288,7 @@ async def run(args: argparse.Namespace) -> Path:
                 await relay.stop()
         finally:
             log.close()
+    ensure_ground_truth(log, args.ground_truth)
     return log.path
 
 

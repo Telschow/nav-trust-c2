@@ -123,6 +123,8 @@ def _nearest(truth: list[dict[str, Any]], t_s: float) -> dict[str, Any]:
 
 def measure_run(recording: Recording) -> Row:
     truth = recording.of("truth")
+    if not truth:
+        raise ValueError("no ground truth in the recording")
     fault_s = _first_fault_s(recording)
     reports = replay_engine(recording, TrustEngine("uav1"))
     reference = _nearest(truth, last_trusted_time(reports, fault_s))
@@ -152,7 +154,10 @@ def table(directory: Path) -> str:
         "|---|---|---:|---:|---:|---:|---|",
     ]
     for path in sorted(directory.glob("*.jsonl")):
-        r = measure_run(load_recording(path))
+        try:
+            r = measure_run(load_recording(path))
+        except ValueError as err:
+            raise ValueError(f"{path.name}: {err}") from err
         speed = f"{r.touchdown_speed_m_s:.1f}" if r.touchdown_speed_m_s is not None else "none"
         stop = f"{r.stop_after_fault_s:.0f}" if r.stop_after_fault_s is not None else "none"
         outside = f"{r.outside_survey_m:.0f}" if r.outside_survey_m > 0 else "0"
