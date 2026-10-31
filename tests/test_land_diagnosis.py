@@ -4,7 +4,7 @@ from typing import Any
 
 import pytest
 
-from eval.land_diagnosis import RunState, measure, summarise
+from eval.land_diagnosis import RunState, measure, summarise, table
 from navtrust.recording import Recording
 
 
@@ -97,3 +97,14 @@ def test_the_per_run_table_lists_every_run_not_only_ranges(tmp_path: Any) -> Non
         (tmp_path / f"stuck-land-v12-d5-{i}.jsonl").write_text(lines, encoding="utf-8")
     out = table(tmp_path)
     assert "stuck-land-v12-d5-1" in out and "stuck-land-v12-d5-2" in out
+
+
+def test_the_results_note_shows_the_numbers_the_recordings_give() -> None:
+    """Metrics are measured, never typed: the committed note must carry the generated tables."""
+    from pathlib import Path
+
+    root = Path(__file__).resolve().parent.parent
+    note = (root / "docs" / "validation" / "land-diagnosis.md").read_text(encoding="utf-8")
+    generated = table(root / "tests" / "replay" / "data" / "experiments" / "land-diagnosis")
+    for block in generated.split("\n\n"):
+        assert block.strip() in note
