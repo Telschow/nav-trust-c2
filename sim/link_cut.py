@@ -26,12 +26,28 @@ from sim.scenario import LinkCut
 # cut, scripts listen 100 ports higher and the relay takes 14540 + instance.
 RELAY_PX4_LOCAL_OFFSET = 40
 RELAY_SCRIPT_OFFSET = 100
+# The onboard side (the monitor's own connection, never cut) listens 100 ports above the scripts.
+RELAY_ONBOARD_OFFSET = 200
 
 
 def relay_ports(system_address: str) -> tuple[int, int, int]:
     """(relay listens, PX4 listens, scripts listen) for an address like udpin://0.0.0.0:14541."""
     port = int(system_address.rsplit(":", 1)[1])
     return port, port + RELAY_PX4_LOCAL_OFFSET, port + RELAY_SCRIPT_OFFSET
+
+
+def onboard_port(system_address: str) -> int:
+    """Where the onboard monitor listens for the same address (see `UdpRelay`)."""
+    return int(system_address.rsplit(":", 1)[1]) + RELAY_ONBOARD_OFFSET
+
+
+def is_heartbeat(data: bytes) -> bool:
+    """Whether a datagram starts with a MAVLink HEARTBEAT (message id 0), v1 or v2 framing."""
+    if data[:1] == b"\xfe" and len(data) >= 6:
+        return data[5] == 0
+    if data[:1] == b"\xfd" and len(data) >= 10:
+        return data[7:10] == b"\x00\x00\x00"
+    return False
 
 
 class LinkCutSchedule:
@@ -101,12 +117,24 @@ class UdpRelay:
     PX4's MAVLink instance for MAVSDK sends to `px4_listen_port` (14540 + instance) from
     `px4_remote_port` (14580 + instance). The relay binds the first; scripts listen on
     `script_port` instead and answer the address they see, which is the relay's own.
+
+    With `onboard_port` the relay also serves the onboard computer: it gets everything PX4 sends
+    and its datagrams reach PX4, whether or not the link is cut, because the onboard computer is
+    not on the C2 link. Its heartbeats are dropped so that PX4 does not take it for a ground
+    station, which would keep the data-link-loss failsafe from firing.
     """
 
     def __init__(
-        self, px4_listen_port: int, px4_remote_port: int, script_port: int, host: str = "127.0.0.1"
+        self,
+        px4_listen_port: int,
+        px4_remote_port: int,
+        script_port: int,
+        host: str = "127.0.0.1",
+        onboard_port: int | None = None,
     ) -> None:
         self._host = host
+        self._onboard = (host, onboard_port) if onboard_port is not None else None
+        self._onboard_side: asyncio.DatagramTransport | None = None
         self._px4_listen_port = px4_listen_port
         self._px4_remote = (host, px4_remote_port)
         self._script = (host, script_port)
@@ -124,9 +152,13 @@ class UdpRelay:
             lambda: _Side(self._from_script), local_addr=(self._host, 0)
         )
         self._px4_side, self._script_side = px4_side, script_side
+        if self._onboard is not None:
+            self._onboard_side, _ = await loop.create_datagram_endpoint(
+                lambda: _Side(self._from_onboard), local_addr=(self._host, 0)
+            )
 
     async def stop(self) -> None:
-        for side in (self._px4_side, self._script_side):
+        for side in (self._px4_side, self._script_side, self._onboard_side):
             if side is not None:
                 side.close()
 
@@ -138,7 +170,13 @@ class UdpRelay:
     def restore(self) -> None:
         self.is_cut = False
 
+    def _from_onboard(self, data: bytes) -> None:
+        if not is_heartbeat(data) and self._px4_side is not None:
+            self._px4_side.sendto(data, self._px4_remote)
+
     def _from_px4(self, data: bytes) -> None:
+        if self._onboard_side is not None and self._onboard is not None:
+            self._onboard_side.sendto(data, self._onboard)
         dropped = self.is_cut and self._direction == "both"
         if not dropped and self._script_side is not None:
             self._script_side.sendto(data, self._script)

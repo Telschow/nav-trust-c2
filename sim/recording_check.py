@@ -3,7 +3,8 @@
 A recording is complete if it has a header, ends the way a finished run does (the recorder's
 `recording_stopped`, or `landed` when the mission ran to its end), and has ground-truth samples if
 its header says ground truth was on. It also shows every fault or action the header scheduled:
-a run so slow that the vehicle never reached the zone ends properly but measured nothing. A file
+a run so slow that the vehicle never reached the zone ends properly but measured nothing.
+An onboard LAND that PX4 never entered (the command did not arrive) is no measurement either. A file
 cut short by a failed run or a killed script, or one whose Gazebo stream gave nothing, is not.
 
     python3 -m sim.recording_check FILE        # exit 0 if complete, 1 and a reason if not
@@ -16,6 +17,7 @@ import sys
 from pathlib import Path
 
 ENDINGS = ("recording_stopped", "landed")
+LAND_MODE_WITHIN_S = 10.0  # proposal: PX4 should show LAND mode this soon after the monitor's LAND
 # header field that schedules something -> the event the recorder writes when it happened
 SCHEDULED = (
     ("zone", "gnss_enter"),
@@ -41,6 +43,18 @@ def incomplete_reason(path: Path) -> str | None:
     for field, event in SCHEDULED:
         if records[0].get(field) and event not in seen:
             return f"the header schedules {field} but no {event} event was recorded"
+    for r in records:
+        is_land = r.get("event") == "onboard_action" and r.get("action") == "LAND"
+        if is_land and not any(
+            x.get("event") == "flight_mode"
+            and x.get("mode") == "LAND"
+            and 0 <= x["t_s"] - r["t_s"] <= LAND_MODE_WITHIN_S
+            for x in records
+        ):
+            return (
+                "the onboard monitor commanded LAND but PX4 did not enter LAND mode "
+                f"within {LAND_MODE_WITHIN_S:.0f} s"
+            )
     return None
 
 
