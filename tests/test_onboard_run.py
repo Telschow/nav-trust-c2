@@ -130,5 +130,7 @@ def test_the_monitor_lands_the_vehicle_itself_and_reports_only_once_the_link_is_
     asyncio.run(go())
     assert drone.landed == 1
     assert [e for e, _ in written] == ["onboard_action"]
+    assert "t_s" not in written[0][1]  # the recorder's own t_s must not be overwritten
+    assert "vehicle_clock_s" in written[0][1]
     [(up, actions)] = reported
     assert up and len(actions) == 1 and actions[0].action == "LAND"

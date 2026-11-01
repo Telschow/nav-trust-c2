@@ -96,7 +96,10 @@ async def run_monitor(
             monitor.trust(t, engine.report(t))
             action = monitor.poll(t)
             if action is not None:
-                write("onboard_action", **asdict(action))
+                # the action's t_s is the vehicle's clock; the recorder stamps its own t_s, and a
+                # field of that name would overwrite it (recordings need t_s non-decreasing)
+                fields = asdict(action)
+                write("onboard_action", vehicle_clock_s=fields.pop("t_s"), **fields)
                 await drone.action.land()
             await asyncio.sleep(interval_s)
 
