@@ -4,7 +4,14 @@ import asyncio
 import contextlib
 import socket
 
-from sim.link_cut import LinkCutSchedule, UdpRelay, drive_link_cut, relay_ports
+from sim.link_cut import (
+    LinkCutSchedule,
+    UdpRelay,
+    drive_link_cut,
+    is_heartbeat,
+    onboard_port,
+    relay_ports,
+)
 from sim.scenario import LinkCut
 
 
@@ -226,3 +233,45 @@ def test_a_repeating_cut_with_no_duration_is_refused_by_the_schedule_too() -> No
 
     with pytest.raises(ValueError, match="cycles"):
         LinkCutSchedule(LinkCut("mission_start", 0.0, None, cycles=2, gap_s=10.0))
+
+
+def test_the_onboard_side_is_never_cut_but_its_heartbeats_do_not_reach_px4() -> None:
+    heartbeat = b"\xfd\x09\x00\x00\x00\xf5\xbe\x00\x00\x00" + bytes(9)
+    command = b"\xfd\x20\x00\x00\x01\xf5\xbe\x4c\x00\x00" + bytes(32)
+
+    async def scenario() -> list[object]:
+        px4_listen, px4_remote = free_port(), free_port()
+        script_port, onboard = free_port(), free_port()
+        px4 = await endpoint(px4_remote)
+        script = await endpoint(script_port)
+        companion = await endpoint(onboard)
+        relay = UdpRelay(px4_listen, px4_remote, script_port, onboard_port=onboard)
+        await relay.start()
+        seen: list[object] = []
+        try:
+            relay.cut("both")
+            px4.send(b"telemetry", (HOST, px4_listen))
+            seen.append(await received(script, 0.3))  # the C2 side hears nothing
+            heard = await received(companion)  # the onboard side still hears the vehicle
+            seen.append(heard and heard[0])
+            assert heard is not None
+            companion.send(heartbeat, heard[1])
+            seen.append(await received(px4, 0.3))  # a ground-station heartbeat would defeat the cut
+            companion.send(command, heard[1])
+            got = await received(px4)
+            seen.append(got and got[0])  # its commands get through the cut
+        finally:
+            await relay.stop()
+            for end in (px4, script, companion):
+                end.close()
+        return seen
+
+    assert asyncio.run(scenario()) == [None, b"telemetry", None, command]
+
+
+def test_heartbeats_are_recognised_in_both_mavlink_framings() -> None:
+    assert is_heartbeat(b"\xfd\x09\x00\x00\x00\x01\x01\x00\x00\x00")
+    assert is_heartbeat(b"\xfe\x09\x00\x01\x01\x00")
+    assert not is_heartbeat(b"\xfd\x09\x00\x00\x00\x01\x01\x4c\x00\x00")
+    assert not is_heartbeat(b"telemetry")
+    assert onboard_port("udpin://0.0.0.0:14541") == 14741

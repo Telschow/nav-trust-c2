@@ -28,7 +28,7 @@ from sim.fly_survey import DEFAULT_ADDRESS, JsonlLog, VehicleDisarmed, fly
 from sim.gnss_injector import MODES, ensure_enabled, inject_loop, log_gps_info
 from sim.ground_truth import gz_available, log_ground_truth
 from sim.interference import rectangle
-from sim.link_cut import LinkCutSchedule, UdpRelay, drive_link_cut, relay_ports
+from sim.link_cut import LinkCutSchedule, UdpRelay, drive_link_cut, onboard_port, relay_ports
 from sim.onboard_monitor import OnboardMonitor
 from sim.onboard_policy import load_policy
 from sim.onboard_run import experiment_approval, run_monitor
@@ -190,6 +190,12 @@ async def run(args: argparse.Namespace) -> Path:
     schedule = LinkCutSchedule(cut) if cut else None
     log = _EventLog(Path(args.out), schedule)
     drone = System(port=args.grpc_port)
+    # the onboard monitor has its own connection to PX4 that the link cut does not touch
+    onboard_drone = (
+        System(port=args.grpc_port + 1)
+        if args.onboard_wait is not None and schedule is not None
+        else drone
+    )
     relay: UdpRelay | None = None
     side_tasks: list[asyncio.Task[None]] = []
     address = args.system_address
@@ -197,8 +203,17 @@ async def run(args: argparse.Namespace) -> Path:
         log.write("header", **build_header(args))
         if schedule is not None:
             listen_port, px4_port, script_port = relay_ports(address)
-            relay = UdpRelay(listen_port, px4_port, script_port)
+            relay = UdpRelay(
+                listen_port,
+                px4_port,
+                script_port,
+                onboard_port=onboard_port(address) if onboard_drone is not drone else None,
+            )
             await relay.start()
+            if onboard_drone is not drone:
+                await onboard_drone.connect(
+                    system_address=f"udpin://0.0.0.0:{onboard_port(address)}"
+                )
             address = f"udpin://0.0.0.0:{script_port}"
             side_tasks.append(asyncio.create_task(drive_link_cut(relay, schedule, log.write)))
         await drone.connect(system_address=address)
@@ -226,7 +241,10 @@ async def run(args: argparse.Namespace) -> Path:
                 tasks.append(
                     asyncio.create_task(
                         run_monitor(
-                            drone, monitor, lambda: relay is None or not relay.is_cut, log.write
+                            onboard_drone,
+                            monitor,
+                            lambda: relay is None or not relay.is_cut,
+                            log.write,
                         )
                     )
                 )

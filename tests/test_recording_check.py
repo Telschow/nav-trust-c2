@@ -82,3 +82,24 @@ def test_every_committed_recording_that_ends_is_complete() -> None:
     for directory in ("eval/recordings", "eval/lost_link/recordings", "eval/heldout/recordings"):
         for path in sorted((root / directory).glob("*.jsonl")):
             assert is_complete(path), f"{path.name}: {incomplete_reason(path)}"
+
+
+def _onboard_run(tmp_path: Path, *modes: tuple[float, str]) -> Path:
+    action = {"t_s": 60.0, "event": "onboard_action", "action": "LAND"}
+    stop = {"t_s": 300.0, "event": "recording_stopped"}
+    flight = [{"t_s": t, "event": "flight_mode", "mode": m} for t, m in modes]
+    return write(tmp_path, HEADER, TRUTH, action, *flight, stop)
+
+
+def test_an_onboard_land_that_px4_never_entered_is_not_complete(tmp_path: Path) -> None:
+    # the command was dropped; PX4's own data-link-loss failsafe acted instead
+    path = _onboard_run(tmp_path, (67.0, "HOLD"), (72.0, "RETURN_TO_LAUNCH"))
+    assert incomplete_reason(path) is not None and "LAND mode" in str(incomplete_reason(path))
+
+
+def test_an_onboard_land_that_px4_entered_soon_after_is_complete(tmp_path: Path) -> None:
+    assert is_complete(_onboard_run(tmp_path, (60.6, "LAND")))
+
+
+def test_a_land_mode_long_after_the_onboard_land_does_not_count(tmp_path: Path) -> None:
+    assert not is_complete(_onboard_run(tmp_path, (90.0, "LAND")))
