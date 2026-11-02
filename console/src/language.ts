@@ -1,4 +1,4 @@
-import type { Calibration, Reason, Recommendation, TrustState } from "./types";
+import type { Calibration, Reason, Recommendation, TrustState, CommandOutcome } from "./types";
 
 export const STATE_LABEL: Record<TrustState, string> = {
   GREEN: "Trusted",
@@ -84,6 +84,20 @@ export function titleOf(rec: Recommendation): string {
   if (command && sectors) return `${command} and hand over ${sectors}`;
   if (command) return command;
   return `Hand over ${sectors} from ${v}`;
+}
+
+/** How an approved command ended, in words. */
+export function commandEndingText(c: CommandOutcome): string {
+  switch (c.kind) {
+    case "command_executed":
+      return `Executed: ${(c.actions ?? []).join("; ") || "nothing to send"}`;
+    case "command_not_acknowledged":
+      return `Not acknowledged: ${c.action ?? "the command"} had no answer${c.timeout_s ? ` in ${c.timeout_s} s` : ""}`;
+    case "command_failed":
+      return `Failed: ${c.error ?? "unknown error"}`;
+    default:
+      return `Not executed: ${c.reason ?? "unknown reason"}`;
+  }
 }
 
 export const ERROR_TEXT: Record<number, string> = {

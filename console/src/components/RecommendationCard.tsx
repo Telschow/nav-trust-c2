@@ -1,9 +1,9 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { STATE_LABEL, actionsOf, contextNote, formatDuration, noLinkWarning, ordinal, reasonText, titleOf, urgencyNote } from "../language";
+import { STATE_LABEL, actionsOf, commandEndingText, contextNote, formatDuration, noLinkWarning, ordinal, reasonText, titleOf, urgencyNote } from "../language";
 import type { RaisedAgain } from "../store";
 import { TONE, vehicleColor } from "../tone";
-import type { Decision, NavTrust, Recommendation } from "../types";
+import type { CommandOutcome, Decision, NavTrust, Recommendation } from "../types";
 
 interface OpenProps {
   rec: Recommendation;
@@ -164,11 +164,13 @@ export function ExpiredNotice({
   );
 }
 
-export function DecidedRow({ rec, decision }: { rec: Recommendation; decision: Decision }) {
+export function DecidedRow({ rec, decision, command }: { rec: Recommendation; decision: Decision; command?: CommandOutcome }) {
   const approved = decision.outcome === "APPROVED";
   const expired = decision.outcome === "EXPIRED";
   const superseded = decision.outcome === "SUPERSEDED";
-  const failed = approved && decision.execution && !decision.execution.executed;
+  // the backend's own word on how the command ended wins; the approving console also has the
+  // HTTP answer, a second console only has the event
+  const failed = approved && (command ? command.kind !== "command_executed" : decision.execution && !decision.execution.executed);
   return (
     <li className="border-b border-line-soft py-2.5 last:border-b-0">
       <div className="flex items-baseline justify-between gap-3">
@@ -185,11 +187,13 @@ export function DecidedRow({ rec, decision }: { rec: Recommendation; decision: D
           {!expired && !superseded && ` by ${decision.operator}`}
         </span>
       </div>
-      {approved && decision.execution && (
+      {approved && (command || decision.execution) && (
         <p className={clsx("mt-1 text-xs", failed ? "text-bad" : "text-muted")}>
-          {failed
-            ? `Not executed: ${decision.execution.reason ?? "unknown reason"}`
-            : `Executed: ${decision.execution.actions.join("; ") || "nothing to send"}`}
+          {command
+            ? commandEndingText(command)
+            : decision.execution && !decision.execution.executed
+              ? `Not executed: ${decision.execution.reason ?? "unknown reason"}`
+              : `Executed: ${decision.execution?.actions.join("; ") || "nothing to send"}`}
         </p>
       )}
     </li>

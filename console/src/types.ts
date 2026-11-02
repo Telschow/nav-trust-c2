@@ -98,6 +98,18 @@ export interface OutageSummary {
   superseded: string[];
 }
 
+/** A command row from the audit log, as the backend publishes it (ICD: Command outcomes). */
+export interface CommandOutcome {
+  kind: string;
+  vehicle_id: string | null;
+  recommendation_id: string;
+  action?: string;
+  actions?: string[];
+  reason?: string;
+  error?: string;
+  timeout_s?: number;
+}
+
 /** Messages from the backend WebSocket. `server_s` is the backend clock. */
 export type ServerEvent =
   | { type: "state"; server_s: number; data: StateSnapshot }
@@ -105,6 +117,7 @@ export type ServerEvent =
   | { type: "position"; server_s: number; data: Position }
   | { type: "recommendation"; server_s: number; data: Recommendation }
   | { type: "decision"; server_s: number; data: Decision }
+  | { type: "command"; server_s: number; data: CommandOutcome }
   | { type: "link"; server_s: number; data: LinkStatus }
   | { type: "outage_summary"; server_s: number; data: OutageSummary }
   | { type: "origin"; server_s: number; data: Origin }
@@ -119,4 +132,6 @@ export interface StateSnapshot {
   /** absent from an older backend: treat as "no link problem known" */
   links?: Record<string, LinkStatus>;
   open_recommendations: Recommendation[];
+  /** how each approved command ended; absent from an older backend */
+  command_outcomes?: Record<string, CommandOutcome>;
 }

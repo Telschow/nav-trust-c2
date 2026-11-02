@@ -1,6 +1,7 @@
-import { actionsOf, formatDuration, reasonText, titleOf, urgencyRank } from "./language";
+import { actionsOf, commandEndingText, formatDuration, reasonText, titleOf, urgencyRank } from "./language";
 import type {
   Calibration,
+  CommandOutcome,
   Decision,
   Fleet,
   LinkState,
@@ -16,6 +17,7 @@ import type {
 const TRAIL_POINTS = 150;
 const HISTORY_POINTS = 240;
 const LOG_ENTRIES = 60;
+const COMMAND_ENDINGS = ["command_executed", "command_not_acknowledged", "command_failed", "command_blocked"];
 
 export interface HistoryPoint {
   server_s: number;
@@ -53,6 +55,8 @@ export interface ConsoleState {
   stateSince: Record<string, number>; // server_s when the state last changed
   recommendations: Record<string, Recommendation>;
   decisions: Record<string, Decision>;
+  /** how each approved command ended, from the backend, whichever console approved it */
+  commands: Record<string, CommandOutcome>;
   /** ids of recommendations the operator has marked "Seen" */
   seen: string[];
   fleet: Fleet;
@@ -77,6 +81,7 @@ export const initialState: ConsoleState = {
   stateSince: {},
   recommendations: {},
   decisions: {},
+  commands: {},
   seen: [],
   fleet: {},
   doneSectors: [],
@@ -202,6 +207,7 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
             stateSince,
             recommendations: recs,
             decisions: {},
+            commands: snap.command_outcomes ?? {},
             seen: [],
           };
         }
@@ -224,6 +230,18 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
           const rec = event.data;
           const next = { ...base, recommendations: { ...base.recommendations, [rec.id]: rec } };
           return withLog(next, event.server_s, "warn", `Recommendation for ${rec.vehicle_id}: ${actionsOf(rec).join("; ")}`);
+        }
+        case "command": {
+          const c = event.data;
+          if (!COMMAND_ENDINGS.includes(c.kind)) return base;
+          const rec = base.recommendations[c.recommendation_id];
+          const what = rec ? titleOf(rec) : c.recommendation_id;
+          return withLog(
+            { ...base, commands: { ...base.commands, [c.recommendation_id]: c } },
+            event.server_s,
+            c.kind === "command_executed" ? "good" : "bad",
+            `${what}: ${commandEndingText(c)}`,
+          );
         }
         case "decision": {
           const d = event.data;
@@ -251,6 +269,23 @@ export function reducer(s: ConsoleState, action: Action): ConsoleState {
       }
     }
   }
+}
+
+/** Why the confirm dialog for a recommendation can no longer approve it, or null while it can.
+ * The backend refuses the approval anyway; this tells the operator before a 1.5 s hold is wasted. */
+export function confirmBlocker(s: ConsoleState, recommendationId: string): string | null {
+  const decision = s.decisions[recommendationId];
+  if (decision) {
+    switch (decision.outcome) {
+      case "EXPIRED":
+        return "This recommendation expired before it was decided.";
+      case "SUPERSEDED":
+        return "The situation changed and this recommendation was closed.";
+      default:
+        return `${decision.operator} already ${decision.outcome === "APPROVED" ? "approved" : "denied"} this recommendation.`;
+    }
+  }
+  return s.recommendations[recommendationId] ? null : "This recommendation no longer exists.";
 }
 
 /** The backend has not heard from this vehicle: its trust state is only the last one known. */
