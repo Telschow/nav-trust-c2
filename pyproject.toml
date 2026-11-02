@@ -14,7 +14,7 @@ sim = ["mavsdk-grpc==4.0.5"]
 # C2 backend (issue 10). Optional so the trust engine and its tests stay dependency-free.
 c2 = ["fastapi>=0.115", "uvicorn[standard]>=0.30"]
 docs = ["mkdocs>=1.6,<2", "mkdocs-material==9.8.0", "mkdocs-include-markdown-plugin==7.3.0", "pymdown-extensions==12.3"]
-dev = ["pytest>=8", "ruff>=0.6", "mypy>=1.10", "pyyaml>=6", "types-PyYAML", "httpx>=0.27"]
+dev = ["pytest>=8", "pytest-timeout>=2.3", "ruff>=0.6", "mypy>=1.10", "pyyaml>=6", "types-PyYAML", "httpx>=0.27"]
 
 [tool.setuptools]
 packages = ["navtrust", "c2", "sim", "eval"]
@@ -46,3 +46,4 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-q"
+timeout = 60  # a proposal, seconds per test: a hanging test fails instead of stalling the run (issue 172)
