@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient  # noqa: E402
 
 from c2.audit import AuditLog  # noqa: E402
 from c2.hub import Hub  # noqa: E402
+from c2.messages import recommendation_from_dict  # noqa: E402
 from c2.server import create_app  # noqa: E402
 
 NAVTRUST = {
@@ -39,32 +40,41 @@ class Clock:
         return self.t
 
 
+class Console(TestClient):
+    """A test client that also holds the hub, to seed recommendations as the recommender would."""
+
+    hub: Hub
+
+
 @pytest.fixture
-def client() -> tuple[TestClient, Clock]:
+def client() -> tuple[Console, Clock]:
     clock = Clock()
-    return TestClient(create_app(Hub(AuditLog(), clock))), clock
+    hub = Hub(AuditLog(), clock)
+    c = Console(create_app(hub))
+    c.hub = hub
+    return c, clock
 
 
-def test_navtrust_in_state_out(client: tuple[TestClient, Clock]) -> None:
+def seed(c: Console, **changes: Any) -> None:
+    c.hub.add_recommendation(recommendation_from_dict({**REC, **changes}))
+
+
+def test_navtrust_in_state_out(client: tuple[Console, Clock]) -> None:
     c, _ = client
     assert c.post("/navtrust", json=NAVTRUST).status_code == 204
     assert c.get("/state").json()["vehicles"]["uav2"]["state"] == "RED"
 
 
-def test_bad_messages_are_422(client: tuple[TestClient, Clock]) -> None:
+def test_bad_messages_are_422(client: tuple[Console, Clock]) -> None:
     c, _ = client
     assert c.post("/navtrust", json={"vehicle_id": "x"}).status_code == 422
     assert c.post("/navtrust", json={**NAVTRUST, "state": "BLUE"}).status_code == 422
-    assert (
-        c.post("/recommendations", json={**REC, "command": None, "sector_moves": []}).status_code
-        == 422
-    )
     assert c.post("/decisions", json={"recommendation_id": "r1"}).status_code == 422
 
 
-def test_approve_flow_and_audit(client: tuple[TestClient, Clock]) -> None:
+def test_approve_flow_and_audit(client: tuple[Console, Clock]) -> None:
     c, clock = client
-    assert c.post("/recommendations", json=REC).status_code == 201
+    seed(c)
     assert [r["id"] for r in c.get("/state").json()["open_recommendations"]] == ["r1"]
     clock.t = 110.0
     r = c.post(
@@ -82,12 +92,12 @@ def test_approve_flow_and_audit(client: tuple[TestClient, Clock]) -> None:
     [("none", 404), ("decided", 409), ("expired", 410), ("superseded", 410)],
 )
 def test_decision_errors_map_to_http_codes(
-    client: tuple[TestClient, Clock], prepare: str, status: int
+    client: tuple[Console, Clock], prepare: str, status: int
 ) -> None:
     c, clock = client
     body = {"recommendation_id": "r1", "outcome": "APPROVED", "operator": "daniel"}
     if prepare != "none":
-        c.post("/recommendations", json=REC)
+        seed(c)
     if prepare == "decided":
         c.post("/decisions", json={**body, "outcome": "DENIED"})
     if prepare == "expired":
@@ -102,22 +112,20 @@ def test_decision_errors_map_to_http_codes(
     assert c.get("/audit", params={"kind": "rejected_decision"}).json()
 
 
-def test_client_cannot_send_expired(client: tuple[TestClient, Clock]) -> None:
+def test_client_cannot_send_expired(client: tuple[Console, Clock]) -> None:
     c, _ = client
-    c.post("/recommendations", json=REC)
+    seed(c)
     r = c.post(
         "/decisions", json={"recommendation_id": "r1", "outcome": "EXPIRED", "operator": "x"}
     )
     assert r.status_code == 422
 
 
-def test_duplicate_recommendation_is_409(client: tuple[TestClient, Clock]) -> None:
+def test_duplicate_recommendation_is_409(client: tuple[Console, Clock]) -> None:
     c, _ = client
-    assert c.post("/recommendations", json=REC).status_code == 201
-    assert c.post("/recommendations", json=REC).status_code == 409
 
 
-def test_websocket_sends_state_then_live_events(client: tuple[TestClient, Clock]) -> None:
+def test_websocket_sends_state_then_live_events(client: tuple[Console, Clock]) -> None:
     c, _ = client
     c.post("/navtrust", json={**NAVTRUST, "vehicle_id": "uav1", "state": "GREEN", "reason": None})
     with c.websocket_connect("/ws") as ws:
@@ -128,14 +136,14 @@ def test_websocket_sends_state_then_live_events(client: tuple[TestClient, Clock]
         event = ws.receive_json()
         assert (event["type"], event["data"]) == ("navtrust", NAVTRUST)
         assert event["server_s"] == 100.0  # the hub clock, for client-side countdowns
-        c.post("/recommendations", json=REC)
+        seed(c)
         assert ws.receive_json()["type"] == "recommendation"
         c.post("/decisions", json={"recommendation_id": "r1", "outcome": "DENIED", "operator": "d"})
         ev = ws.receive_json()
         assert ev["type"] == "decision" and ev["data"]["outcome"] == "DENIED"
 
 
-def test_positions_and_origin_reach_state_and_websocket(client: tuple[TestClient, Clock]) -> None:
+def test_positions_and_origin_reach_state_and_websocket(client: tuple[Console, Clock]) -> None:
     c, _ = client
     with c.websocket_connect("/ws") as ws:
         ws.receive_json()
@@ -151,14 +159,14 @@ def test_positions_and_origin_reach_state_and_websocket(client: tuple[TestClient
     assert c.get("/fleet").json()["origin"]["lon_deg"] == 8.54
 
 
-def test_calibration_is_served_with_its_provenance(client: tuple[TestClient, Clock]) -> None:
+def test_calibration_is_served_with_its_provenance(client: tuple[Console, Clock]) -> None:
     c, _ = client
     body = c.get("/calibration").json()
     assert body["bound_m"] == 3.0 and body["coverage"] == 0.99
     assert body["development_reports"] > 0 and "Gazebo" in body["source"]
 
 
-def test_bad_positions_are_422(client: tuple[TestClient, Clock]) -> None:
+def test_bad_positions_are_422(client: tuple[Console, Clock]) -> None:
     c, _ = client
     assert (
         c.post(
@@ -178,7 +186,7 @@ def test_console_is_served_without_shadowing_the_api(tmp_path) -> None:  # type:
 
 
 def test_source_label_defaults_to_live_and_can_be_marked_as_a_replay(
-    client: tuple[TestClient, Clock],
+    client: tuple[Console, Clock],
 ) -> None:
     c, _ = client
     assert c.get("/state").json()["source"] == "live"
@@ -227,7 +235,7 @@ POLICY_BODY = {
 
 
 def test_the_operator_approves_a_policy_and_a_vehicle_reports_under_it(
-    client: tuple[TestClient, Clock],
+    client: tuple[Console, Clock],
 ) -> None:
     c, _ = client
     r = c.post("/policy", json=POLICY_BODY)
@@ -254,7 +262,7 @@ def test_the_operator_approves_a_policy_and_a_vehicle_reports_under_it(
     ],
 )
 def test_a_policy_a_vehicle_would_refuse_is_not_approved(
-    client: tuple[TestClient, Clock], change: dict[str, object]
+    client: tuple[Console, Clock], change: dict[str, object]
 ) -> None:
     c, _ = client
     assert c.post("/policy", json={**POLICY_BODY, **change}).status_code == 422

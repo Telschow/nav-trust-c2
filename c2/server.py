@@ -37,9 +37,11 @@ from c2.hub import (
     InvalidOperator,
     InvalidOutcome,
     InvalidPolicy,
+    NoLink,
     SupersededRecommendation,
     UnknownPolicy,
     UnknownRecommendation,
+    UnknownVehicle,
 )
 from c2.messages import (
     Decision,
@@ -58,6 +60,8 @@ _STATUS = {
     UnknownRecommendation: 404,
     AlreadyDecided: 409,
     DuplicateRecommendation: 409,
+    UnknownVehicle: 422,
+    NoLink: 422,
     ExpiredRecommendation: 410,
     SupersededRecommendation: 410,
     InvalidPolicy: 422,
@@ -128,10 +132,13 @@ def create_app(
     progress: SectorProgress | None = None,
     console_dir: str | Path | None = None,
     sweep_interval_s: float = 0.5,
+    allow_external_recommendations: bool = False,
 ) -> FastAPI:
     """recommender needs fleet; gate (command execution) needs an approved decision; progress
     (which sectors are flown) needs fleet and the area origin. The hub is swept every
-    sweep_interval_s so a vehicle that goes silent is marked NO_LINK even when nothing arrives."""
+    sweep_interval_s so a vehicle that goes silent is marked NO_LINK even when nothing arrives.
+    allow_external_recommendations adds `POST /recommendations` for tests and demos; the operator
+    is otherwise only ever asked about what the recommender proposed (issue 157)."""
 
     @contextlib.asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
@@ -254,16 +261,19 @@ def create_app(
         except (KeyError, ValueError, TypeError) as err:
             raise bad_request(err) from err
 
-    @app.post("/recommendations", status_code=201)
-    async def post_recommendation(body: dict[str, Any] = Body(...)) -> dict[str, Any]:  # noqa: B008
-        try:
-            rec = recommendation_from_dict(body)
-            hub.add_recommendation(rec)
-        except HubError as err:
-            raise HTTPException(_STATUS[type(err)], err.code) from err
-        except (KeyError, ValueError, TypeError) as err:
-            raise bad_request(err) from err
-        return recommendation_to_dict(rec)
+    if allow_external_recommendations:
+
+        @app.post("/recommendations", status_code=201)
+        async def post_recommendation(
+            body: dict[str, Any] = Body(...),  # noqa: B008
+        ) -> dict[str, Any]:
+            try:
+                rec = hub.add_external_recommendation(recommendation_from_dict(body))
+            except HubError as err:
+                raise HTTPException(_STATUS[type(err)], err.code) from err
+            except (KeyError, ValueError, TypeError) as err:
+                raise bad_request(err) from err
+            return recommendation_to_dict(rec)
 
     @app.post("/decisions")
     async def post_decision(body: dict[str, Any] = Body(...)) -> dict[str, Any]:  # noqa: B008

@@ -152,3 +152,10 @@ Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendatio
 state or reason changes, not on every message. A `link_change` row has the `state`,
 `previous_state`, `last_report_age_s` (as in the `link` event) and `link_timeout_s`; one row per
 change.
+
+A `recommendation` row's payload carries `source`: `recommender` for one the rule-based
+recommender made, `external` for one a client posted. `POST /recommendations` exists only when the
+app is built with `allow_external_recommendations` (tests and demos); the production app answers
+404. A posted recommendation is re-stamped by the hub (created now, 60 s to live) and refused with
+422 `unknown_vehicle` (never heard from) or `no_link` (a command for a vehicle without a link; a
+re-task is allowed). Issue 157.

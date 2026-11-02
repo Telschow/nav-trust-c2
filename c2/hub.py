@@ -7,7 +7,7 @@ log; a rejected decision attempt is logged too.
 from __future__ import annotations
 
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import StrEnum
 from typing import Any
 
@@ -21,6 +21,7 @@ from c2.messages import (
     navtrust_to_dict,
     recommendation_to_dict,
 )
+from c2.recommender import RecommenderConfig
 from navtrust.types import NavTrust, ReasonCode, TrustState
 
 Event = dict[str, Any]
@@ -31,6 +32,11 @@ class LinkState(StrEnum):
 
     LINK_OK = "LINK_OK"
     NO_LINK = "NO_LINK"
+
+
+EXTERNAL_TTL_S = (
+    RecommenderConfig().ttl_s
+)  # a posted recommendation lives as long as one the recommender makes
 
 
 class HubError(Exception):
@@ -73,6 +79,14 @@ class InvalidOperator(HubError):
 
 class DuplicateRecommendation(HubError):
     code = "duplicate_recommendation"
+
+
+class UnknownVehicle(HubError):
+    code = "unknown_vehicle"
+
+
+class NoLink(HubError):
+    code = "no_link"
 
 
 @dataclass
@@ -191,14 +205,32 @@ class Hub:
     def origin(self) -> dict[str, float] | None:
         return self._origin
 
-    def add_recommendation(self, rec: Recommendation) -> None:
+    def add_recommendation(self, rec: Recommendation, source: str = "recommender") -> None:
+        """Put a recommendation in front of the operator. `source` goes into the audit row:
+        "recommender" for the rule-based recommender, "external" for one a client posted."""
         if rec.id in self._recs:
             raise DuplicateRecommendation(rec.id)
         self._recs[rec.id] = rec
         self._audit.append(
-            self._clock(), "recommendation", rec.vehicle_id, recommendation_to_dict(rec)
+            self._clock(),
+            "recommendation",
+            rec.vehicle_id,
+            {**recommendation_to_dict(rec), "source": source},
         )
         self._publish({"type": "recommendation", "data": recommendation_to_dict(rec)})
+
+    def add_external_recommendation(self, rec: Recommendation) -> Recommendation:
+        """A recommendation a client posted (tests and demos only, see create_app). The hub, not
+        the client, decides its times; it refuses a vehicle never heard from, and a command to a
+        vehicle without a link (ADR 0004 item 6). A re-task for such a vehicle is allowed."""
+        if rec.vehicle_id not in self._last_report_s and rec.vehicle_id not in self._trust:
+            raise UnknownVehicle(rec.vehicle_id)
+        if rec.command is not None and not self.is_reachable(rec.vehicle_id):
+            raise NoLink(rec.vehicle_id)
+        now = self._clock()
+        stamped = replace(rec, created_s=now, expires_s=now + EXTERNAL_TTL_S)
+        self.add_recommendation(stamped, source="external")
+        return stamped
 
     def approve_policy(
         self, policy: dict[str, Any], operator: str, max_wait_s: float
