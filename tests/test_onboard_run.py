@@ -11,7 +11,9 @@ from sim.onboard_monitor import OnboardAction
 from sim.onboard_policy import load_policy
 from sim.onboard_run import action_report, experiment_approval
 
-ACTION = OnboardAction("uav1", 59.0, "LAND", "INCONSISTENT_INNOVATION", 5.2, 7, "ab" * 32)
+ACTION = OnboardAction(
+    "uav1", 59.0, "LAND", "INCONSISTENT_INNOVATION", 5.2, 7, "ab" * 32, "acknowledged"
+)
 
 
 def test_an_experiment_approval_loads_and_says_what_it_is() -> None:
@@ -32,7 +34,7 @@ def test_the_report_to_the_backend_carries_the_action_and_its_policy_reference()
     assert action_report(ACTION) == {
         "vehicle_id": "uav1", "t_s": 59.0, "action": "LAND",
         "reason": "INCONSISTENT_INNOVATION", "link_down_s": 5.2,
-        "policy_audit_id": 7, "policy_sha256": "ab" * 32,
+        "policy_audit_id": 7, "policy_sha256": "ab" * 32, "outcome": "acknowledged",
     }  # fmt: skip
 
 
@@ -211,7 +213,7 @@ def test_a_land_that_fails_is_logged_and_the_monitor_keeps_running() -> None:
 
     asyncio.run(go())
     kinds = [e for e, _ in written]
-    assert kinds == ["onboard_action", "onboard_command_failed"]
+    assert kinds[:2] == ["onboard_action", "onboard_command_failed"]
     assert "COMMAND_DENIED" in written[1][1]["error"]
 
 
@@ -285,3 +287,69 @@ def test_a_report_the_backend_refuses_for_good_is_dropped_and_does_not_block_the
     asyncio.run(go())
     assert attempts == [1]  # tried once; a 4xx will not change by asking again
     assert "onboard_report_rejected" in [e for e, _ in written]
+
+
+class _Flaky(_FakeDrone):
+    """A vehicle whose LAND is refused `refusals` times, then accepted."""
+
+    def __init__(self, refusals: int) -> None:
+        super().__init__()
+        self.calls = 0
+        outer = self
+
+        async def land() -> None:
+            outer.calls += 1
+            if outer.calls <= refusals:
+                raise RuntimeError("COMMAND_DENIED")
+
+        self.action.land = land  # type: ignore[method-assign]
+
+
+def _run_with(drone: _FakeDrone) -> tuple[list[tuple[str, dict[str, Any]]], list[OnboardAction]]:
+    from sim.onboard_monitor import OnboardMonitor
+    from sim.onboard_run import run_monitor
+
+    approval = experiment_approval(wait_s=0.1)
+    policy = load_policy(approval, now_s=approval["approved_s"], max_age_s=3600.0)
+    written: list[tuple[str, dict[str, Any]]] = []
+    reported: list[OnboardAction] = []
+    link = {"up": True}
+
+    async def report(actions: list[OnboardAction]) -> None:
+        reported.extend(actions)
+
+    async def go() -> None:
+        import time
+
+        monitor = OnboardMonitor("uav1", policy, started_s=time.monotonic(), land_retry_s=0.05)
+        task = asyncio.create_task(
+            run_monitor(
+                drone, monitor, lambda: link["up"], lambda e, **f: written.append((e, f)),
+                engine=_FrozenEngine(), report=report, interval_s=0.02,  # type: ignore[arg-type]
+            )
+        )  # fmt: skip
+        await asyncio.sleep(0.1)
+        link["up"] = False
+        await asyncio.sleep(1.0)
+        link["up"] = True
+        await asyncio.sleep(0.3)
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    asyncio.run(go())
+    return written, reported
+
+
+def test_a_land_refused_twice_is_called_three_times_and_reported_once_as_acknowledged() -> None:
+    drone = _Flaky(refusals=2)
+    written, reported = _run_with(drone)
+    assert drone.calls == 3
+    assert [e for e, _ in written].count("onboard_command_failed") == 2
+    assert [a.outcome for a in reported] == ["acknowledged"]
+
+
+def test_a_land_refused_every_time_is_called_three_times_and_reported_once_as_failed() -> None:
+    drone = _Flaky(refusals=99)
+    _, reported = _run_with(drone)
+    assert drone.calls == 3
+    assert [a.outcome for a in reported] == ["failed"]

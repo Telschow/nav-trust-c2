@@ -66,7 +66,7 @@ def test_red_vehicle_produces_a_recommendation_and_nothing_executes_yet(system) 
     rec = c.get("/state").json()["open_recommendations"][0]
     assert rec["command"] == "LAND" and rec["sector_moves"][0]["sector_id"] == "S2"
     assert executor.log == []  # C2-01: a recommendation alone commands nothing
-    assert hub.audit.events("command_executed") == [] and rid.startswith("rec-uav2")
+    assert hub.audit.events("command_executed") == [] and rid.startswith("rec-") and "-uav2-" in rid
 
 
 def test_approval_executes_exactly_what_was_recommended(system) -> None:  # type: ignore[no-untyped-def]

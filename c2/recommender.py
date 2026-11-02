@@ -53,19 +53,22 @@ class Recommender:
         clock: Callable[[], float],
         config: RecommenderConfig | None = None,
         link_ok: Callable[[str], bool] = _always_reachable,
-        session: str = "",
     ) -> None:
-        """link_ok: whether the backend can currently hear a vehicle (the hub's view). session:
-        the backend run's id (`Hub.start_session`), put in every id so that a restarted backend
-        never repeats one in the same audit database."""
+        """link_ok: whether the backend can currently hear a vehicle (the hub's view)."""
         self._clock = clock
         self._cfg = config or RecommenderConfig()
         self._link_ok = link_ok
-        self._id_prefix = f"{session}-" if session else ""
+        self._id_prefix = ""
         self._latest: dict[str, TrustState] = {}
         self._issued: dict[str, ReasonCode] = {}  # vehicle -> reason of the open episode
         self._open: dict[str, tuple[ReasonCode, float]] = {}  # vehicle -> its open recommendation
         self._counter = 0
+
+    def use_session(self, session: str) -> None:
+        """Put the backend run's id (`Hub.start_session`) in every id from now on, so that a
+        restarted backend never repeats one in the same audit database. `create_app` does this;
+        a recommender used on its own (evaluation, replay) keeps the plain ids."""
+        self._id_prefix = f"{session}-"
 
     def observe(self, msg: NavTrust, fleet: FleetState) -> list[Recommendation]:
         """Feed one trust message; returns the recommendations it triggers (usually none)."""
