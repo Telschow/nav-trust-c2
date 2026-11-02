@@ -159,8 +159,12 @@ try {
   const ok = '<span class="pill ok"><i></i>TRUSTED</span>';
   const bad = '<span class="pill bad"><i></i>DO NOT TRUST</span>';
 
+  // 1. hook: the question, large, over real moving footage, from the first frame (at least 3.5 s)
   await page.goto(BACKEND);
+  cue("hook", "Which drone's position can you trust? Three simulated drones. One person decides.");
+  await title("<h1>Which drone's position can you trust?</h1><p>Three simulated drones. One person decides.</p>");
   await page.waitForSelector("text=REPLAY DEMO", { timeout: 15000 });
+  const hookFrom = now();
   // start the replay now: the footage moves behind the opening question
   feed = spawn(
     PYTHON,
@@ -168,13 +172,8 @@ try {
     { stdio: "ignore" },
   );
   await page.getByText("3 trusted").first().waitFor({ timeout: 30000 });
-
-  // 1. hook: the question, large, over real moving footage (3.5 s)
-  cue("hook", "Which drone's position can you trust? Three simulated drones. One person decides.");
-  await title("<h1>Which drone's position can you trust?</h1><p>Three simulated drones. One person decides.</p>");
-  await page.waitForTimeout(2200);
+  await page.waitForTimeout(Math.max(0, 3500 - (now() - hookFrom)));
   await page.screenshot({ path: join(OUT, "poster.jpg"), type: "jpeg", quality: 90 });
-  await page.waitForTimeout(1300);
   await title(null);
 
   // 2. all three trusted (what the console itself says: "3 trusted")
@@ -254,11 +253,14 @@ const stamp = (ms) => {
   const p = (n, w = 2) => String(n).padStart(w, "0");
   return `${p(Math.floor(ms / 3600000))}:${p(Math.floor(ms / 60000) % 60)}:${p(Math.floor(ms / 1000) % 60)},${p(ms % 1000, 3)}`;
 };
+// the first frames are the page loading: the MP4 starts a little before the question (trim_s) and
+// the captions are shifted to match
+const trimMs = Math.max(0, cues[0].from - 100);
 writeFileSync(
   join(OUT, "clip.srt"),
   cues
     .filter((c) => c.to > c.from)
-    .map((c, i) => `${i + 1}\n${stamp(c.from)} --> ${stamp(c.to)}\n${c.text}\n`)
+    .map((c, i) => `${i + 1}\n${stamp(c.from - trimMs)} --> ${stamp(c.to - trimMs)}\n${c.text}\n`)
     .join("\n"),
 );
 
@@ -282,6 +284,7 @@ writeFileSync(
       },
       viewport: SIZE,
       console_zoom: Number(ZOOM),
+      trim_s: trimMs / 1000,
       playwright: playwrightVersion,
       beats_s: {
         hook: beatAt("hook"),

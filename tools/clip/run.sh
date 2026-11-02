@@ -47,7 +47,8 @@ curl -s -o /dev/null --max-time 2 "${CLIP_BACKEND}/state" || { echo "the backend
 node tools/clip/capture.mjs
 
 if command -v ffmpeg >/dev/null; then
-    ffmpeg -loglevel error -y -i "${CLIP_OUT}/clip.webm" -an -c:v libx264 -preset slow -crf 20 \
+    trim="$("${CLIP_PYTHON}" -c "import json,sys; print(json.load(open(sys.argv[1]))['trim_s'])" "${CLIP_OUT}/manifest.json")"
+    ffmpeg -loglevel error -y -ss "${trim}" -i "${CLIP_OUT}/clip.webm" -an -c:v libx264 -preset slow -crf 20 \
         -pix_fmt yuv420p -movflags +faststart "${CLIP_OUT}/clip.mp4"
     echo "wrote ${CLIP_OUT}/clip.mp4"
 
