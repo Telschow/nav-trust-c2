@@ -79,8 +79,11 @@ flowchart TB
 - Simulation only. Unclassified, public sources only.
 - Mission framing is search-and-rescue and area survey.
 - No weapons, no targeting, no effectors, no real platform parameters, no swarm attack behaviour.
-- The operator approves vehicle commands. Only PX4's own failsafes act without approval today. A
-  contingency approved before the mission is planned (ADR 0004, not built).
+- The operator approves vehicle commands. Only PX4's own failsafes act without approval today.
+  A contingency approved before the mission (ADR 0004, LAND only) is partly built: the backend
+  records the approval and checks every onboard report against it, and a simulated vehicle's
+  monitor can land itself under it in recorded experiments. Handing an approved policy to a
+  vehicle is not built (issue 76).
 
 ## Non-goals
 

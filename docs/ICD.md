@@ -109,8 +109,8 @@ GLOSSARY.md "No link"). It is measured on the backend's own clock from the arriv
   {vehicle_id, duration_s, trust, trust_changes, onboard_actions, superseded}, "server_s": ...}`:
   `duration_s` is the length of the silence, `trust` the first report after it,
   `trust_changes` the `{server_s, state, reason}` changes seen since the link was lost,
-  `onboard_actions` the actions the vehicle took on its own (always empty until the onboard
-  monitor exists, issue 76) and `superseded` the ids of recommendations closed. A recommendation
+  `onboard_actions` the actions the vehicle took on its own and reported (from `POST
+  /onboard-actions`; empty when it did nothing on its own) and `superseded` the ids of recommendations closed. A recommendation
   raised before the outage for that vehicle is closed as SUPERSEDED when its trust state or reason
   changed; one raised while the link was down is left alone. The recommender raises a new one if
   the vehicle still needs it. If a position report ends the outage, the summary waits for the
