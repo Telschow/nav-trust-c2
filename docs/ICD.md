@@ -152,7 +152,8 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
 Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendation`,
 `decision`, `rejected_decision`, `link_change`, `outage_summary`, `command_sent`,
 `command_acknowledged`, `command_not_acknowledged`, `command_executed`, `command_failed`,
-`command_blocked`, `policy_approved`, `onboard_action`, `rejected_onboard_action`), `vehicle_id`, JSON `payload`. Trust is logged on
+`command_blocked`, `policy_approved`, `onboard_action`, `rejected_onboard_action`,
+`session_started`), `vehicle_id`, JSON `payload`. Trust is logged on
 state or reason changes, not on every message. A `link_change` row has the `state`,
 `previous_state`, `last_report_age_s` (as in the `link` event) and `link_timeout_s`; one row per
 change.
@@ -163,3 +164,11 @@ app is built with `allow_external_recommendations` (tests and demos); the produc
 404. A posted recommendation is re-stamped by the hub (created now, 60 s to live) and refused with
 422 `unknown_vehicle` (never heard from) or `no_link` (a command for a vehicle without a link; a
 re-task is allowed). Issue 157.
+
+Each backend run writes a `session_started` row first, `{session_id, wall_clock_utc}`: the run's
+clock and recommendation counter restart at 0, so the rows after it belong to that run. The
+recommender puts the session id in its ids (`rec-<session>-<vehicle>-<n>`). Every `command_*`
+row carries `decision_audit_id`, the audit id of the `decision` row that authorised it (absent on
+`command_blocked` when there was no decision). `python -m c2.audit_verify <db>` checks that every
+`command_sent` row cites an approval of the same recommendation, taken in the same session, and
+that no recommendation id repeats. A database from before issue 159 does not pass. Issue 159.

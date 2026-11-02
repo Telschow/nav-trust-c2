@@ -417,6 +417,7 @@ def main() -> None:
     start = time.monotonic()
     clock = lambda: time.monotonic() - start  # noqa: E731
     hub = Hub(AuditLog(args.db), clock, link_timeout_s=args.link_timeout)
+    session = hub.start_session()
     if args.source:
         hub.set_source(args.source)
     ids = [f"uav{i}" for i in range(1, args.vehicles + 1)]
@@ -443,7 +444,7 @@ def main() -> None:
     app = create_app(
         hub,
         fleet=fleet,
-        recommender=Recommender(clock, link_ok=hub.is_reachable),
+        recommender=Recommender(clock, link_ok=hub.is_reachable, session=session),
         gate=CommandGate(hub, fleet, executor, ack_timeout_s=args.ack_timeout),
         progress=SectorProgress(sectors, swath_half_width_m=args.spacing / 2),
         console_dir=args.console,

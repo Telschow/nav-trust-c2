@@ -6,8 +6,10 @@ log; a rejected decision attempt is logged too.
 
 from __future__ import annotations
 
+import secrets
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
@@ -127,10 +129,24 @@ class Hub:
         self._trust: dict[str, NavTrust] = {}
         self._recs: dict[str, Recommendation] = {}
         self._decisions: dict[str, Decision] = {}
+        self._decision_rows: dict[str, int] = {}  # recommendation id -> audit id of its decision
+        self.session_id = ""
         self._subscribers: list[Callable[[Event], None]] = []
         self._positions: dict[str, dict[str, float]] = {}
         self._origin: dict[str, float] | None = None
         self._source = "live"
+
+    def start_session(self) -> str:
+        """Mark the start of this backend run in the audit log and return its random id. The
+        clock restarts at 0 with every run, so the rows after this one belong to this run."""
+        self.session_id = secrets.token_hex(4)
+        self._audit.append(
+            self._clock(),
+            "session_started",
+            None,
+            {"session_id": self.session_id, "wall_clock_utc": datetime.now(UTC).isoformat()},
+        )
+        return self.session_id
 
     # --- subscriptions -------------------------------------------------------------------
 
@@ -464,7 +480,8 @@ class Hub:
 
     def _record(self, decision: Decision, vehicle_id: str) -> None:
         self._decisions[decision.recommendation_id] = decision
-        self._audit.append(self._clock(), "decision", vehicle_id, decision_to_dict(decision))
+        row = self._audit.append(self._clock(), "decision", vehicle_id, decision_to_dict(decision))
+        self._decision_rows[decision.recommendation_id] = row.id
         self._publish({"type": "decision", "data": decision_to_dict(decision)})
 
     # --- queries -------------------------------------------------------------------------
@@ -492,6 +509,10 @@ class Hub:
                 if r.id not in self._decisions
             ],
         }
+
+    def decision_audit_id(self, recommendation_id: str) -> int | None:
+        """The audit row of the decision on a recommendation: what a command row cites."""
+        return self._decision_rows.get(recommendation_id)
 
     def decision_for(self, recommendation_id: str) -> Decision | None:
         return self._decisions.get(recommendation_id)
