@@ -1,0 +1,40 @@
+{
+  "commit": "46ade0e7adf0b7d208096c120c21cb88bab14a53",
+  "working_tree_dirty": false,
+  "scenario": "stuck",
+  "replay_speed": 8,
+  "source": "sim.demo_feed: recorded trust data with synthetic positions; no simulator was running",
+  "recordings": {
+    "uav1": {
+      "path": "tests/replay/data/nominal-1.jsonl",
+      "sha256": "00cc97a619ba45e2555a607344e8cc3667602269378d9aea831d90306d6fadbd"
+    },
+    "uav2": {
+      "path": "tests/replay/data/stuck_zone-1.jsonl",
+      "sha256": "88b3b2ebe2e9e5b4b4e74b1dcec57aebc5ecdb8e169ac3dec1ebaba6556fd658"
+    },
+    "uav3": {
+      "path": "tests/replay/data/nominal-3.jsonl",
+      "sha256": "78a3f21a50c2c54c3fc99939a9916389600306f28d03ab55ae30936d8ec2d941"
+    }
+  },
+  "viewport": {
+    "width": 1080,
+    "height": 1920
+  },
+  "console_zoom": 1.5,
+  "playwright": "1.63.0",
+  "beats_s": {
+    "trusted": 3.474,
+    "flagged": 11.575,
+    "approval": 18.646,
+    "recorded": 23.608
+  },
+  "operator_name_shown": "Duty operator",
+  "shown_on_screen": "the decided row and the activity line 'approved by <name>'; the audit database itself is not shown",
+  "alt_text": {
+    "clip.mp4": "A person supervising simulated drones: uav2 is flagged as not trusted, the console recommends landing it, the person holds a button to approve, and the approval is recorded with their name. Captions say nothing moves until a person approves.",
+    "loop.gif": "The same sequence in 10 seconds: uav2 flagged, a landing recommended, the person approves by holding a button.",
+    "poster.jpg": "The console after the approval: uav2 not trusted, the decision shown as approved by the operator, and the activity log line recording it."
+  }
+}

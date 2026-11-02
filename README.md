@@ -7,6 +7,10 @@
 
 **Does the operator know which drone's position to trust, and what to do about it?**
 
+<p align="center"><img src="docs/media/vertical/loop.gif" width="360" alt="The same sequence in 10 seconds: uav2 flagged, a landing recommended, the person approves by holding a button."></p>
+
+*The real console in the replay demo: recorded trust data, synthetic positions, no simulator running. [The 30 s version with captions](docs/media/vertical/clip.mp4).*
+
 <!-- summary-start -->
 ## In 60 seconds
 
