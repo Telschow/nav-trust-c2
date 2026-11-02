@@ -2,7 +2,7 @@
 policy's wait time, the trust reason matches an entry and the policy is still valid."""
 
 from navtrust.types import NavTrust, ReasonCode, TrustState
-from sim.onboard_monitor import OnboardMonitor
+from sim.onboard_monitor import LAND_RETRY_S, MAX_LAND_ATTEMPTS, OnboardMonitor
 from sim.onboard_policy import load_policy, policy_sha256
 
 POLICY_DOC = {
@@ -115,7 +115,9 @@ def test_it_acts_once_and_remembers_what_it_did_until_it_is_reported() -> None:
     action = feed_until(m, 20.1, 40.0)
     assert action is not None
     assert feed_until(m, action.t_s + 0.1, action.t_s + 30.0) is None  # never repeats
-    assert m.take_unreported() == [action]
+    m.land_result(action, ok=True, t_s=action.t_s)  # what the runner does once land() answered
+    [reported] = m.take_unreported()
+    assert reported.outcome == "acknowledged" and reported.t_s == action.t_s
     assert m.take_unreported() == []
 
 
@@ -129,3 +131,76 @@ def test_stale_trust_is_not_acted_on() -> None:
 def test_before_any_trust_report_it_does_nothing() -> None:
     m = monitor()
     assert m.poll(100.0) is None
+
+
+def armed_monitor() -> tuple[OnboardMonitor, float]:
+    """A monitor that has just decided to LAND, and the time it did."""
+    m = monitor()
+    frozen_with_link_lost_at(m, 20.0)
+    action = feed_until(m, 20.1, 40.0)
+    assert action is not None
+    return m, action.t_s
+
+
+def test_a_refused_land_is_tried_again_after_a_pause_and_not_before() -> None:
+    m, t = armed_monitor()
+    first = m.poll(t)  # already acted once; this is the same instant
+    assert first is None
+    m.land_result(m_action(m, t), ok=False, t_s=t)
+    m.trust(t + LAND_RETRY_S / 2, trust(t + LAND_RETRY_S / 2, *FROZEN))
+    assert m.poll(t + LAND_RETRY_S / 2) is None
+    m.trust(t + LAND_RETRY_S, trust(t + LAND_RETRY_S, *FROZEN))
+    again = m.poll(t + LAND_RETRY_S)
+    assert again is not None and again.action == "LAND"
+    assert m.take_unreported() == []  # nothing is told to the backend before it is settled
+
+
+def m_action(m: OnboardMonitor, t: float):  # type: ignore[no-untyped-def]
+    """The action the monitor last returned, rebuilt as the runner holds it."""
+    from sim.onboard_monitor import OnboardAction
+
+    return OnboardAction(
+        "uav1", t, "LAND", "INCONSISTENT_INNOVATION", 5.0, 7, policy_sha256(POLICY_DOC)
+    )
+
+
+def test_a_land_that_is_refused_every_time_is_tried_the_most_times_and_reported_as_failed() -> None:
+    m, t = armed_monitor()
+    attempts = 1
+    action = m_action(m, t)
+    while True:
+        m.land_result(action, ok=False, t_s=t)
+        t += LAND_RETRY_S
+        m.trust(t, trust(t, *FROZEN))
+        nxt = m.poll(t)
+        if nxt is None:
+            break
+        attempts, action = attempts + 1, nxt
+    assert attempts == MAX_LAND_ATTEMPTS
+    [reported] = m.take_unreported()
+    assert reported.outcome == "failed"
+    m.trust(t + 30, trust(t + 30, *FROZEN))
+    assert m.poll(t + 30) is None  # and it stops there
+
+
+def test_a_land_accepted_on_a_retry_is_reported_once_as_acknowledged() -> None:
+    m, t = armed_monitor()
+    m.land_result(m_action(m, t), ok=False, t_s=t)
+    t += LAND_RETRY_S
+    m.trust(t, trust(t, *FROZEN))
+    again = m.poll(t)
+    assert again is not None
+    m.land_result(again, ok=True, t_s=t)
+    [reported] = m.take_unreported()
+    assert reported.outcome == "acknowledged" and reported.t_s == again.t_s
+
+
+def test_a_refused_land_is_not_tried_again_once_the_link_is_back_but_is_still_reported() -> None:
+    m, t = armed_monitor()
+    m.land_result(m_action(m, t), ok=False, t_s=t)
+    t += LAND_RETRY_S
+    m.c2_heard(t)  # the C2 answers: the conditions that allowed the action no longer hold
+    m.trust(t, trust(t, *FROZEN))
+    assert m.poll(t) is None
+    [reported] = m.take_unreported()
+    assert reported.outcome == "failed"

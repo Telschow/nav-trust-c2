@@ -145,3 +145,18 @@ def test_a_report_inside_the_policy_is_still_accepted() -> None:
     approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
     report(hub, approval)
     assert len(audit.events("onboard_action")) == 1
+
+
+def test_the_outcome_of_an_onboard_land_is_audited_and_an_unknown_one_is_refused() -> None:
+    from c2.hub import InvalidOutcome
+
+    hub, audit, _, _ = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    report(hub, approval, outcome="failed")
+    [row] = audit.events("onboard_action")
+    assert row.payload["outcome"] == "failed"
+    with pytest.raises(InvalidOutcome):
+        report(hub, approval, outcome="probably")
+    [rejected] = audit.events("rejected_onboard_action")
+    assert rejected.payload["rejected_because"] == "invalid_outcome"
+    assert len(audit.events("onboard_action")) == 1

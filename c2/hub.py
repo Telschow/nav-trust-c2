@@ -42,6 +42,7 @@ class LinkState(StrEnum):
     NO_LINK = "NO_LINK"
 
 
+ONBOARD_OUTCOMES = ("acknowledged", "failed")  # how an onboard LAND ended (issue 166)
 # the same four kinds as COMMAND_ENDINGS in console/src/store.ts, and in docs/ICD.md
 _COMMAND_ENDINGS = (
     "command_executed",
@@ -329,6 +330,10 @@ class Hub:
         if not self._within_policy(approved[0].payload["policy"], report):
             self._reject_onboard_action(vehicle_id, report, OutsidePolicy.code)
             raise OutsidePolicy(f"{report.get('action')} for {report.get('reason')}")
+        outcome = report.get("outcome")  # absent from a vehicle that predates issue 166
+        if outcome is not None and outcome not in ONBOARD_OUTCOMES:
+            self._reject_onboard_action(vehicle_id, report, InvalidOutcome.code)
+            raise InvalidOutcome(str(outcome))
         self._note_report(vehicle_id)  # hearing from the vehicle at all
         self._audit.append(self._clock(), "onboard_action", vehicle_id, report)
         self._onboard_actions.append((self._clock(), report))

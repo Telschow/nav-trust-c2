@@ -124,6 +124,27 @@ async def run_monitor(
         else:
             retry["pause"] = retry_s
 
+    attempts = {"n": 0}
+
+    async def land(action: OnboardAction, t: float) -> None:
+        attempts["n"] += 1
+        # the action's t_s is the vehicle's clock; the recorder stamps its own t_s, and a field of
+        # that name would overwrite it (recordings need t_s non-decreasing)
+        fields = asdict(action)
+        fields.pop("outcome")  # not known yet
+        if attempts["n"] == 1:
+            write("onboard_action", vehicle_clock_s=fields.pop("t_s"), **fields)
+        else:  # the action is told to the backend once; a retry is only a line in the recording
+            write("onboard_land_retry", attempt=attempts["n"], vehicle_clock_s=fields["t_s"])
+        try:
+            await drone.action.land()
+        except Exception as err:
+            write("onboard_command_failed", error=repr(err), attempt=attempts["n"])
+            monitor.land_result(action, ok=False, t_s=t)
+        else:
+            write("onboard_command_acknowledged", attempt=attempts["n"])
+            monitor.land_result(action, ok=True, t_s=t)
+
     async def decide() -> None:
         while True:
             try:
@@ -134,16 +155,7 @@ async def run_monitor(
                 monitor.trust(t, engine.report(t))
                 action = monitor.poll(t)
                 if action is not None:
-                    # the action's t_s is the vehicle's clock; the recorder stamps its own t_s, and
-                    # a field of that name would overwrite it (recordings need t_s non-decreasing)
-                    fields = asdict(action)
-                    write("onboard_action", vehicle_clock_s=fields.pop("t_s"), **fields)
-                    try:
-                        await drone.action.land()
-                    except Exception as err:
-                        write("onboard_command_failed", error=repr(err))
-                    else:
-                        write("onboard_command_acknowledged")
+                    await land(action, t)
             except Exception as err:
                 write("onboard_error", task="decide", error=repr(err))
             await asyncio.sleep(interval_s)
