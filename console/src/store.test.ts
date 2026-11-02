@@ -524,7 +524,7 @@ describe("how a command ended (issue 161)", () => {
   });
 
   it("learns the endings that happened before it connected from the snapshot", () => {
-    const withOutcome = { ...snapshot, command_outcomes: { r1: { kind: "command_executed", vehicle_id: "uav2", recommendation_id: "r1" } } };
+    const withOutcome = { ...snapshot, command_outcomes: { r1: { kind: "command_executed" as const, vehicle_id: "uav2", recommendation_id: "r1" } } };
     const s = apply(initialState, ev({ type: "state", server_s: 50, data: withOutcome }));
     expect(s.commands.r1?.kind).toBe("command_executed");
   });

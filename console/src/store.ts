@@ -17,6 +17,7 @@ import type {
 const TRAIL_POINTS = 150;
 const HISTORY_POINTS = 240;
 const LOG_ENTRIES = 60;
+// the same four kinds as _COMMAND_ENDINGS in c2/hub.py, and in docs/ICD.md
 const COMMAND_ENDINGS = ["command_executed", "command_not_acknowledged", "command_failed", "command_blocked"];
 
 export interface HistoryPoint {

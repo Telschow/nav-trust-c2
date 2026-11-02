@@ -72,8 +72,9 @@ async def run_monitor(
     cancelled. `write(event, **fields)` logs 'onboard_action', then 'onboard_command_acknowledged'
     or 'onboard_command_failed' for the LAND, and 'onboard_error' for anything that went wrong
     without stopping the monitor. `report`, if given, is called with the actions not yet told to
-    the backend once the link is back; if it raises, they are kept and tried again after a pause
-    that doubles up to `REPORT_RETRY_MAX_S` (see `report_actions`)."""
+    the backend once the link is back; if it raises they are kept and tried again after a pause
+    that doubles up to `REPORT_RETRY_MAX_S`, unless the backend answered 4xx, which is logged as
+    'onboard_report_rejected' and not repeated (see `report_actions`)."""
     from sim.record_run import parse_estimator_status  # imported here: record_run imports this
 
     engine = engine or TrustEngine(vehicle_id)
@@ -110,6 +111,12 @@ async def run_monitor(
         try:
             await report(unreported)
         except Exception as err:
+            status = getattr(getattr(err, "response", None), "status_code", None)
+            if isinstance(status, int) and 400 <= status < 500:
+                # the backend read it and said no (a 422 from the policy check): asking again
+                # changes nothing and would hold up everything queued behind it
+                write("onboard_report_rejected", status=status, actions=len(unreported))
+                return
             monitor.requeue(unreported)
             write("onboard_error", task="report", error=repr(err))
             retry["at"] = t + retry["pause"]

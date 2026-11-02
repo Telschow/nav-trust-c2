@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { STATE_LABEL, actionsOf, commandEndingText, contextNote, formatDuration, noLinkWarning, ordinal, reasonText, titleOf, urgencyNote } from "../language";
+import { STATE_LABEL, actionsOf, commandEndingText, contextNote, executionText, formatDuration, noLinkWarning, ordinal, reasonText, titleOf, urgencyNote } from "../language";
 import type { RaisedAgain } from "../store";
 import { TONE, vehicleColor } from "../tone";
 import type { CommandOutcome, Decision, NavTrust, Recommendation } from "../types";
@@ -189,11 +189,7 @@ export function DecidedRow({ rec, decision, command }: { rec: Recommendation; de
       </div>
       {approved && (command || decision.execution) && (
         <p className={clsx("mt-1 text-xs", failed ? "text-bad" : "text-muted")}>
-          {command
-            ? commandEndingText(command)
-            : decision.execution && !decision.execution.executed
-              ? `Not executed: ${decision.execution.reason ?? "unknown reason"}`
-              : `Executed: ${decision.execution?.actions.join("; ") || "nothing to send"}`}
+          {command ? commandEndingText(command) : decision.execution ? executionText(decision.execution) : null}
         </p>
       )}
     </li>

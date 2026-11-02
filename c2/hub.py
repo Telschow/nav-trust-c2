@@ -30,7 +30,6 @@ from c2.messages import (
     navtrust_to_dict,
     recommendation_to_dict,
 )
-from c2.recommender import RecommenderConfig
 from navtrust.types import NavTrust, ReasonCode, TrustState
 
 Event = dict[str, Any]
@@ -43,15 +42,15 @@ class LinkState(StrEnum):
     NO_LINK = "NO_LINK"
 
 
+# the same four kinds as COMMAND_ENDINGS in console/src/store.ts, and in docs/ICD.md
 _COMMAND_ENDINGS = (
     "command_executed",
     "command_not_acknowledged",
     "command_failed",
     "command_blocked",
 )
-EXTERNAL_TTL_S = (
-    RecommenderConfig().ttl_s
-)  # a posted recommendation lives as long as one the recommender makes
+# A posted recommendation lives as long as one the recommender makes (RecommenderConfig.ttl_s).
+EXTERNAL_TTL_S = 60.0  # proposal
 
 
 class HubError(Exception):
@@ -147,10 +146,14 @@ class Hub:
     def record_command(self, kind: str, vehicle_id: str | None, payload: dict[str, Any]) -> None:
         """Audit a command row and tell every console about it, so each one can show how an
         approved command ended (executed, not acknowledged, failed, blocked)."""
+        rec_id = str(payload.get("recommendation_id"))
+        row = self._decision_rows.get(rec_id)
+        if row is not None:  # a command row cites the decision row that authorised it (issue 159)
+            payload = {**payload, "decision_audit_id": row}
         self._audit.append(self._clock(), kind, vehicle_id, payload)
         data = {"kind": kind, "vehicle_id": vehicle_id, **payload}
         if kind in _COMMAND_ENDINGS:
-            self._command_outcomes[str(payload.get("recommendation_id"))] = data
+            self._command_outcomes[rec_id] = data
         self._publish({"type": "command", "data": data})
 
     def start_session(self) -> str:
@@ -268,7 +271,8 @@ class Hub:
         """A recommendation a client posted (tests and demos only, see create_app). The hub, not
         the client, decides its times; it refuses a vehicle never heard from, and a command to a
         vehicle without a link (ADR 0004 item 6). A re-task for such a vehicle is allowed."""
-        if rec.vehicle_id not in self._last_report_s and rec.vehicle_id not in self._trust:
+        # the recommender only speaks of vehicles it has a trust report for
+        if rec.vehicle_id not in self._trust:
             raise UnknownVehicle(rec.vehicle_id)
         if rec.command is not None and not self.is_reachable(rec.vehicle_id):
             raise NoLink(rec.vehicle_id)
@@ -529,10 +533,6 @@ class Hub:
                 if r.id not in self._decisions
             ],
         }
-
-    def decision_audit_id(self, recommendation_id: str) -> int | None:
-        """The audit row of the decision on a recommendation: what a command row cites."""
-        return self._decision_rows.get(recommendation_id)
 
     def decision_for(self, recommendation_id: str) -> Decision | None:
         return self._decisions.get(recommendation_id)

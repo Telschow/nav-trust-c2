@@ -242,3 +242,46 @@ def test_a_land_the_vehicle_accepts_is_logged_as_acknowledged() -> None:
 
     asyncio.run(go())
     assert [e for e, _ in written] == ["onboard_action", "onboard_command_acknowledged"]
+
+
+def test_a_report_the_backend_refuses_for_good_is_dropped_and_does_not_block_the_monitor() -> None:
+    from sim.onboard_monitor import OnboardMonitor
+    from sim.onboard_run import run_monitor
+
+    class Refused(Exception):
+        """What httpx raises for a 422: it carries the response."""
+
+        response = type("R", (), {"status_code": 422})()
+
+    approval = experiment_approval(wait_s=0.1)
+    policy = load_policy(approval, now_s=approval["approved_s"], max_age_s=3600.0)
+    written: list[tuple[str, dict[str, Any]]] = []
+    attempts: list[int] = []
+    link = {"up": True}
+
+    async def report(actions: list[OnboardAction]) -> None:
+        attempts.append(len(actions))
+        raise Refused("422")
+
+    async def go() -> None:
+        import time
+
+        monitor = OnboardMonitor("uav1", policy, started_s=time.monotonic())
+        task = asyncio.create_task(
+            run_monitor(
+                _FakeDrone(), monitor, lambda: link["up"], lambda e, **f: written.append((e, f)),
+                engine=_FrozenEngine(), report=report, interval_s=0.02, retry_s=0.02,  # type: ignore[arg-type]
+            )
+        )  # fmt: skip
+        await asyncio.sleep(0.1)
+        link["up"] = False
+        await asyncio.sleep(0.3)
+        link["up"] = True
+        await asyncio.sleep(0.5)
+        assert not task.done()
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    asyncio.run(go())
+    assert attempts == [1]  # tried once; a 4xx will not change by asking again
+    assert "onboard_report_rejected" in [e for e, _ in written]

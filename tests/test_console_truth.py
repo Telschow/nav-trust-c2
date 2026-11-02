@@ -118,3 +118,23 @@ def test_a_console_that_connects_later_is_told_how_the_command_ended() -> None:
         assert ws.receive_json()["data"]["command_outcomes"]["r1"]["kind"] == (
             "command_not_acknowledged"
         )
+
+
+def test_a_number_that_is_not_finite_in_a_free_form_report_cannot_disconnect_a_console() -> None:
+    from c2.contingency import land_on_inconsistent_position
+
+    hub = Hub(AuditLog(), Clock())
+    client = TestClient(create_app(hub))
+    approval = hub.approve_policy(land_on_inconsistent_position(5.0), "daniel", max_wait_s=10.0)
+    report = (
+        '{"vehicle_id": "uav1", "t_s": 1.0, "action": "LAND", "reason": "INCONSISTENT_INNOVATION", '
+        f'"link_down_s": 6.0, "policy_audit_id": {approval["audit_id"]}, '
+        f'"policy_sha256": "{approval["sha256"]}", "extra": NaN}}'
+    )
+    with client.websocket_connect("/ws") as ws:
+        ws.receive_json()
+        assert client.post("/onboard-actions", content=report, headers=JSON).status_code == 204
+        event = ws.receive_json()  # the socket is still open, and the NaN went out as null
+        assert event["type"] == "onboard_action" and event["data"]["extra"] is None
+        client.post("/navtrust", content=NAVTRUST % ("5.0", "0.99", "0.5"), headers=JSON)
+        assert ws.receive_json()["type"] == "navtrust"

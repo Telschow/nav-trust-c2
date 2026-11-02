@@ -16,7 +16,7 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Protocol
 
 from c2.allocator import Assignment
 from c2.fleet import FleetState
@@ -107,14 +107,14 @@ class CommandGate:
             self._hub.record_command(
                 "command_failed",
                 rec.vehicle_id,
-                {**self._ref(recommendation_id), "error": repr(err), "completed": done},
+                {"recommendation_id": recommendation_id, "error": repr(err), "completed": done},
             )
             return GateResult(False, f"failed: {err}", done)
 
         self._hub.record_command(
             "command_executed",
             rec.vehicle_id,
-            {**self._ref(recommendation_id), "actions": done},
+            {"recommendation_id": recommendation_id, "actions": done},
         )
         return GateResult(True, None, done)
 
@@ -123,7 +123,7 @@ class CommandGate:
     ) -> None:
         """Send one command and wait for the vehicle's answer: the executor call returns when the
         vehicle has accepted it. Audited as sent, then acknowledged or not."""
-        payload = {**self._ref(recommendation_id), "action": action}
+        payload = {"recommendation_id": recommendation_id, "action": action}
         self._hub.record_command("command_sent", vehicle_id, payload)
         task = asyncio.ensure_future(call)
         # not wait_for: a TimeoutError raised by the executor itself is a failure, not silence
@@ -139,19 +139,10 @@ class CommandGate:
         task.result()  # the executor's own error, if any, is a failure
         self._hub.record_command("command_acknowledged", vehicle_id, payload)
 
-    def _ref(self, recommendation_id: str) -> dict[str, Any]:
-        """What a command row says about its authority: the recommendation and the audit row of the
-        decision on it (absent when there is none), so the join survives a restart (issue 159)."""
-        row = self._hub.decision_audit_id(recommendation_id)
-        ref: dict[str, Any] = {"recommendation_id": recommendation_id}
-        if row is not None:
-            ref["decision_audit_id"] = row
-        return ref
-
     def _blocked(self, recommendation_id: str, vehicle_id: str | None, reason: str) -> GateResult:
         self._hub.record_command(
             "command_blocked",
             vehicle_id,
-            {**self._ref(recommendation_id), "reason": reason},
+            {"recommendation_id": recommendation_id, "reason": reason},
         )
         return GateResult(False, reason)

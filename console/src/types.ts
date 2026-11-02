@@ -99,8 +99,16 @@ export interface OutageSummary {
 }
 
 /** A command row from the audit log, as the backend publishes it (ICD: Command outcomes). */
+export type CommandKind =
+  | "command_sent"
+  | "command_acknowledged"
+  | "command_not_acknowledged"
+  | "command_executed"
+  | "command_failed"
+  | "command_blocked";
+
 export interface CommandOutcome {
-  kind: string;
+  kind: CommandKind;
   vehicle_id: string | null;
   recommendation_id: string;
   action?: string;

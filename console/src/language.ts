@@ -1,4 +1,4 @@
-import type { Calibration, Reason, Recommendation, TrustState, CommandOutcome } from "./types";
+import type { Calibration, CommandOutcome, Reason, Recommendation, TrustState } from "./types";
 
 export const STATE_LABEL: Record<TrustState, string> = {
   GREEN: "Trusted",
@@ -95,9 +95,19 @@ export function commandEndingText(c: CommandOutcome): string {
       return `Not acknowledged: ${c.action ?? "the command"} had no answer${c.timeout_s ? ` in ${c.timeout_s} s` : ""}`;
     case "command_failed":
       return `Failed: ${c.error ?? "unknown error"}`;
-    default:
+    case "command_blocked":
       return `Not executed: ${c.reason ?? "unknown reason"}`;
+    case "command_sent":
+    case "command_acknowledged":
+      return "Sent, waiting for the vehicle";
   }
+}
+
+/** The same sentence from the HTTP answer the approving console gets to its own decision. */
+export function executionText(execution: { executed: boolean; reason: string | null; actions: string[] }): string {
+  return execution.executed
+    ? `Executed: ${execution.actions.join("; ") || "nothing to send"}`
+    : `Not executed: ${execution.reason ?? "unknown reason"}`;
 }
 
 export const ERROR_TEXT: Record<number, string> = {

@@ -172,7 +172,7 @@ change.
 A `recommendation` row's payload carries `source`: `recommender` for one the rule-based
 recommender made, `external` for one a client posted. `POST /recommendations` exists only when the
 app is built with `allow_external_recommendations` (tests and demos); the production app answers
-404. A posted recommendation is re-stamped by the hub (created now, 60 s to live) and refused with
+404. A posted recommendation is re-stamped by the hub (created now, 60 s to live, a proposal) and refused with
 422 `unknown_vehicle` (never heard from) or `no_link` (a command for a vehicle without a link; a
 re-task is allowed). Issue 157.
 

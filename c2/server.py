@@ -15,6 +15,7 @@ import contextlib
 import ipaddress
 import json
 import logging
+import math
 import time
 from collections.abc import AsyncIterator
 from dataclasses import asdict
@@ -74,10 +75,25 @@ _STATUS = {
 }
 
 
+def _without_non_finite(value: Any) -> Any:
+    if isinstance(value, float) and not math.isfinite(value):
+        return None
+    if isinstance(value, dict):
+        return {k: _without_non_finite(v) for k, v in value.items()}
+    if isinstance(value, list | tuple):
+        return [_without_non_finite(v) for v in value]
+    return value
+
+
 def _json(message: dict[str, Any]) -> str:
     """WebSocket JSON that a browser can always parse: a NaN would be a syntax error there, and
-    every later snapshot would be dropped (issue 161)."""
-    return json.dumps(message, allow_nan=False)
+    every later snapshot would be dropped (issue 161). The fields the console reads are refused
+    at ingest; a free-form one (an onboard report's extras) goes out as null rather than closing
+    every console's socket."""
+    try:
+        return json.dumps(message, allow_nan=False)
+    except ValueError:
+        return json.dumps(_without_non_finite(message), allow_nan=False)
 
 
 def _authority(value: str) -> tuple[str, int | None] | None:

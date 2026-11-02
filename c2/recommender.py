@@ -61,7 +61,7 @@ class Recommender:
         self._clock = clock
         self._cfg = config or RecommenderConfig()
         self._link_ok = link_ok
-        self._session = session
+        self._id_prefix = f"{session}-" if session else ""
         self._latest: dict[str, TrustState] = {}
         self._issued: dict[str, ReasonCode] = {}  # vehicle -> reason of the open episode
         self._open: dict[str, tuple[ReasonCode, float]] = {}  # vehicle -> its open recommendation
@@ -113,9 +113,7 @@ class Recommender:
         if moves:
             parts.append("re-task " + ", ".join(f"{m.sector_id} to {m.to_vehicle}" for m in moves))
         return Recommendation(
-            id=f"rec-{self._session}-{vehicle}-{self._counter}"
-            if self._session
-            else f"rec-{vehicle}-{self._counter}",
+            id=f"rec-{self._id_prefix}{vehicle}-{self._counter}",
             vehicle_id=vehicle,
             created_s=now,
             expires_s=now + self._cfg.ttl_s,
