@@ -182,6 +182,10 @@ def create_app(
             task.cancel()
             await asyncio.gather(task, return_exceptions=True)
 
+    if recommender is not None:
+        # every id carries the run's id, so a restarted backend cannot repeat one (issue 159)
+        recommender.use_session(hub.session_id or hub.start_session())
+
     app = FastAPI(title="nav-trust-c2 backend", lifespan=lifespan)
 
     @app.middleware("http")
@@ -440,7 +444,7 @@ def main() -> None:
     start = time.monotonic()
     clock = lambda: time.monotonic() - start  # noqa: E731
     hub = Hub(AuditLog(args.db), clock, link_timeout_s=args.link_timeout)
-    session = hub.start_session()
+    hub.start_session()
     if args.source:
         hub.set_source(args.source)
     ids = [f"uav{i}" for i in range(1, args.vehicles + 1)]
@@ -467,7 +471,7 @@ def main() -> None:
     app = create_app(
         hub,
         fleet=fleet,
-        recommender=Recommender(clock, link_ok=hub.is_reachable, session=session),
+        recommender=Recommender(clock, link_ok=hub.is_reachable),
         gate=CommandGate(hub, fleet, executor, ack_timeout_s=args.ack_timeout),
         progress=SectorProgress(sectors, swath_half_width_m=args.spacing / 2),
         console_dir=args.console,

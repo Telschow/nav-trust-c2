@@ -33,7 +33,8 @@ def session(db: Path, approve: bool = True) -> tuple[Hub, str]:
     hub = Hub(AuditLog(db), clock)
     session_id = hub.start_session()
     fleet = FleetState(assign(split_area(900, 900, 2), ["uav1", "uav2"]), positions={})
-    recommender = Recommender(clock, session=session_id)
+    recommender = Recommender(clock)
+    recommender.use_session(session_id)
     hub.ingest_navtrust(GREEN)
     fleet.positions["uav1"] = (0.0, 0.0)
     msg = RED
@@ -123,3 +124,30 @@ def test_the_verifier_fails_a_decision_taken_in_an_earlier_session(tmp_path: Pat
         {"recommendation_id": rec_id, "action": "LAND uav2", "decision_audit_id": decision.id},
     )
     assert any("session" in p for p in problems(db))
+
+
+def test_an_app_gives_its_recommender_the_session_so_no_caller_can_forget_it(
+    tmp_path: Path,
+) -> None:
+    from fastapi.testclient import TestClient
+
+    from c2.server import create_app
+
+    db = tmp_path / "audit.sqlite"
+    ids = []
+    for _ in range(2):  # two backend runs on one database, the recommender built with no session
+        clock = Clock()
+        hub = Hub(AuditLog(db), clock)
+        fleet = FleetState(assign(split_area(900, 900, 2), ["uav1", "uav2"]), positions={})
+        fleet.positions["uav1"] = (0.0, 0.0)
+        client = TestClient(create_app(hub, fleet=fleet, recommender=Recommender(clock)))
+        for msg in (GREEN, RED):
+            body = {
+                "vehicle_id": msg.vehicle_id, "stamp_s": msg.stamp_s, "state": msg.state.value,
+                "reason": msg.reason.value if msg.reason else None, "horizontal_bound_m": None,
+                "confidence": msg.confidence, "headroom": msg.headroom,
+            }  # fmt: skip
+            client.post("/navtrust", json=body)
+        ids.append(hub.state()["open_recommendations"][0]["id"])
+    assert ids[0] != ids[1]
+    assert len(AuditLog(db).events("session_started")) == 2
