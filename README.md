@@ -9,7 +9,7 @@
 
 ![The operator console in the replay demo: uav2 has lost trust and a decision is waiting for the operator](docs/screenshots/console-1080p.jpg)
 
-*Real console, replayed demo data (no vehicle is flying).*
+*The real console in the replay demo: recorded trust data, synthetic positions, no simulator running.*
 
 <!-- summary-start -->
 ## In 60 seconds
