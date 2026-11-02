@@ -6,8 +6,10 @@ vehicle itself, straight through MAVSDK: the operator approved this before the m
 does not pass the gate (ADR 0004). What the vehicle did is told to the backend afterwards with
 `report_actions`.
 
-NOT SHOWN BY ANY TEST HERE: `run_monitor` needs a simulator. The decision logic is tested without
-one (tests/test_onboard_monitor.py, eval/onboard_replay.py). In the simulator the C2 link signal
+The loop, its retries and its error handling are tested against a fake vehicle
+(tests/test_onboard_run.py), and the decision logic without one (tests/test_onboard_monitor.py,
+eval/onboard_replay.py). What a real PX4 does with the LAND is NOT SHOWN by any test here: only a
+simulator run shows it (`sim/record_onboard_runs.sh`). In the simulator the C2 link signal
 is whatever the caller passes as `link_up`; `sim.record_run` passes the state of its link-cut
 relay, so a result says what the monitor does given that cut, not that PX4 or a real radio lost
 the C2. The trust inputs are PX4's own figures through the trust engine (ADR 0005).
@@ -23,6 +25,7 @@ from typing import TYPE_CHECKING, Any
 
 from c2.contingency import land_on_inconsistent_position, policy_sha256
 from navtrust.engine import TrustEngine
+from sim.estimator_status import parse_estimator_status
 from sim.onboard_monitor import OnboardAction, OnboardMonitor
 
 if TYPE_CHECKING:
@@ -75,8 +78,6 @@ async def run_monitor(
     the backend once the link is back; if it raises they are kept and tried again after a pause
     that doubles up to `REPORT_RETRY_MAX_S`, unless the backend answered 4xx, which is logged as
     'onboard_report_rejected' and not repeated (see `report_actions`)."""
-    from sim.record_run import parse_estimator_status  # imported here: record_run imports this
-
     engine = engine or TrustEngine(vehicle_id)
 
     async def fixes() -> None:

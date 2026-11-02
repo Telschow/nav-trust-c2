@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import json
 import subprocess
 import time
 from datetime import UTC, datetime
@@ -22,9 +21,11 @@ from mavsdk_grpc import System
 
 from c2.contingency import POLICY_MAX_AGE_S
 from navtrust.recording import SCHEMA
+from sim.estimator_status import parse_estimator_status
 from sim.failsafe_params import apply_failsafe_params
 from sim.flight_mode_log import log_flight_mode
 from sim.fly_survey import DEFAULT_ADDRESS, JsonlLog, VehicleDisarmed, fly
+from sim.gazebo_version import gazebo_version
 from sim.gnss_injector import MODES, ensure_enabled, inject_loop, log_gps_info
 from sim.ground_truth import gz_available, log_ground_truth
 from sim.interference import rectangle
@@ -34,22 +35,6 @@ from sim.onboard_policy import load_policy
 from sim.onboard_run import experiment_approval, run_monitor
 from sim.scenario import LINK_CUT_AFTER, LINK_CUT_DIRECTIONS, LinkCut
 from sim.survey import GeoPoint
-
-ESTIMATOR_FIELDS = (
-    "vel_ratio",
-    "pos_horiz_ratio",
-    "pos_vert_ratio",
-    "mag_ratio",
-    "pos_horiz_accuracy",
-    "pos_vert_accuracy",
-    "flags",
-)
-
-
-def parse_estimator_status(fields_json: str) -> dict[str, Any]:
-    """Pick the estimator health fields from an ESTIMATOR_STATUS message, dropping nulls."""
-    fields = json.loads(fields_json)
-    return {k: fields[k] for k in ESTIMATOR_FIELDS if fields.get(k) is not None}
 
 
 async def log_estimator_status(drone: System, log: JsonlLog) -> None:
@@ -101,6 +86,7 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
         "scenario": args.scenario,
         "created_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "px4_commit": px4_commit(),
+        "gazebo_version": gazebo_version(),
         "survey": {
             "width_m": args.width,
             "height_m": args.height,
