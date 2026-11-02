@@ -1,5 +1,5 @@
 {
-  "commit": "46ade0e7adf0b7d208096c120c21cb88bab14a53",
+  "commit": "131278455789f66545b5b2ca3e1450cff3745a98",
   "working_tree_dirty": false,
   "scenario": "stuck",
   "replay_speed": 8,
@@ -18,23 +18,37 @@
       "sha256": "78a3f21a50c2c54c3fc99939a9916389600306f28d03ab55ae30936d8ec2d941"
     }
   },
+  "numbers": {
+    "frozen_position_flagged_s": {
+      "min": 3,
+      "max": 4.5,
+      "runs": 7,
+      "from": [
+        "eval/results.json",
+        "eval/heldout/results.json"
+      ],
+      "note": "time from the start of the fault to the first report that is not GREEN, over runs where it was flagged"
+    }
+  },
   "viewport": {
     "width": 1080,
     "height": 1920
   },
   "console_zoom": 1.5,
+  "trim_s": 0.73,
   "playwright": "1.63.0",
   "beats_s": {
-    "trusted": 3.474,
-    "flagged": 11.575,
-    "approval": 18.646,
-    "recorded": 23.608
+    "hook": 0.83,
+    "trusted": 4.62,
+    "flagged": 11.068,
+    "recorded": 28.647,
+    "end": 32.887
   },
   "operator_name_shown": "Duty operator",
   "shown_on_screen": "the decided row and the activity line 'approved by <name>'; the audit database itself is not shown",
   "alt_text": {
-    "clip.mp4": "A person supervising simulated drones: uav2 is flagged as not trusted, the console recommends landing it, the person holds a button to approve, and the approval is recorded with their name. Captions say nothing moves until a person approves.",
-    "loop.gif": "The same sequence in 10 seconds: uav2 flagged, a landing recommended, the person approves by holding a button.",
-    "poster.jpg": "The console after the approval: uav2 not trusted, the decision shown as approved by the operator, and the activity log line recording it."
+    "clip.mp4": "Simulation (PX4 SITL), replayed. A person supervises three drones. One drone's position freezes and is flagged as not trusted within 3.0 to 4.5 seconds in 7 runs. The console recommends landing it, the person holds a button to approve, and the approval is recorded with their name. Nothing moves until a person approves. It does not show real hardware or a usability result.",
+    "loop.gif": "Simulation (PX4 SITL), replayed. uav2 flagged as not trusted, a landing recommended, the person approves by holding a button.",
+    "poster.jpg": "Simulation (PX4 SITL), replayed. The question 'Which drone's position can you trust?' over the console with three simulated drones."
   }
 }
