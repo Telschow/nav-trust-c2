@@ -1,8 +1,15 @@
 # Vertical clip and README GIF (issue 164)
 
-`run.sh` records a 1080x1920 clip of the replay demo: one vehicle goes GREEN, then RED with a
-reason, the recommendation appears, the operator holds the button to approve, and the audit row
-with the operator's name shows. It uses the real console (built from `console/`) and the replay
+**Maintainer checklist for the settings: the last section of this file.**
+
+`run.sh` records a 1080x1920 LinkedIn cut of the replay demo (about 38 s), built to the portfolio
+visual strategy: the question in large text over moving footage from the first frame; all three
+drones TRUSTED; uav2 DO NOT TRUST with its reason; the one number, with its denominator, read from
+the committed results files (frozen position flagged in 3.0 to 4.5 s, 7 simulation runs); the
+recommendation; the press-and-hold approval ("Nothing moves until a person approves."); the decided
+row with the operator's name; and an end card with what the project does not show and the Pages
+URL. A spotlight marks what to look at in each beat, and the evidence label with the commit is on
+every frame. It uses the real console (built from `console/`) and the replay
 feeder (`sim.demo_feed`), no simulator, no mock frames. It is a replay of recorded trust data with
 synthetic positions, and the clip says so on screen: "SIMULATION (PX4 SITL), replayed".
 

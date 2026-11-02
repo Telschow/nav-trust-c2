@@ -1,19 +1,31 @@
 1
-00:00:03,474 --> 00:00:11,575
-Three simulated drones, all trusted.
+00:00:00,100 --> 00:00:03,890
+Which drone's position can you trust? Three simulated drones. One person decides.
 
 2
-00:00:11,575 --> 00:00:15,144
-uav2's position froze. The system flags it RED and says why.
+00:00:03,890 --> 00:00:10,338
+TRUSTED. All three report a trusted position.
 
 3
-00:00:15,144 --> 00:00:18,646
-It recommends landing uav2. It cannot act on its own.
+00:00:10,338 --> 00:00:14,389
+DO NOT TRUST. uav2's position froze. The system says why.
 
 4
-00:00:18,646 --> 00:00:23,608
-Nothing moves until a person approves.
+00:00:14,389 --> 00:00:18,210
+Frozen position flagged in 3.0 to 4.5 s, 7 simulation runs.
 
 5
-00:00:23,608 --> 00:00:29,762
-Approved by Duty operator. The decision and the name are recorded in the audit log.
+00:00:18,210 --> 00:00:22,301
+It recommends landing uav2. It cannot act alone.
+
+6
+00:00:22,301 --> 00:00:27,917
+Nothing moves until a person approves.
+
+7
+00:00:27,917 --> 00:00:32,157
+Approved by Duty operator. Recorded in the audit log.
+
+8
+00:00:32,157 --> 00:00:37,609
+Nothing moves until a person approves. What this does not show: real hardware or radio interference, and a usability result. Simulation only. Not flight-tested. telschow.github.io/nav-trust-c2
