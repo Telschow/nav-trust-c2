@@ -6,13 +6,22 @@ log; a rejected decision attempt is logged too.
 
 from __future__ import annotations
 
+import math
+import secrets
 from collections.abc import Callable
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 
 from c2.audit import AuditLog
-from c2.contingency import POLICY_MAX_AGE_S, policy_sha256, validate_policy
+from c2.contingency import (
+    POLICY_MAX_AGE_S,
+    matching_entry,
+    policy_entries,
+    policy_sha256,
+    validate_policy,
+)
 from c2.messages import (
     Decision,
     Outcome,
@@ -31,6 +40,17 @@ class LinkState(StrEnum):
 
     LINK_OK = "LINK_OK"
     NO_LINK = "NO_LINK"
+
+
+# the same four kinds as COMMAND_ENDINGS in console/src/store.ts, and in docs/ICD.md
+_COMMAND_ENDINGS = (
+    "command_executed",
+    "command_not_acknowledged",
+    "command_failed",
+    "command_blocked",
+)
+# A posted recommendation lives as long as one the recommender makes (RecommenderConfig.ttl_s).
+EXTERNAL_TTL_S = 60.0  # proposal
 
 
 class HubError(Exception):
@@ -59,6 +79,10 @@ class UnknownPolicy(HubError):
     code = "unknown_policy"
 
 
+class OutsidePolicy(HubError):
+    code = "outside_policy"
+
+
 class SupersededRecommendation(HubError):
     code = "superseded"
 
@@ -73,6 +97,14 @@ class InvalidOperator(HubError):
 
 class DuplicateRecommendation(HubError):
     code = "duplicate_recommendation"
+
+
+class UnknownVehicle(HubError):
+    code = "unknown_vehicle"
+
+
+class NoLink(HubError):
+    code = "no_link"
 
 
 @dataclass
@@ -103,10 +135,38 @@ class Hub:
         self._trust: dict[str, NavTrust] = {}
         self._recs: dict[str, Recommendation] = {}
         self._decisions: dict[str, Decision] = {}
+        self._decision_rows: dict[str, int] = {}  # recommendation id -> audit id of its decision
+        self.session_id = ""
+        self._command_outcomes: dict[str, dict[str, Any]] = {}  # recommendation id -> last row
         self._subscribers: list[Callable[[Event], None]] = []
         self._positions: dict[str, dict[str, float]] = {}
         self._origin: dict[str, float] | None = None
         self._source = "live"
+
+    def record_command(self, kind: str, vehicle_id: str | None, payload: dict[str, Any]) -> None:
+        """Audit a command row and tell every console about it, so each one can show how an
+        approved command ended (executed, not acknowledged, failed, blocked)."""
+        rec_id = str(payload.get("recommendation_id"))
+        row = self._decision_rows.get(rec_id)
+        if row is not None:  # a command row cites the decision row that authorised it (issue 159)
+            payload = {**payload, "decision_audit_id": row}
+        self._audit.append(self._clock(), kind, vehicle_id, payload)
+        data = {"kind": kind, "vehicle_id": vehicle_id, **payload}
+        if kind in _COMMAND_ENDINGS:
+            self._command_outcomes[rec_id] = data
+        self._publish({"type": "command", "data": data})
+
+    def start_session(self) -> str:
+        """Mark the start of this backend run in the audit log and return its random id. The
+        clock restarts at 0 with every run, so the rows after this one belong to this run."""
+        self.session_id = secrets.token_hex(4)
+        self._audit.append(
+            self._clock(),
+            "session_started",
+            None,
+            {"session_id": self.session_id, "wall_clock_utc": datetime.now(UTC).isoformat()},
+        )
+        return self.session_id
 
     # --- subscriptions -------------------------------------------------------------------
 
@@ -158,6 +218,8 @@ class Hub:
         """Latest position for the map. High rate, so it is published but not audited."""
         if not (-90 <= lat_deg <= 90 and -180 <= lon_deg <= 180):
             raise ValueError("latitude or longitude out of range")
+        if not math.isfinite(alt_m):
+            raise ValueError("altitude must be a finite number")
         self._note_report(vehicle_id)
         pos = {"lat_deg": lat_deg, "lon_deg": lon_deg, "alt_m": alt_m, "stamp_s": self._clock()}
         self._positions[vehicle_id] = pos
@@ -191,14 +253,33 @@ class Hub:
     def origin(self) -> dict[str, float] | None:
         return self._origin
 
-    def add_recommendation(self, rec: Recommendation) -> None:
+    def add_recommendation(self, rec: Recommendation, source: str = "recommender") -> None:
+        """Put a recommendation in front of the operator. `source` goes into the audit row:
+        "recommender" for the rule-based recommender, "external" for one a client posted."""
         if rec.id in self._recs:
             raise DuplicateRecommendation(rec.id)
         self._recs[rec.id] = rec
         self._audit.append(
-            self._clock(), "recommendation", rec.vehicle_id, recommendation_to_dict(rec)
+            self._clock(),
+            "recommendation",
+            rec.vehicle_id,
+            {**recommendation_to_dict(rec), "source": source},
         )
         self._publish({"type": "recommendation", "data": recommendation_to_dict(rec)})
+
+    def add_external_recommendation(self, rec: Recommendation) -> Recommendation:
+        """A recommendation a client posted (tests and demos only, see create_app). The hub, not
+        the client, decides its times; it refuses a vehicle never heard from, and a command to a
+        vehicle without a link (ADR 0004 item 6). A re-task for such a vehicle is allowed."""
+        # the recommender only speaks of vehicles it has a trust report for
+        if rec.vehicle_id not in self._trust:
+            raise UnknownVehicle(rec.vehicle_id)
+        if rec.command is not None and not self.is_reachable(rec.vehicle_id):
+            raise NoLink(rec.vehicle_id)
+        now = self._clock()
+        stamped = replace(rec, created_s=now, expires_s=now + EXTERNAL_TTL_S)
+        self.add_recommendation(stamped, source="external")
+        return stamped
 
     def approve_policy(
         self, policy: dict[str, Any], operator: str, max_wait_s: float
@@ -233,7 +314,8 @@ class Hub:
 
     def report_onboard_action(self, report: dict[str, Any]) -> None:
         """A vehicle says what it did on its own, citing the policy it did it under. Accepted only
-        if that policy approval is in the audit log with the same hash; audited either way."""
+        if that policy approval is in the audit log with the same hash and the policy authorises
+        the reported action; audited either way."""
         vehicle_id = str(report["vehicle_id"])
         approved = [
             e
@@ -242,17 +324,35 @@ class Hub:
             and e.payload["sha256"] == report.get("policy_sha256")
         ]
         if not approved:
-            self._audit.append(
-                self._clock(),
-                "rejected_onboard_action",
-                vehicle_id,
-                {**report, "rejected_because": UnknownPolicy.code},
-            )
+            self._reject_onboard_action(vehicle_id, report, UnknownPolicy.code)
             raise UnknownPolicy(str(report.get("policy_audit_id")))
+        if not self._within_policy(approved[0].payload["policy"], report):
+            self._reject_onboard_action(vehicle_id, report, OutsidePolicy.code)
+            raise OutsidePolicy(f"{report.get('action')} for {report.get('reason')}")
         self._note_report(vehicle_id)  # hearing from the vehicle at all
         self._audit.append(self._clock(), "onboard_action", vehicle_id, report)
         self._onboard_actions.append((self._clock(), report))
         self._publish({"type": "onboard_action", "data": report})
+
+    @staticmethod
+    def _within_policy(policy: dict[str, Any], report: dict[str, Any]) -> bool:
+        """ADR 0004 item 8: the action counts for the fault, link condition and action the policy
+        names, and for nothing else. A vehicle acts only once the link has been down longer than
+        the policy's wait."""
+        entry = matching_entry(policy_entries(policy), report.get("reason"), "NO_LINK")
+        return (
+            entry is not None
+            and entry.action == report.get("action")
+            and float(report.get("link_down_s", 0.0)) > float(policy["wait_s"])
+        )
+
+    def _reject_onboard_action(self, vehicle_id: str, report: dict[str, Any], why: str) -> None:
+        self._audit.append(
+            self._clock(),
+            "rejected_onboard_action",
+            vehicle_id,
+            {**report, "rejected_because": why},
+        )
 
     def decide(
         self, recommendation_id: str, outcome: Outcome, operator: str, note: str = ""
@@ -403,7 +503,8 @@ class Hub:
 
     def _record(self, decision: Decision, vehicle_id: str) -> None:
         self._decisions[decision.recommendation_id] = decision
-        self._audit.append(self._clock(), "decision", vehicle_id, decision_to_dict(decision))
+        row = self._audit.append(self._clock(), "decision", vehicle_id, decision_to_dict(decision))
+        self._decision_rows[decision.recommendation_id] = row.id
         self._publish({"type": "decision", "data": decision_to_dict(decision)})
 
     # --- queries -------------------------------------------------------------------------
@@ -425,6 +526,7 @@ class Hub:
                 }
                 for v in sorted(self._link)
             },
+            "command_outcomes": dict(self._command_outcomes),
             "open_recommendations": [
                 recommendation_to_dict(r)
                 for r in self._recs.values()

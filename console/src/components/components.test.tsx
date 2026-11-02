@@ -82,6 +82,28 @@ describe("ConfirmDialog", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it("cannot approve once its recommendation has gone, and says why", () => {
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} demo={false} unavailable="This recommendation expired." onConfirm={onConfirm} />);
+    expect(screen.getByRole("alert").textContent).toMatch(/expired/);
+    const confirm = screen.getByRole("button", { name: "Confirm approval" }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(confirm);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("a landing cannot be started by holding once its recommendation has gone", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={{ ...rec, command: "LAND" }} demo={false} unavailable="This recommendation expired." onConfirm={onConfirm} />);
+    const hold = screen.getByRole("button", { name: /Hold to confirm landing/ }) as HTMLButtonElement;
+    expect(hold.disabled).toBe(true);
+    fireEvent.pointerDown(hold);
+    vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS + 100);
+    expect(onConfirm).not.toHaveBeenCalled();
+    vi.useRealTimers();
+  });
+
   it("Escape cancels with the latest handler after a re-render", () => {
     const first = vi.fn();
     const latest = vi.fn();
@@ -625,5 +647,19 @@ describe("a superseded decision in the history (issue 77)", () => {
     render(<ul><DecidedRow rec={rec} decision={decision} /></ul>);
     expect(screen.getByText("Superseded")).toBeTruthy();
     expect(screen.queryByText(/by system/)).toBeNull();
+  });
+});
+
+describe("DecidedRow shows how a command ended, also when another console approved it (issue 161)", () => {
+  const approved = { recommendation_id: "r1", outcome: "APPROVED" as const, decided_s: 110, operator: "ana", note: "" };
+
+  it("says it was not acknowledged", () => {
+    render(<ul><DecidedRow rec={rec} decision={approved} command={{ kind: "command_not_acknowledged", vehicle_id: "uav2", recommendation_id: "r1" }} /></ul>);
+    expect(screen.getByText(/Not acknowledged/)).toBeTruthy();
+  });
+
+  it("says what was executed", () => {
+    render(<ul><DecidedRow rec={rec} decision={approved} command={{ kind: "command_executed", vehicle_id: "uav2", recommendation_id: "r1", actions: ["HOLD uav2"] }} /></ul>);
+    expect(screen.getByText(/Executed: HOLD uav2/)).toBeTruthy();
   });
 });

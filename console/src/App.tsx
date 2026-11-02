@@ -10,7 +10,7 @@ import { DecidedRow, ExpiredNotice, RecommendationCard } from "./components/Reco
 import { VehicleRow } from "./components/VehicleRow";
 import { announce, loadSoundChoice, saveSoundChoice, webAudioPlayer } from "./cues";
 import { useConsole, useServerNow } from "./hooks";
-import { backendLost as isBackendLost, decidedHistory, expiredWithoutLink, isNoLink, isSeen, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
+import { backendLost as isBackendLost, confirmBlocker, decidedHistory, expiredWithoutLink, isNoLink, isSeen, openRecommendations, pinnedExpired, raisedAgain, trustCounts } from "./store";
 import type { Recommendation } from "./types";
 
 const OPERATOR_KEY = "nav-trust-operator";
@@ -201,7 +201,7 @@ export function App() {
               <h2 className="label">Recently decided</h2>
               <ul className="mt-2">
                 {decided.map(({ rec, decision }) => (
-                  <DecidedRow key={rec.id} rec={rec} decision={decision} />
+                  <DecidedRow key={rec.id} rec={rec} decision={decision} command={state.commands[rec.id]} />
                 ))}
               </ul>
             </div>
@@ -224,6 +224,7 @@ export function App() {
           busy={busy}
           noLink={isNoLink(state, confirming.vehicle_id)}
           backendLost={backendLost}
+          unavailable={confirmBlocker(state, confirming.id)}
           onOperatorChange={changeOperator}
           onCancel={() => setConfirming(null)}
           onConfirm={() => void decide(confirming, "APPROVED")}

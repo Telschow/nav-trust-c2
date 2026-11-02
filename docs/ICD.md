@@ -63,6 +63,17 @@ carry `server_s`, the backend clock, for client-side expiry countdowns. `POST /s
 `{label}` names where the data comes from (`live` by default); a replay or demo feeder must set
 it so the console cannot present replayed data as a live flight.
 
+Numbers must be finite: a `navtrust` report with a NaN or infinite `stamp_s`, `confidence`,
+`headroom` or `horizontal_bound_m` (`null` means unbounded), or a position with such an `alt_m`,
+is refused with 422, and WebSocket JSON is written with `allow_nan` off (issue 161).
+
+Command outcomes (issue 161). Every `command_*` audit row is also published as a `command`
+WebSocket event `{"type": "command", "data": {kind, vehicle_id, recommendation_id,
+decision_audit_id, ...the row's payload}, "server_s": ...}`, so a console that did not click
+Approve still learns how the command ended. `/state` and the first WebSocket message carry
+`command_outcomes`, the last ending per recommendation id (`command_executed`,
+`command_not_acknowledged`, `command_failed` or `command_blocked`).
+
 ## Fleet (`GET /fleet`)
 `{origin, assignment, done}`. `assignment` maps each vehicle to its sectors
 (`{id, west, south, east, north}`, metres from the origin). `done` lists the ids of sectors that
@@ -135,7 +146,11 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
 - `POST /onboard-actions` `{vehicle_id, t_s, action, reason, link_down_s, policy_audit_id,
   policy_sha256}` is a vehicle saying, once its link is back, what it did on its own. `t_s` is
   the vehicle's clock. It is accepted only if that policy approval is in the audit log with the
-  same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row). It is audited as
+  same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row) and the policy
+  authorises it: an entry with that `reason` and the link condition `NO_LINK`, the same `action`,
+  and `link_down_s` above the policy's `wait_s` (else 422 `outside_policy`, a
+  `rejected_onboard_action` row with `rejected_because: outside_policy`, and the link state of the
+  vehicle is not touched). It is audited as
   `onboard_action`, published as an `onboard_action` WebSocket event with the same fields, and
   listed in the `outage_summary` of the outage it falls in (`onboard_actions`) if it is reported
   before that summary is published, which happens at the first trust report after the link returns.
@@ -148,7 +163,23 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
 Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendation`,
 `decision`, `rejected_decision`, `link_change`, `outage_summary`, `command_sent`,
 `command_acknowledged`, `command_not_acknowledged`, `command_executed`, `command_failed`,
-`command_blocked`, `policy_approved`, `onboard_action`, `rejected_onboard_action`), `vehicle_id`, JSON `payload`. Trust is logged on
+`command_blocked`, `policy_approved`, `onboard_action`, `rejected_onboard_action`,
+`session_started`), `vehicle_id`, JSON `payload`. Trust is logged on
 state or reason changes, not on every message. A `link_change` row has the `state`,
 `previous_state`, `last_report_age_s` (as in the `link` event) and `link_timeout_s`; one row per
 change.
+
+A `recommendation` row's payload carries `source`: `recommender` for one the rule-based
+recommender made, `external` for one a client posted. `POST /recommendations` exists only when the
+app is built with `allow_external_recommendations` (tests and demos); the production app answers
+404. A posted recommendation is re-stamped by the hub (created now, 60 s to live, a proposal) and refused with
+422 `unknown_vehicle` (never heard from) or `no_link` (a command for a vehicle without a link; a
+re-task is allowed). Issue 157.
+
+Each backend run writes a `session_started` row first, `{session_id, wall_clock_utc}`: the run's
+clock and recommendation counter restart at 0, so the rows after it belong to that run. The
+recommender puts the session id in its ids (`rec-<session>-<vehicle>-<n>`). Every `command_*`
+row carries `decision_audit_id`, the audit id of the `decision` row that authorised it (absent on
+`command_blocked` when there was no decision). `python -m c2.audit_verify <db>` checks that every
+`command_sent` row cites an approval of the same recommendation, taken in the same session, and
+that no recommendation id repeats. A database from before issue 159 does not pass. Issue 159.

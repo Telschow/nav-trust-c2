@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import hashlib
 import json
+from collections.abc import Iterable
+from dataclasses import dataclass
 from typing import Any
 
 from navtrust.types import ReasonCode
@@ -46,3 +48,24 @@ def validate_policy(policy: dict[str, Any], max_wait_s: float) -> None:
             raise ValueError(f"unknown link condition {link!r}")
         if action not in ACTIONS:
             raise ValueError(f"action {action!r} is not allowed: only LAND")
+
+
+@dataclass(frozen=True)
+class PolicyEntry:
+    reason: str
+    link: str
+    action: str
+
+
+def policy_entries(policy: dict[str, Any]) -> tuple[PolicyEntry, ...]:
+    return tuple(PolicyEntry(e["reason"], e["link"], e["action"]) for e in policy["entries"])
+
+
+def matching_entry(
+    entries: Iterable[PolicyEntry], reason: str | None, link: str
+) -> PolicyEntry | None:
+    """The entry that authorises an action for this reason and link condition, if any. The one
+    answer to "is this within the policy", for the vehicle that acts and the backend that checks."""
+    if reason is None:
+        return None
+    return next((e for e in entries if e.reason == reason and e.link == link), None)

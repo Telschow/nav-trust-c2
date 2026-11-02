@@ -11,7 +11,7 @@ import {
   titleOf,
   urgencyNote,
 } from "./language";
-import { decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, backendLost, expiredWithoutLink, isSeen, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
+import { confirmBlocker, decidedHistory, decidedRecommendations, initialState, isNoLink, openRecommendations, backendLost, expiredWithoutLink, isSeen, pinnedExpired, raisedAgain, reducer, serverNow, trustCounts } from "./store";
 import type { ConsoleState } from "./store";
 import type { NavTrust, Recommendation, ServerEvent, StateSnapshot } from "./types";
 
@@ -505,5 +505,47 @@ describe("recovery after an outage (issue 77)", () => {
 
   it("says plainly when the situation had not changed", () => {
     expect(apply(initialState, summary([])).log[0]?.text).toContain("nothing closed");
+  });
+});
+
+describe("how a command ended (issue 161)", () => {
+  const ended = (kind: string) =>
+    ev({ type: "command", data: { kind, vehicle_id: "uav2", recommendation_id: "r1", action: "LAND uav2" } } as never);
+
+  it("keeps the ending a second console is told about, and puts it in the activity log", () => {
+    const s = apply(apply(initialState, ev({ type: "state", server_s: 50, data: snapshot }), 20), ended("command_not_acknowledged"));
+    expect(s.commands.r1?.kind).toBe("command_not_acknowledged");
+    expect(s.log[0]?.tone).toBe("bad");
+  });
+
+  it("does not treat a command that was only sent as an ending", () => {
+    const s = apply(initialState, ended("command_sent"));
+    expect(s.commands.r1).toBeUndefined();
+  });
+
+  it("learns the endings that happened before it connected from the snapshot", () => {
+    const withOutcome = { ...snapshot, command_outcomes: { r1: { kind: "command_executed" as const, vehicle_id: "uav2", recommendation_id: "r1" } } };
+    const s = apply(initialState, ev({ type: "state", server_s: 50, data: withOutcome }));
+    expect(s.commands.r1?.kind).toBe("command_executed");
+  });
+});
+
+describe("whether the confirm dialog can still approve (issue 161)", () => {
+  const opened = apply(initialState, ev({ type: "state", server_s: 50, data: snapshot }));
+
+  it("can while the recommendation is open", () => {
+    expect(confirmBlocker(opened, "r1")).toBeNull();
+  });
+
+  it("says why when it expired, was superseded or was decided elsewhere", () => {
+    const decide = (outcome: string) =>
+      apply(opened, ev({ type: "decision", data: { recommendation_id: "r1", outcome, decided_s: 60, operator: "ana", note: "" } } as never));
+    expect(confirmBlocker(decide("EXPIRED"), "r1")).toMatch(/expired/i);
+    expect(confirmBlocker(decide("SUPERSEDED"), "r1")).toMatch(/situation changed/i);
+    expect(confirmBlocker(decide("APPROVED"), "r1")).toMatch(/ana/);
+  });
+
+  it("says it no longer exists when the backend forgot it", () => {
+    expect(confirmBlocker(initialState, "r1")).toMatch(/no longer/i);
   });
 });

@@ -21,6 +21,7 @@ from c2.dryrun import DryRunExecutor  # noqa: E402
 from c2.fleet import FleetState  # noqa: E402
 from c2.gate import CommandGate  # noqa: E402
 from c2.hub import Hub  # noqa: E402
+from c2.messages import recommendation_from_dict  # noqa: E402
 from c2.server import create_app, cross_site_reason  # noqa: E402
 
 REC: dict[str, Any] = {
@@ -60,8 +61,8 @@ def test_rebound_page_cannot_create_or_approve_a_command(
 def test_cross_origin_page_is_refused_even_for_a_real_recommendation(
     system: tuple[TestClient, DryRunExecutor, Hub],
 ) -> None:
-    client, executor, _ = system
-    assert client.post("/recommendations", json=REC).status_code == 201  # backend-side client
+    client, executor, hub = system
+    hub.add_recommendation(recommendation_from_dict(REC))  # what the recommender does
     other_site = {"Origin": "https://example.org"}
     assert client.post("/decisions", json=APPROVE, headers=other_site).status_code == 403
     assert client.post("/decisions", json=APPROVE, headers={"Origin": "null"}).status_code == 403
@@ -105,7 +106,7 @@ def test_blank_operator_is_refused_and_nothing_executes(
     system: tuple[TestClient, DryRunExecutor, Hub],
 ) -> None:
     client, executor, hub = system
-    assert client.post("/recommendations", json=REC).status_code == 201
+    hub.add_recommendation(recommendation_from_dict(REC))
     blank = {**APPROVE, "operator": "  "}
     response = client.post("/decisions", json=blank)
     assert response.status_code == 422 and response.json()["detail"] == "invalid_operator"

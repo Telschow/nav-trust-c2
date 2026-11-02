@@ -49,16 +49,18 @@ interface Props {
   noLink?: boolean;
   /** the console cannot reach the backend, so nothing can be sent */
   backendLost?: boolean;
+  /** why this can no longer be approved (it expired, was closed or was decided elsewhere) */
+  unavailable?: string | null;
   onOperatorChange: (name: string) => void;
   onCancel: () => void;
   onConfirm: () => void;
 }
 
-export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backendLost = false, onOperatorChange, onCancel, onConfirm }: Props) {
+export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backendLost = false, unavailable = null, onOperatorChange, onCancel, onConfirm }: Props) {
   const landing = rec.command === "LAND";
   const confirmRef = useRef<HTMLButtonElement>(null);
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
-  const canConfirm = !busy && !backendLost && operator.trim() !== "";
+  const canConfirm = !busy && !backendLost && !unavailable && operator.trim() !== "";
   const hold = useHold(HOLD_TO_CONFIRM_MS, onConfirm, canConfirm);
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
@@ -104,6 +106,12 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
             ? "Demo mode: no command is sent to any vehicle. The decision is still recorded."
             : "These commands are sent to the vehicles and the decision is recorded in the audit log."}
         </p>
+
+        {unavailable && (
+          <p role="alert" className="mt-4 border border-bad/60 px-3 py-2 text-sm text-bad">
+            {unavailable} Close this and look at the decisions list.
+          </p>
+        )}
 
         {backendLost && (
           <p role="alert" className="mt-4 border border-bad/60 px-3 py-2 text-sm text-bad">
