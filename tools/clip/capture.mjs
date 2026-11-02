@@ -158,7 +158,7 @@ writeFileSync(
   JSON.stringify(
     {
       commit: sh("git rev-parse HEAD"),
-      working_tree_dirty: sh("git status --porcelain").length > 0,
+      working_tree_dirty: sh("git status --porcelain --untracked-files=no").length > 0,
       scenario: SCENARIO,
       replay_speed: Number(SPEED),
       source: "sim.demo_feed: recorded trust data with synthetic positions; no simulator was running",
