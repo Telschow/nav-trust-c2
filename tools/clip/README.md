@@ -47,7 +47,10 @@ with `curl` and unpack it to `~/Library/Caches/ms-playwright/ffmpeg-1011/` with 
 
 ## Maintainer checklist (settings; agents do not change these)
 
-- [ ] Repository homepage field: `https://telschow.github.io/nav-trust-c2/`.
-- [ ] Social preview image (1280x640): a crop of `poster.jpg` or of `docs/screenshots/console-1080p.jpg`,
-      uploaded under Settings, General.
-- [ ] Look at `logs/clip/clip.mp4` once for pace and wording before it is committed.
+- [ ] **Repository homepage:** on the repository page, About (the gear), Website:
+      `https://telschow.github.io/nav-trust-c2/`.
+- [ ] **Social preview:** Settings, General, Social preview, upload `docs/media/social-preview.png`
+      (1280x640, a crop of the real console).
+- [ ] **LinkedIn post:** upload `docs/media/vertical/clip.mp4`, add `clip.srt` as the captions file
+      (burned-in captions are already in the video), use `poster.jpg` as the thumbnail, and take the
+      alt text from `manifest.json` (`alt_text`). Keep "Simulation only" in the post text.
