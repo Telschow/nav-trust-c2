@@ -51,11 +51,16 @@ if command -v ffmpeg >/dev/null; then
         -pix_fmt yuv420p -movflags +faststart "${CLIP_OUT}/clip.mp4"
     echo "wrote ${CLIP_OUT}/clip.mp4"
 
-    # the README's first-screen GIF: from the flag to the approval, 1.5x, 360 px wide. Issue 164
-    # sets at most 10 s and 5 MB; both are measured below, not assumed.
-    start="$("${CLIP_PYTHON}" -c "import json,sys; print(max(0, json.load(open(sys.argv[1]))['beats_s']['flagged'] - 0.5))" "${CLIP_OUT}/manifest.json")"
-    ffmpeg -loglevel error -y -ss "${start}" -t 14 -i "${CLIP_OUT}/clip.webm" \
-        -vf "setpts=PTS/1.5,fps=10,scale=360:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse" \
+    # the README's first-screen GIF: from the flag to the approval being recorded, sped up to 9 s,
+    # 360 px wide. Issue 164 sets under 10 s and 5 MB; both are measured below, not assumed.
+    read -r start span speed < <("${CLIP_PYTHON}" -c "
+import json, sys
+b = json.load(open(sys.argv[1]))['beats_s']
+start = max(0, b['flagged'] - 0.3)
+span = b['recorded'] + 3.5 - start
+print(round(start, 2), round(span, 2), round(span / 9.0, 3))" "${CLIP_OUT}/manifest.json")
+    ffmpeg -loglevel error -y -ss "${start}" -t "${span}" -i "${CLIP_OUT}/clip.webm" \
+        -vf "setpts=PTS/${speed},fps=10,scale=360:-1:flags=lanczos,split[a][b];[a]palettegen=max_colors=96[p];[b][p]paletteuse" \
         "${CLIP_OUT}/loop.gif"
     bytes="$(wc -c <"${CLIP_OUT}/loop.gif")"
     seconds="$(ffprobe -v error -show_entries format=duration -of csv=p=0 "${CLIP_OUT}/loop.gif")"
