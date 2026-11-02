@@ -17,6 +17,7 @@ from eval.evaluate import (
     evaluate,
     render_markdown,
 )
+from eval.freeze import stale_hint
 from eval.metrics import EvalConfig
 
 SETS = {
@@ -43,16 +44,14 @@ def test_committed_results_match_a_fresh_evaluation(name: str) -> None:
     recordings, scenarios, out, title, where, expectations = SETS[name]
     result = evaluate(recordings, scenarios, EvalConfig())
     json_path, md_path = out / "results.json", out / "results.md"
-    assert json_path.exists() and md_path.exists(), (
-        "run `make eval` / `make eval-heldout` and commit"
-    )
+    assert json_path.exists() and md_path.exists(), stale_hint()
     assert json_path.read_text(encoding="utf-8") == json.dumps(result, indent=2) + "\n", (
         f"{json_path.name} is stale (new recordings, a changed harness, or changed engine code): "
-        "regenerate and commit"
+        + stale_hint()
     )
     assert md_path.read_text(encoding="utf-8") == render_markdown(
         result, title, where, expectations
-    )
+    ), stale_hint()
 
 
 @pytest.mark.parametrize("name", SETS)
