@@ -82,6 +82,10 @@ class OnboardMonitor:
         self._unreported.append(action)
         return action
 
+    def requeue(self, actions: list[OnboardAction]) -> None:
+        """Put actions back that could not be reported, ahead of any newer ones."""
+        self._unreported = [*actions, *self._unreported]
+
     def take_unreported(self) -> list[OnboardAction]:
         """Actions not yet told to the backend. Call when the link is back, then report them."""
         out, self._unreported = self._unreported, []

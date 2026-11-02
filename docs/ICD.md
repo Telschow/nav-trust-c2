@@ -135,7 +135,11 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
 - `POST /onboard-actions` `{vehicle_id, t_s, action, reason, link_down_s, policy_audit_id,
   policy_sha256}` is a vehicle saying, once its link is back, what it did on its own. `t_s` is
   the vehicle's clock. It is accepted only if that policy approval is in the audit log with the
-  same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row). It is audited as
+  same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row) and the policy
+  authorises it: an entry with that `reason` and the link condition `NO_LINK`, the same `action`,
+  and `link_down_s` above the policy's `wait_s` (else 422 `outside_policy`, a
+  `rejected_onboard_action` row with `rejected_because: outside_policy`, and the link state of the
+  vehicle is not touched). It is audited as
   `onboard_action`, published as an `onboard_action` WebSocket event with the same fields, and
   listed in the `outage_summary` of the outage it falls in (`onboard_actions`) if it is reported
   before that summary is published, which happens at the first trust report after the link returns.

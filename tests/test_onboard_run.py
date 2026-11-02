@@ -129,8 +129,116 @@ def test_the_monitor_lands_the_vehicle_itself_and_reports_only_once_the_link_is_
 
     asyncio.run(go())
     assert drone.landed == 1
-    assert [e for e, _ in written] == ["onboard_action"]
+    assert [e for e, _ in written] == ["onboard_action", "onboard_command_acknowledged"]
     assert "t_s" not in written[0][1]  # the recorder's own t_s must not be overwritten
     assert "vehicle_clock_s" in written[0][1]
     [(up, actions)] = reported
     assert up and len(actions) == 1 and actions[0].action == "LAND"
+
+
+def test_a_report_the_backend_refuses_is_kept_and_sent_again_until_it_is_accepted() -> None:
+    from sim.onboard_monitor import OnboardMonitor
+    from sim.onboard_run import run_monitor
+
+    approval = experiment_approval(wait_s=0.1)
+    policy = load_policy(approval, now_s=approval["approved_s"], max_age_s=3600.0)
+    drone, written, attempts = _FakeDrone(), [], []
+
+    async def report(actions: list[OnboardAction]) -> None:
+        attempts.append(len(actions))
+        if len(attempts) < 3:  # the backend answers 500 twice, then 204
+            raise RuntimeError("500")
+
+    async def go() -> None:
+        import time
+
+        monitor = OnboardMonitor("uav1", policy, started_s=time.monotonic())
+        task = asyncio.create_task(
+            run_monitor(
+                drone, monitor, lambda: monitor_link["up"], lambda e, **f: written.append((e, f)),
+                engine=_FrozenEngine(), report=report, interval_s=0.02,  # type: ignore[arg-type]
+                retry_s=0.05,
+            )
+        )  # fmt: skip
+        await asyncio.sleep(0.1)  # the C2 is heard first, or the monitor has nothing to count from
+        monitor_link["up"] = False
+        await asyncio.sleep(0.4)
+        monitor_link["up"] = True
+        await asyncio.sleep(1.0)
+        assert not task.done()  # a failed POST must not end the monitor
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    monitor_link = {"up": True}
+    asyncio.run(go())
+    assert attempts == [1, 1, 1]  # the same single action, three tries, then nothing left to send
+
+
+def test_a_land_that_fails_is_logged_and_the_monitor_keeps_running() -> None:
+    from sim.onboard_monitor import OnboardMonitor
+    from sim.onboard_run import run_monitor
+
+    class Failing(_FakeDrone):
+        def __init__(self) -> None:
+            super().__init__()
+
+            async def land() -> None:
+                raise RuntimeError("COMMAND_DENIED")
+
+            self.action.land = land  # type: ignore[method-assign]
+
+    approval = experiment_approval(wait_s=0.1)
+    policy = load_policy(approval, now_s=approval["approved_s"], max_age_s=3600.0)
+    written: list[tuple[str, dict[str, Any]]] = []
+    link = {"up": True}
+
+    async def go() -> None:
+        import time
+
+        monitor = OnboardMonitor("uav1", policy, started_s=time.monotonic())
+        task = asyncio.create_task(
+            run_monitor(
+                Failing(), monitor, lambda: link["up"], lambda e, **f: written.append((e, f)),
+                engine=_FrozenEngine(), interval_s=0.02,  # type: ignore[arg-type]
+            )
+        )  # fmt: skip
+        await asyncio.sleep(0.1)
+        link["up"] = False
+        await asyncio.sleep(0.5)
+        assert not task.done()
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    asyncio.run(go())
+    kinds = [e for e, _ in written]
+    assert kinds == ["onboard_action", "onboard_command_failed"]
+    assert "COMMAND_DENIED" in written[1][1]["error"]
+
+
+def test_a_land_the_vehicle_accepts_is_logged_as_acknowledged() -> None:
+    from sim.onboard_monitor import OnboardMonitor
+    from sim.onboard_run import run_monitor
+
+    approval = experiment_approval(wait_s=0.1)
+    policy = load_policy(approval, now_s=approval["approved_s"], max_age_s=3600.0)
+    written: list[tuple[str, dict[str, Any]]] = []
+    link = {"up": True}
+
+    async def go() -> None:
+        import time
+
+        monitor = OnboardMonitor("uav1", policy, started_s=time.monotonic())
+        task = asyncio.create_task(
+            run_monitor(
+                _FakeDrone(), monitor, lambda: link["up"], lambda e, **f: written.append((e, f)),
+                engine=_FrozenEngine(), interval_s=0.02,  # type: ignore[arg-type]
+            )
+        )  # fmt: skip
+        await asyncio.sleep(0.1)
+        link["up"] = False
+        await asyncio.sleep(0.4)
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+    asyncio.run(go())
+    assert [e for e, _ in written] == ["onboard_action", "onboard_command_acknowledged"]

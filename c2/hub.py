@@ -12,7 +12,13 @@ from enum import StrEnum
 from typing import Any
 
 from c2.audit import AuditLog
-from c2.contingency import POLICY_MAX_AGE_S, policy_sha256, validate_policy
+from c2.contingency import (
+    POLICY_MAX_AGE_S,
+    matching_entry,
+    policy_entries,
+    policy_sha256,
+    validate_policy,
+)
 from c2.messages import (
     Decision,
     Outcome,
@@ -63,6 +69,10 @@ class InvalidPolicy(HubError):
 
 class UnknownPolicy(HubError):
     code = "unknown_policy"
+
+
+class OutsidePolicy(HubError):
+    code = "outside_policy"
 
 
 class SupersededRecommendation(HubError):
@@ -265,7 +275,8 @@ class Hub:
 
     def report_onboard_action(self, report: dict[str, Any]) -> None:
         """A vehicle says what it did on its own, citing the policy it did it under. Accepted only
-        if that policy approval is in the audit log with the same hash; audited either way."""
+        if that policy approval is in the audit log with the same hash and the policy authorises
+        the reported action; audited either way."""
         vehicle_id = str(report["vehicle_id"])
         approved = [
             e
@@ -274,17 +285,35 @@ class Hub:
             and e.payload["sha256"] == report.get("policy_sha256")
         ]
         if not approved:
-            self._audit.append(
-                self._clock(),
-                "rejected_onboard_action",
-                vehicle_id,
-                {**report, "rejected_because": UnknownPolicy.code},
-            )
+            self._reject_onboard_action(vehicle_id, report, UnknownPolicy.code)
             raise UnknownPolicy(str(report.get("policy_audit_id")))
+        if not self._within_policy(approved[0].payload["policy"], report):
+            self._reject_onboard_action(vehicle_id, report, OutsidePolicy.code)
+            raise OutsidePolicy(f"{report.get('action')} for {report.get('reason')}")
         self._note_report(vehicle_id)  # hearing from the vehicle at all
         self._audit.append(self._clock(), "onboard_action", vehicle_id, report)
         self._onboard_actions.append((self._clock(), report))
         self._publish({"type": "onboard_action", "data": report})
+
+    @staticmethod
+    def _within_policy(policy: dict[str, Any], report: dict[str, Any]) -> bool:
+        """ADR 0004 item 8: the action counts for the fault, link condition and action the policy
+        names, and for nothing else. A vehicle acts only once the link has been down longer than
+        the policy's wait."""
+        entry = matching_entry(policy_entries(policy), report.get("reason"), "NO_LINK")
+        return (
+            entry is not None
+            and entry.action == report.get("action")
+            and float(report.get("link_down_s", 0.0)) > float(policy["wait_s"])
+        )
+
+    def _reject_onboard_action(self, vehicle_id: str, report: dict[str, Any], why: str) -> None:
+        self._audit.append(
+            self._clock(),
+            "rejected_onboard_action",
+            vehicle_id,
+            {**report, "rejected_because": why},
+        )
 
     def decide(
         self, recommendation_id: str, outcome: Outcome, operator: str, note: str = ""

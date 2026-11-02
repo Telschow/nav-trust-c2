@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 
 from c2.audit import AuditLog
-from c2.hub import Hub, InvalidPolicy, UnknownPolicy
+from c2.hub import Hub, InvalidPolicy, OutsidePolicy, UnknownPolicy
 from navtrust.types import NavTrust, TrustState
 
 POLICY = {
@@ -108,3 +108,40 @@ def test_the_outage_summary_lists_what_the_vehicle_did_on_its_own() -> None:
     [summary] = [e["data"] for e in events if e["type"] == "outage_summary"]
     [action] = summary["onboard_actions"]
     assert action["action"] == "LAND" and action["policy_audit_id"] == approval["audit_id"]
+
+
+NAV = NavTrust("uav1", 1.0, TrustState.GREEN, None, 5.0, 0.99, 0.5)
+
+
+@pytest.mark.parametrize(
+    "over",
+    [
+        {"action": "RTL"},  # the policy names LAND only
+        {"reason": "GNSS_LOSS"},  # a reason it has no entry for
+        {"link_down_s": 3.0},  # the vehicle may act only after the wait (5 s) has passed
+    ],
+)
+def test_a_report_the_cited_policy_does_not_authorise_is_refused_and_audited(
+    over: dict[str, Any],
+) -> None:
+    hub, audit, clock, events = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    hub.ingest_navtrust(NAV)
+    clock.t += 10.0  # silent: the backend has marked the vehicle NO_LINK
+    assert hub.state()["links"]["uav1"]["state"] == "NO_LINK"
+    with pytest.raises(OutsidePolicy):
+        report(hub, approval, **over)
+    [row] = audit.events("rejected_onboard_action")
+    assert row.payload["rejected_because"] == "outside_policy"
+    assert audit.events("onboard_action") == []
+    assert (
+        hub.state()["links"]["uav1"]["state"] == "NO_LINK"
+    )  # a refused report is not a sign of life
+    assert not [e for e in events if e["type"] == "onboard_action"]
+
+
+def test_a_report_inside_the_policy_is_still_accepted() -> None:
+    hub, audit, _, _ = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    report(hub, approval)
+    assert len(audit.events("onboard_action")) == 1

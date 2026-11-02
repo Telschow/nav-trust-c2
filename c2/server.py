@@ -38,6 +38,7 @@ from c2.hub import (
     InvalidOutcome,
     InvalidPolicy,
     NoLink,
+    OutsidePolicy,
     SupersededRecommendation,
     UnknownPolicy,
     UnknownRecommendation,
@@ -66,6 +67,7 @@ _STATUS = {
     SupersededRecommendation: 410,
     InvalidPolicy: 422,
     UnknownPolicy: 422,
+    OutsidePolicy: 422,
     InvalidOutcome: 422,
     InvalidOperator: 422,
 }

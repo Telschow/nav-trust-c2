@@ -15,7 +15,13 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from c2.contingency import policy_sha256, validate_policy
+from c2.contingency import (
+    PolicyEntry,
+    matching_entry,
+    policy_entries,
+    policy_sha256,
+    validate_policy,
+)
 from sim.failsafe_params import COM_DL_LOSS_T_S
 
 __all__ = ["Policy", "PolicyEntry", "PolicyRejected", "load_policy", "policy_sha256"]
@@ -23,13 +29,6 @@ __all__ = ["Policy", "PolicyEntry", "PolicyRejected", "load_policy", "policy_sha
 
 class PolicyRejected(Exception):
     """The vehicle will not rely on this policy."""
-
-
-@dataclass(frozen=True)
-class PolicyEntry:
-    reason: str
-    link: str
-    action: str
 
 
 @dataclass(frozen=True)
@@ -43,9 +42,7 @@ class Policy:
 
     def matches(self, reason: str | None, link: str) -> PolicyEntry | None:
         """The entry that authorises an action for this reason and link condition, if any."""
-        if reason is None:
-            return None
-        return next((e for e in self.entries if e.reason == reason and e.link == link), None)
+        return matching_entry(self.entries, reason, link)
 
     def valid_at(self, local_s: float, loaded_local_s: float) -> bool:
         """Whether the approval is still young enough, on the vehicle's own clock."""
@@ -78,5 +75,6 @@ def load_policy(approval: dict[str, Any], now_s: float, max_age_s: float) -> Pol
         validate_policy(policy, COM_DL_LOSS_T_S)
     except ValueError as err:
         raise PolicyRejected(str(err)) from err
-    entries = tuple(PolicyEntry(e["reason"], e["link"], e["action"]) for e in policy["entries"])
-    return Policy(entries, float(policy["wait_s"]), audit_id, claimed, age_s, max_age_s)
+    return Policy(
+        policy_entries(policy), float(policy["wait_s"]), audit_id, claimed, age_s, max_age_s
+    )
