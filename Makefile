@@ -1,7 +1,7 @@
 IMAGE ?= nav-trust-c2-sim
 VEHICLES ?= 1
 
-.PHONY: scenario record-all record-lost-link eval-lost-link eval help check lint typecheck test sim-build sim-up sim-down fly fleet backend console console-dev demo
+.PHONY: scenario record-all record-lost-link eval-lost-link eval eval-heldout eval-all help check lint typecheck test sim-build sim-up sim-down fly fleet backend console console-dev demo
 
 help:
 	@echo "scenario    record one scenario run in the running sim: make scenario NAME=stuck_position RUN=1"
@@ -9,6 +9,7 @@ help:
 	@echo "record-lost-link  only the link_loss family, scenarios/lost_link"
 	@echo "eval-lost-link    regenerate eval/lost_link/results.md from its recordings"
 	@echo "eval        regenerate eval/results.json and eval/results.md, and the link_loss table, from the recordings"
+	@echo "eval-all    eval (development, link_loss) + eval-heldout: every table that records the engine fingerprint; run after editing a file it covers"
 	@echo "check       ruff + mypy + pytest (no simulator needed)"
 	@echo "sim-build   build the PX4 SITL + Gazebo image (long, first time only)"
 	@echo "sim-up      start headless SITL, VEHICLES=n"
@@ -96,6 +97,9 @@ record-heldout:
 
 eval-heldout:
 	python -m eval.evaluate --heldout
+
+# After editing any file the engine fingerprint covers (eval/freeze.py PATTERNS): both sets.
+eval-all: eval eval-heldout
 
 # Fleet mission completion (M-04): three vehicles, one lost, scripted operator. About 80 minutes.
 record-fleet:

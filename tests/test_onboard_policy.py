@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from sim.failsafe_params import COM_DL_LOSS_T_S
+from c2.contingency import COM_DL_LOSS_T_S
 from sim.onboard_policy import Policy, PolicyRejected, load_policy, policy_sha256
 
 LAND_ON_FROZEN: dict[str, Any] = {

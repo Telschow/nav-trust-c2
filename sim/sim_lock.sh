@@ -12,6 +12,11 @@ if ! mkdir "${LOCK}" 2>/dev/null; then
 fi
 trap 'rmdir "${LOCK}" 2>/dev/null' EXIT
 
+# The machine must be quiet too: another container using many cores starved the simulator and
+# gave runs with no ground truth (issue 176). SIM_PREFLIGHT=off records anyway; the limits are
+# SIM_MAX_OTHER_CPU (percent of a core) and SIM_MAX_LOAD (see sim/preflight.py).
+python3 -m sim.preflight || exit 3
+
 # A recording counts as done only if it is complete (see sim/recording_check.py): it ends the way
 # a finished run does and carries ground truth if it was meant to. A file cut short by a failed run
 # or a killed script, or one whose Gazebo stream gave nothing, is recorded again, not skipped.

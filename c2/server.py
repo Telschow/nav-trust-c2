@@ -17,7 +17,7 @@ import json
 import logging
 import math
 import time
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Callable, Mapping
 from dataclasses import asdict
 from pathlib import Path
 from typing import Any
@@ -28,8 +28,9 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from c2.audit import AuditLog
+from c2.contingency import COM_DL_LOSS_T_S
 from c2.fleet import FleetState
-from c2.gate import CommandGate
+from c2.gate import CommandGate, Executor
 from c2.hub import (
     AlreadyDecided,
     DuplicateRecommendation,
@@ -233,8 +234,6 @@ def create_app(
     @app.post("/policy", status_code=201)
     async def post_policy(body: dict[str, Any] = Body(...)) -> dict[str, Any]:  # noqa: B008
         """The operator approves, before the mission, what a vehicle may do alone (ADR 0004)."""
-        from sim.failsafe_params import COM_DL_LOSS_T_S  # the limit lives with PX4's parameters
-
         try:
             policy = {"entries": body["entries"], "wait_s": body["wait_s"]}
             return hub.approve_policy(policy, body["operator"], max_wait_s=COM_DL_LOSS_T_S)
@@ -394,13 +393,16 @@ def create_app(
     return app
 
 
-def main() -> None:
-    import uvicorn
+ExecutorFactory = Callable[[argparse.Namespace, FleetState], Executor]
+"""Builds the executor the gate sends approved commands to, for the fleet the backend manages. The
+backend knows only `dryrun`; a launcher that has an executor of its own (sim/backend.py, MAVSDK)
+registers it by name, so the backend never imports the simulator package (issue 177)."""
 
-    from c2.allocator import assign, split_area
-    from c2.dryrun import DryRunExecutor
-    from c2.recommender import Recommender
 
+def parse_args(
+    executors: Mapping[str, ExecutorFactory], argv: list[str] | None = None
+) -> argparse.Namespace:
+    """The backend's command line; `executors` are the extra executors a launcher registered."""
     p = argparse.ArgumentParser(description="nav-trust-c2 backend")
     p.add_argument("--db", default="logs/audit.sqlite")
     p.add_argument("--host", default="127.0.0.1")
@@ -443,11 +445,22 @@ def main() -> None:
     )
     p.add_argument(
         "--executor",
-        choices=["dryrun", "mavsdk"],
+        choices=["dryrun", *executors],
         default="dryrun",
-        help="mavsdk sends approved commands to fly_fleet's vehicles; dryrun only logs them",
+        help="dryrun only logs approved commands; mavsdk sends them to fly_fleet's vehicles "
+        "(start the backend with `python -m sim.backend` to have it)",
     )
-    args = p.parse_args()
+    return p.parse_args(argv)
+
+
+def build_app_from_args(
+    args: argparse.Namespace, executors: Mapping[str, ExecutorFactory]
+) -> FastAPI:
+    """The whole backend for a command line: audit log, hub, fleet, recommender, gate, console."""
+    from c2.allocator import assign, split_area
+    from c2.dryrun import DryRunExecutor
+    from c2.recommender import Recommender
+
     start = time.monotonic()
     clock = lambda: time.monotonic() - start  # noqa: E731
     hub = Hub(AuditLog(args.db), clock, link_timeout_s=args.link_timeout)
@@ -460,21 +473,9 @@ def main() -> None:
         assign(sectors, ids),
         positions={v: (0.0, 5.0 * i) for i, v in enumerate(ids)},  # spawn spacing of run_sitl.sh
     )
-    if args.executor == "mavsdk":
-        from sim.executor import MavsdkExecutor
-        from sim.fly_fleet import home_of
-        from sim.survey import GeoPoint
-
-        origin = GeoPoint(*args.origin) if args.origin else asyncio.run(home_of(1))
-        executor: Any = MavsdkExecutor(
-            origin,
-            spacing_m=args.spacing,
-            altitude_m=30.0,
-            speed_m_s=10.0,
-            initial={v: list(secs) for v, secs in fleet.assignment.items()},
-        )
-    else:
-        executor = DryRunExecutor()
+    factories: dict[str, ExecutorFactory] = {"dryrun": lambda _args, _fleet: DryRunExecutor()}
+    factories.update(executors)
+    executor = factories[args.executor](args, fleet)
     app = create_app(
         hub,
         fleet=fleet,
@@ -489,7 +490,15 @@ def main() -> None:
         progress=SectorProgress(sectors, swath_half_width_m=args.spacing / 2),
         console_dir=args.console,
     )
-    uvicorn.run(app, host=args.host, port=args.port)
+    return app
+
+
+def main(executors: Mapping[str, ExecutorFactory] | None = None) -> None:
+    import uvicorn
+
+    extra = executors or {}
+    args = parse_args(extra)
+    uvicorn.run(build_app_from_args(args, extra), host=args.host, port=args.port)
 
 
 if __name__ == "__main__":

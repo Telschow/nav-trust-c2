@@ -21,6 +21,15 @@ PATTERNS = (
 )
 
 
+def stale_hint() -> str:
+    """What to tell someone whose committed eval tables no longer match: the one command, and the
+    files whose change makes them stale (issue 173)."""
+    return (
+        "regenerate every committed eval table with `make eval-all` and commit them; the engine "
+        f"fingerprint covers {', '.join(PATTERNS)}"
+    )
+
+
 def fingerprinted_files(root: Path = ROOT) -> list[Path]:
     files: set[Path] = set()
     for pattern in PATTERNS:
