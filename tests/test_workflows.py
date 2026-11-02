@@ -7,7 +7,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-WORKFLOWS = sorted((Path(__file__).resolve().parent.parent / ".github" / "workflows").glob("*.yml"))
+WORKFLOW_DIR = Path(__file__).resolve().parent.parent / ".github" / "workflows"
+WORKFLOWS = sorted(WORKFLOW_DIR.glob("*.yml"))
 
 
 def test_there_are_workflows_to_check() -> None:
@@ -23,5 +24,5 @@ def test_every_action_is_pinned_to_a_commit_with_a_version_comment(path: Path) -
 
 
 def test_the_ci_workflow_can_only_read_the_repository() -> None:
-    ci = yaml.safe_load((WORKFLOWS[0].parent / "ci.yml").read_text(encoding="utf-8"))
+    ci = yaml.safe_load((WORKFLOW_DIR / "ci.yml").read_text(encoding="utf-8"))
     assert ci["permissions"] == {"contents": "read"}

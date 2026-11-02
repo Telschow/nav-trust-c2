@@ -60,10 +60,14 @@ class CommandGate:
         retask_ack_timeout_s: the same for a re-task, which downloads, uploads and starts a
         mission and so may need longer; each vehicle has its own window. None means the same as
         ack_timeout_s: no figure is set until re-task times have been measured with this gate."""
-        if ack_timeout_s <= 0 or (retask_ack_timeout_s is not None and retask_ack_timeout_s <= 0):
-            raise ValueError("the acknowledgement timeouts must be > 0")
+        if ack_timeout_s <= 0:
+            raise ValueError("ack_timeout_s must be > 0")
+        if retask_ack_timeout_s is not None and retask_ack_timeout_s <= 0:
+            raise ValueError("retask_ack_timeout_s must be > 0")
         self._ack_timeout_s = ack_timeout_s
-        self._retask_ack_timeout_s = retask_ack_timeout_s or ack_timeout_s
+        self._retask_ack_timeout_s = (
+            ack_timeout_s if retask_ack_timeout_s is None else retask_ack_timeout_s
+        )
         self._hub = hub
         self._fleet = fleet
         self._executor = executor
@@ -108,6 +112,8 @@ class CommandGate:
                 changed = sorted({rec.vehicle_id, *(m.to_vehicle for m in rec.sector_moves)})
                 moves = ", ".join(f"{m.sector_id}->{m.to_vehicle}" for m in rec.sector_moves)
                 for vehicle in changed:  # one command, one window, one set of rows per vehicle
+                    if not self._fleet.assignment.get(vehicle):
+                        continue  # nothing left to fly (the lost vehicle): nothing to confirm
                     await send(
                         f"RETASK {moves} ({vehicle})",
                         self._executor.retask(self._fleet.assignment, [vehicle]),
