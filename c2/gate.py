@@ -104,16 +104,14 @@ class CommandGate:
             if moved:
                 self._fleet.assignment.clear()
                 self._fleet.assignment.update(original)
-            self._hub.audit.append(
-                self._hub.now(),
+            self._hub.record_command(
                 "command_failed",
                 rec.vehicle_id,
                 {**self._ref(recommendation_id), "error": repr(err), "completed": done},
             )
             return GateResult(False, f"failed: {err}", done)
 
-        self._hub.audit.append(
-            self._hub.now(),
+        self._hub.record_command(
             "command_executed",
             rec.vehicle_id,
             {**self._ref(recommendation_id), "actions": done},
@@ -126,21 +124,20 @@ class CommandGate:
         """Send one command and wait for the vehicle's answer: the executor call returns when the
         vehicle has accepted it. Audited as sent, then acknowledged or not."""
         payload = {**self._ref(recommendation_id), "action": action}
-        self._hub.audit.append(self._hub.now(), "command_sent", vehicle_id, payload)
+        self._hub.record_command("command_sent", vehicle_id, payload)
         task = asyncio.ensure_future(call)
         # not wait_for: a TimeoutError raised by the executor itself is a failure, not silence
         await asyncio.wait({task}, timeout=self._ack_timeout_s)
         if not task.done():
             task.cancel()
-            self._hub.audit.append(
-                self._hub.now(),
+            self._hub.record_command(
                 "command_not_acknowledged",
                 vehicle_id,
                 {**payload, "timeout_s": self._ack_timeout_s},
             )
             raise NotAcknowledged(f"{action} had no answer in {self._ack_timeout_s:g} s")
         task.result()  # the executor's own error, if any, is a failure
-        self._hub.audit.append(self._hub.now(), "command_acknowledged", vehicle_id, payload)
+        self._hub.record_command("command_acknowledged", vehicle_id, payload)
 
     def _ref(self, recommendation_id: str) -> dict[str, Any]:
         """What a command row says about its authority: the recommendation and the audit row of the
@@ -152,8 +149,7 @@ class CommandGate:
         return ref
 
     def _blocked(self, recommendation_id: str, vehicle_id: str | None, reason: str) -> GateResult:
-        self._hub.audit.append(
-            self._hub.now(),
+        self._hub.record_command(
             "command_blocked",
             vehicle_id,
             {**self._ref(recommendation_id), "reason": reason},

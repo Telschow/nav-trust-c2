@@ -75,16 +75,25 @@ def navtrust_to_dict(msg: NavTrust) -> dict[str, Any]:
     }
 
 
+def _finite(name: str, value: Any) -> float:
+    """A number the console can show: NaN and infinity are refused at the door, because the
+    WebSocket would carry them as JSON the browser cannot parse (issue 161)."""
+    number = float(value)
+    if not math.isfinite(number):
+        raise ValueError(f"{name} must be a finite number")
+    return number
+
+
 def navtrust_from_dict(d: dict[str, Any]) -> NavTrust:
     bound = d["horizontal_bound_m"]
     return NavTrust(
         vehicle_id=d["vehicle_id"],
-        stamp_s=float(d["stamp_s"]),
+        stamp_s=_finite("stamp_s", d["stamp_s"]),
         state=TrustState(d["state"]),
         reason=ReasonCode(d["reason"]) if d["reason"] else None,
-        horizontal_bound_m=math.inf if bound is None else float(bound),
-        confidence=float(d["confidence"]),
-        headroom=float(d.get("headroom", 0.0)),
+        horizontal_bound_m=math.inf if bound is None else _finite("horizontal_bound_m", bound),
+        confidence=_finite("confidence", d["confidence"]),
+        headroom=_finite("headroom", d.get("headroom", 0.0)),
     )
 
 

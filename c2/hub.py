@@ -6,6 +6,7 @@ log; a rejected decision attempt is logged too.
 
 from __future__ import annotations
 
+import math
 import secrets
 from collections.abc import Callable
 from dataclasses import dataclass, field, replace
@@ -42,6 +43,12 @@ class LinkState(StrEnum):
     NO_LINK = "NO_LINK"
 
 
+_COMMAND_ENDINGS = (
+    "command_executed",
+    "command_not_acknowledged",
+    "command_failed",
+    "command_blocked",
+)
 EXTERNAL_TTL_S = (
     RecommenderConfig().ttl_s
 )  # a posted recommendation lives as long as one the recommender makes
@@ -131,10 +138,20 @@ class Hub:
         self._decisions: dict[str, Decision] = {}
         self._decision_rows: dict[str, int] = {}  # recommendation id -> audit id of its decision
         self.session_id = ""
+        self._command_outcomes: dict[str, dict[str, Any]] = {}  # recommendation id -> last row
         self._subscribers: list[Callable[[Event], None]] = []
         self._positions: dict[str, dict[str, float]] = {}
         self._origin: dict[str, float] | None = None
         self._source = "live"
+
+    def record_command(self, kind: str, vehicle_id: str | None, payload: dict[str, Any]) -> None:
+        """Audit a command row and tell every console about it, so each one can show how an
+        approved command ended (executed, not acknowledged, failed, blocked)."""
+        self._audit.append(self._clock(), kind, vehicle_id, payload)
+        data = {"kind": kind, "vehicle_id": vehicle_id, **payload}
+        if kind in _COMMAND_ENDINGS:
+            self._command_outcomes[str(payload.get("recommendation_id"))] = data
+        self._publish({"type": "command", "data": data})
 
     def start_session(self) -> str:
         """Mark the start of this backend run in the audit log and return its random id. The
@@ -198,6 +215,8 @@ class Hub:
         """Latest position for the map. High rate, so it is published but not audited."""
         if not (-90 <= lat_deg <= 90 and -180 <= lon_deg <= 180):
             raise ValueError("latitude or longitude out of range")
+        if not math.isfinite(alt_m):
+            raise ValueError("altitude must be a finite number")
         self._note_report(vehicle_id)
         pos = {"lat_deg": lat_deg, "lon_deg": lon_deg, "alt_m": alt_m, "stamp_s": self._clock()}
         self._positions[vehicle_id] = pos
@@ -503,6 +522,7 @@ class Hub:
                 }
                 for v in sorted(self._link)
             },
+            "command_outcomes": dict(self._command_outcomes),
             "open_recommendations": [
                 recommendation_to_dict(r)
                 for r in self._recs.values()

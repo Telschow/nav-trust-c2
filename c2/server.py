@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import contextlib
 import ipaddress
+import json
 import logging
 import time
 from collections.abc import AsyncIterator
@@ -71,6 +72,12 @@ _STATUS = {
     InvalidOutcome: 422,
     InvalidOperator: 422,
 }
+
+
+def _json(message: dict[str, Any]) -> str:
+    """WebSocket JSON that a browser can always parse: a NaN would be a syntax error there, and
+    every later snapshot would be dropped (issue 161)."""
+    return json.dumps(message, allow_nan=False)
 
 
 def _authority(value: str) -> tuple[str, int | None] | None:
@@ -350,11 +357,11 @@ def create_app(
             state = hub.state()
             # server_s at the top level like every other message: the console derives its clock
             # offset from it, and without it the header showed T+NaN:NaN until the first event
-            await websocket.send_json(
-                {"type": "state", "server_s": state["server_s"], "data": state}
+            await websocket.send_text(
+                _json({"type": "state", "server_s": state["server_s"], "data": state})
             )
             while True:
-                await websocket.send_json(await queue.get())
+                await websocket.send_text(_json(await queue.get()))
         except WebSocketDisconnect:
             pass
         finally:

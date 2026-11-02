@@ -63,6 +63,17 @@ carry `server_s`, the backend clock, for client-side expiry countdowns. `POST /s
 `{label}` names where the data comes from (`live` by default); a replay or demo feeder must set
 it so the console cannot present replayed data as a live flight.
 
+Numbers must be finite: a `navtrust` report with a NaN or infinite `stamp_s`, `confidence`,
+`headroom` or `horizontal_bound_m` (`null` means unbounded), or a position with such an `alt_m`,
+is refused with 422, and WebSocket JSON is written with `allow_nan` off (issue 161).
+
+Command outcomes (issue 161). Every `command_*` audit row is also published as a `command`
+WebSocket event `{"type": "command", "data": {kind, vehicle_id, recommendation_id,
+decision_audit_id, ...the row's payload}, "server_s": ...}`, so a console that did not click
+Approve still learns how the command ended. `/state` and the first WebSocket message carry
+`command_outcomes`, the last ending per recommendation id (`command_executed`,
+`command_not_acknowledged`, `command_failed` or `command_blocked`).
+
 ## Fleet (`GET /fleet`)
 `{origin, assignment, done}`. `assignment` maps each vehicle to its sectors
 (`{id, west, south, east, north}`, metres from the origin). `done` lists the ids of sectors that
