@@ -418,6 +418,13 @@ def main() -> None:
         help="seconds a vehicle has to answer a command before it is audited as not acknowledged "
         "(proposal: 5)",
     )
+    p.add_argument(
+        "--retask-ack-timeout",
+        type=float,
+        default=None,
+        help="seconds each vehicle has to answer a re-task (default: the same as --ack-timeout; "
+        "set it from measured re-task times, see issue 77)",
+    )
     p.add_argument("--console", default="console/dist", help="built console to serve at /")
     p.add_argument(
         "--source",
@@ -472,7 +479,13 @@ def main() -> None:
         hub,
         fleet=fleet,
         recommender=Recommender(clock, link_ok=hub.is_reachable),
-        gate=CommandGate(hub, fleet, executor, ack_timeout_s=args.ack_timeout),
+        gate=CommandGate(
+            hub,
+            fleet,
+            executor,
+            ack_timeout_s=args.ack_timeout,
+            retask_ack_timeout_s=args.retask_ack_timeout,
+        ),
         progress=SectorProgress(sectors, swath_half_width_m=args.spacing / 2),
         console_dir=args.console,
     )

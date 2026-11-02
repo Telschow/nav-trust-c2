@@ -130,6 +130,14 @@ not executed with reason `not_acknowledged: ...`. An error raised by the executo
 failure (`command_failed`), not a missing answer. Whether the vehicle received it anyway is unknown,
 so a re-task is not rolled back.
 
+A re-task is sent to each vehicle it changes in turn (sorted by id), as its own command with its
+own window and its own rows: `command_sent`, then `command_acknowledged` or
+`command_not_acknowledged`, with the target in `vehicle_id` and `action` `RETASK <moves> (<vehicle>)`.
+`timeout_s` in a `command_not_acknowledged` row is the window that applied. A vehicle that does not
+answer ends the sequence: the later vehicles are not sent anything, and nothing is resent.
+`--retask-ack-timeout` sets the re-task window; by default it is the same as `--ack-timeout`, and
+no other figure is proposed until re-task times have been measured with this gate (issue 77).
+
 ## Onboard contingencies (issue 76, ADR 0004)
 A contingency is an approval given in advance. The operator approves, before the mission, a
 policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached.
