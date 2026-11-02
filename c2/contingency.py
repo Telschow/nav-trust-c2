@@ -17,6 +17,9 @@ from navtrust.types import ReasonCode
 LINK_CONDITIONS = ("NO_LINK",)
 ACTIONS = ("LAND",)
 POLICY_MAX_AGE_S = 4 * 3600.0  # proposal: how long a vehicle may rely on an approved policy
+COM_DL_LOSS_T_S = 10  # proposal: PX4's default, seconds without a ground station before its
+# data-link-loss failsafe starts. A contingency's wait must stay below it, so PX4's hold and its
+# own action have not begun (ADR 0004). The simulated vehicles are set to it.
 
 
 def land_on_inconsistent_position(wait_s: float) -> dict[str, Any]:

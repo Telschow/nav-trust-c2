@@ -16,13 +16,13 @@ from dataclasses import dataclass
 from typing import Any
 
 from c2.contingency import (
+    COM_DL_LOSS_T_S,
     PolicyEntry,
     matching_entry,
     policy_entries,
     policy_sha256,
     validate_policy,
 )
-from sim.failsafe_params import COM_DL_LOSS_T_S
 
 __all__ = ["Policy", "PolicyEntry", "PolicyRejected", "load_policy", "policy_sha256"]
 

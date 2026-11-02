@@ -173,7 +173,7 @@ async def run(args: argparse.Namespace) -> Path:
         procs.append(
             await spawn(
                 [
-                    "c2.server",
+                    "sim.backend",  # the backend with the MAVSDK executor registered
                     "--executor",
                     "mavsdk",
                     "--width",
