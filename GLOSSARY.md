@@ -71,8 +71,12 @@ A recommendation the backend closed because the vehicle's trust state or reason 
 _Avoid_: cancelled, withdrawn
 
 **Acknowledged**:
-A command the vehicle answered. A command with no answer in time is audited as not acknowledged and never resent.
+A command the vehicle answered. A re-task is a separate command to each vehicle it changes, each with its own answer. A command with no answer in time is audited as not acknowledged and never resent.
 _Avoid_: delivered, confirmed
+
+**Session**:
+One run of the backend, marked in the audit log by a `session_started` row. Its id is in every recommendation id and every command row cites the decision that authorised it, so the log proves which approval authorised which command even after a restart.
+_Avoid_: boot, process
 
 **Approval**:
 A recorded operator decision to allow a recommendation. Spent once used.
