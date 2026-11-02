@@ -4,7 +4,8 @@ import pytest
 
 pytest.importorskip("mavsdk_grpc")
 
-from sim.record_run import build_header, parse_args, parse_estimator_status  # noqa: E402
+from sim.estimator_status import parse_estimator_status  # noqa: E402
+from sim.record_run import build_header, parse_args  # noqa: E402
 
 
 def test_estimator_status_keeps_known_fields_and_drops_nulls() -> None:
@@ -24,6 +25,11 @@ def test_estimator_status_keeps_known_fields_and_drops_nulls() -> None:
         "pos_horiz_ratio": 0.004,
         "flags": 959,
     }
+
+
+def test_the_header_names_the_gazebo_version(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr("sim.record_run.gazebo_version", lambda: "9.1.0")
+    assert build_header(parse_args(["--scenario", "nominal"]))["gazebo_version"] == "9.1.0"
 
 
 def test_header_without_zone() -> None:

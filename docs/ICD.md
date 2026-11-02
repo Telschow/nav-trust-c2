@@ -109,9 +109,9 @@ GLOSSARY.md "No link"). It is measured on the backend's own clock from the arriv
   {vehicle_id, duration_s, trust, trust_changes, onboard_actions, superseded}, "server_s": ...}`:
   `duration_s` is the length of the silence, `trust` the first report after it,
   `trust_changes` the `{server_s, state, reason}` changes seen since the link was lost,
-  `onboard_actions` the actions the vehicle took on its own (always empty until the onboard
-  monitor exists, issue 76) and `superseded` the ids of recommendations closed. A recommendation
-  raised before the outage for that vehicle is closed as SUPERSEDED when its trust state or reason
+  `onboard_actions` the actions the vehicle took on its own and reported (from `POST
+  /onboard-actions`; empty when it did nothing on its own) and `superseded` the ids of
+  recommendations closed. A recommendation raised before the outage for that vehicle is closed as SUPERSEDED when its trust state or reason
   changed; one raised while the link was down is left alone. The recommender raises a new one if
   the vehicle still needs it. If a position report ends the outage, the summary waits for the
   next trust report. The same summary is an `outage_summary` audit row.
@@ -129,6 +129,15 @@ recommendation, so nothing is raised again automatically. The decision's `execut
 not executed with reason `not_acknowledged: ...`. An error raised by the executor itself is a
 failure (`command_failed`), not a missing answer. Whether the vehicle received it anyway is unknown,
 so a re-task is not rolled back.
+
+A re-task is sent to each vehicle it changes that still has a mission to fly (the vehicle that
+lost all its sectors is sent nothing) in turn (sorted by id), as its own command with its
+own window and its own rows: `command_sent`, then `command_acknowledged` or
+`command_not_acknowledged`, with the target in `vehicle_id` and `action` `RETASK <moves> (<vehicle>)`.
+`timeout_s` in a `command_not_acknowledged` row is the window that applied. A vehicle that does not
+answer ends the sequence: the later vehicles are not sent anything, and nothing is resent.
+`--retask-ack-timeout` sets the re-task window; by default it is the same as `--ack-timeout`, and
+no other figure is proposed until re-task times have been measured with this gate (issue 77).
 
 ## Onboard contingencies (issue 76, ADR 0004)
 A contingency is an approval given in advance. The operator approves, before the mission, a

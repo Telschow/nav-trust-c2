@@ -21,7 +21,7 @@ from mavsdk_grpc import System
 
 from c2.messages import navtrust_to_dict
 from navtrust.engine import TrustEngine
-from sim.record_run import parse_estimator_status
+from sim.estimator_status import parse_estimator_status
 
 
 async def feed_vehicle(

@@ -353,3 +353,59 @@ def test_a_land_refused_every_time_is_called_three_times_and_reported_once_as_fa
     _, reported = _run_with(drone)
     assert drone.calls == 3
     assert [a.outcome for a in reported] == ["failed"]
+
+
+def test_the_monitor_runs_without_the_simulator_packages(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An install without the `sim` extra has no mavsdk_grpc, and the monitor's logic and this
+    test must not need it (issue 163): the estimator stream is read through a module that does not
+    import it."""
+    import sys
+
+    from sim.onboard_monitor import OnboardMonitor
+    from sim.onboard_run import run_monitor
+
+    monkeypatch.setitem(sys.modules, "mavsdk_grpc", None)  # importing it now raises ImportError
+    monkeypatch.delitem(sys.modules, "sim.record_run", raising=False)
+    heard: list[tuple[float | None, ...]] = []
+
+    class Engine(_FrozenEngine):
+        def update_estimator(self, t: float, *vals: Any) -> None:
+            heard.append(vals)
+
+    class Message:
+        fields_json = json.dumps(
+            {"pos_horiz_accuracy": 0.9, "pos_horiz_ratio": 2.0, "vel_ratio": 1.0}
+        )
+
+    class Once(_Silent):
+        def __aiter__(self) -> "Once":
+            return self
+
+        async def __anext__(self) -> Any:
+            if heard:
+                await asyncio.sleep(3600)
+            return Message()
+
+    drone = _FakeDrone()
+    drone.mavlink_direct.message = lambda name: Once()  # type: ignore[method-assign]
+    approval = experiment_approval(wait_s=0.1)
+    policy = load_policy(approval, now_s=approval["approved_s"], max_age_s=3600.0)
+
+    async def go() -> None:
+        import time
+
+        monitor = OnboardMonitor("uav1", policy, started_s=time.monotonic())
+        task = asyncio.create_task(
+            run_monitor(
+                drone, monitor, lambda: True, lambda e, **f: None,
+                engine=Engine(), interval_s=0.02,  # type: ignore[arg-type]
+            )
+        )  # fmt: skip
+        await asyncio.sleep(0.2)
+        failed = task.done()
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+        assert not failed
+
+    asyncio.run(go())
+    assert heard == [(0.9, 2.0, 1.0)]

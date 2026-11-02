@@ -24,6 +24,7 @@ from typing import Any
 import httpx
 
 from sim.fly_survey import JsonlLog
+from sim.gazebo_version import gazebo_version
 from sim.ground_truth import log_ground_truth
 from sim.record_run import px4_commit
 
@@ -134,6 +135,7 @@ async def run(args: argparse.Namespace) -> Path:
         schema=1,
         scenario=args.name,
         px4_commit=px4,
+        gazebo_version=gazebo_version(),
         area={"width_m": args.width, "height_m": args.height, "spacing_m": args.spacing},
         vehicles=VEHICLES,
         fault={"vehicle": args.fault_vehicle, "mode": args.mode, "zone": args.zone},

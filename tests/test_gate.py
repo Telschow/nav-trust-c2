@@ -82,8 +82,9 @@ def test_approved_recommendation_executes_command_and_retask_and_is_audited() ->
     hub.add_recommendation(rec())
     hub.decide("r1", Outcome.APPROVED, "daniel")
     result = run(gate)
-    assert result.executed and result.actions == ["HOLD uav2", "RETASK S2->uav3"]
-    assert ex.calls[0] == "hold uav2" and ex.calls[1].startswith("retask ['uav2', 'uav3']")
+    assert result.executed
+    assert result.actions == ["HOLD uav2", "RETASK S2->uav3 (uav3)"]
+    assert ex.calls[0] == "hold uav2" and ex.calls[1].startswith("retask ['uav3']")
     assert [s.id for s in fleet.assignment["uav3"]] == ["S3", "S2"] and fleet.assignment[
         "uav2"
     ] == []

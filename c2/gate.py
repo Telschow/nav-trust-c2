@@ -49,12 +49,25 @@ class GateResult:
 
 class CommandGate:
     def __init__(
-        self, hub: Hub, fleet: FleetState, executor: Executor, ack_timeout_s: float = 5.0
+        self,
+        hub: Hub,
+        fleet: FleetState,
+        executor: Executor,
+        ack_timeout_s: float = 5.0,
+        retask_ack_timeout_s: float | None = None,
     ) -> None:
-        """ack_timeout_s: how long a vehicle has to answer a command (a proposal)."""
+        """ack_timeout_s: how long a vehicle has to answer a command (a proposal).
+        retask_ack_timeout_s: the same for a re-task, which downloads, uploads and starts a
+        mission and so may need longer; each vehicle has its own window. None means the same as
+        ack_timeout_s: no figure is set until re-task times have been measured with this gate."""
         if ack_timeout_s <= 0:
             raise ValueError("ack_timeout_s must be > 0")
+        if retask_ack_timeout_s is not None and retask_ack_timeout_s <= 0:
+            raise ValueError("retask_ack_timeout_s must be > 0")
         self._ack_timeout_s = ack_timeout_s
+        self._retask_ack_timeout_s = (
+            ack_timeout_s if retask_ack_timeout_s is None else retask_ack_timeout_s
+        )
         self._hub = hub
         self._fleet = fleet
         self._executor = executor
@@ -78,8 +91,13 @@ class CommandGate:
         original = {v: list(s) for v, s in self._fleet.assignment.items()}
         try:
 
-            async def send(action: str, call: Awaitable[None]) -> None:
-                await self._send(recommendation_id, rec.vehicle_id, action, call)
+            async def send(
+                action: str,
+                call: Awaitable[None],
+                vehicle: str = rec.vehicle_id,
+                timeout_s: float = self._ack_timeout_s,
+            ) -> None:
+                await self._send(recommendation_id, vehicle, action, call, timeout_s)
                 done.append(action)
 
             if rec.command is Command.HOLD:
@@ -93,9 +111,15 @@ class CommandGate:
                 moved = True
                 changed = sorted({rec.vehicle_id, *(m.to_vehicle for m in rec.sector_moves)})
                 moves = ", ".join(f"{m.sector_id}->{m.to_vehicle}" for m in rec.sector_moves)
-                await send(
-                    f"RETASK {moves}", self._executor.retask(self._fleet.assignment, changed)
-                )
+                for vehicle in changed:  # one command, one window, one set of rows per vehicle
+                    if not self._fleet.assignment.get(vehicle):
+                        continue  # nothing left to fly (the lost vehicle): nothing to confirm
+                    await send(
+                        f"RETASK {moves} ({vehicle})",
+                        self._executor.retask(self._fleet.assignment, [vehicle]),
+                        vehicle,
+                        self._retask_ack_timeout_s,
+                    )
         except NotAcknowledged as err:
             # the approval is spent and nothing is resent; whether the vehicle got it is unknown,
             # so the plan is not rolled back
@@ -119,7 +143,12 @@ class CommandGate:
         return GateResult(True, None, done)
 
     async def _send(
-        self, recommendation_id: str, vehicle_id: str, action: str, call: Awaitable[None]
+        self,
+        recommendation_id: str,
+        vehicle_id: str,
+        action: str,
+        call: Awaitable[None],
+        timeout_s: float,
     ) -> None:
         """Send one command and wait for the vehicle's answer: the executor call returns when the
         vehicle has accepted it. Audited as sent, then acknowledged or not."""
@@ -127,15 +156,15 @@ class CommandGate:
         self._hub.record_command("command_sent", vehicle_id, payload)
         task = asyncio.ensure_future(call)
         # not wait_for: a TimeoutError raised by the executor itself is a failure, not silence
-        await asyncio.wait({task}, timeout=self._ack_timeout_s)
+        await asyncio.wait({task}, timeout=timeout_s)
         if not task.done():
             task.cancel()
             self._hub.record_command(
                 "command_not_acknowledged",
                 vehicle_id,
-                {**payload, "timeout_s": self._ack_timeout_s},
+                {**payload, "timeout_s": timeout_s},
             )
-            raise NotAcknowledged(f"{action} had no answer in {self._ack_timeout_s:g} s")
+            raise NotAcknowledged(f"{action} had no answer in {timeout_s:g} s")
         task.result()  # the executor's own error, if any, is a failure
         self._hub.record_command("command_acknowledged", vehicle_id, payload)
 
