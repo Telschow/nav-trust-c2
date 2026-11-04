@@ -1,6 +1,6 @@
-// Records the vertical LinkedIn cut of the replay demo (issue 164), following the portfolio visual
-// strategy: the question in large text over moving real footage for the first 3 s, one idea per
-// beat, a spotlight on what to look at, one number with its denominator (read from the generated
+// Records the vertical cut of the replay demo (issue 164) for social video feeds: the question in
+// large text over moving real footage for the first 3 s, one idea per beat, a spotlight on what to
+// look at, one number with its denominator (read from the generated
 // results files, never typed), the evidence label with the commit on every frame, and an end card
 // that says what the project does not show. Real UI only: it drives the built console in Chrome.
 // tools/clip/run.sh starts the backend, installs Playwright outside the repo and encodes the MP4.
