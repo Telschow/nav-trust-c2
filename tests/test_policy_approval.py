@@ -1,4 +1,4 @@
-"""Issue 76, ADR 0004 item 5 and 7: the policy is approved once per mission as an audited
+"""LL-02, issue 76, ADR 0004 item 5 and 7: the policy is approved once per mission as an audited
 approval, and what a vehicle did on its own is reported when the link returns and audited."""
 
 from typing import Any
