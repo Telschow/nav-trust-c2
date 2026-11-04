@@ -27,7 +27,8 @@ operator approval; one gate is the only path to a command, and a test enforces i
 **Evidence, all in simulation (PX4 SITL and Gazebo, ground truth from the simulator).**
 
 - GNSS loss was detected in 1.0 to 1.4 s in 12 runs; a frozen position in 3.0 to 4.5 s. No alert
-  in 9 nominal runs.
+  in 9 nominal runs. The frozen-position range spans three flight speeds (5, 10 and 12 m/s), 2 to 3
+  runs each.
 - The displayed bound, within 3 m, held in 100% of 4,040 reports on the data it was tuned on and
   in 99.72% of 5,308 reports on an independent set. The first version, taken from the
   estimator's own accuracy figure, held in 30.8%.
