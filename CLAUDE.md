@@ -20,35 +20,27 @@ gate, audit log) | console/ (web UI) | sim/ (docker, survey script, later worlds
 (YAML) | eval/ (batch runner, metrics) | docs/product, docs/programme, docs/adr, docs/ICD.md, GLOSSARY.md, docs/research
 
 ## Commands
-- All checks without the sim: `make check` (ruff, ruff format, mypy strict, pytest)
-- Unit tests only: `pytest`
-- Bag replay tests (from M1b): `pytest tests/replay`
-- Console (React, TypeScript, Vite, MapLibre; Node 22+): `make console` builds it, `make demo` runs backend +
-  console + replayed demo data with no simulator, `cd console && npm test` for its tests
-- Usability session (issue 16): `docs/usability/` has the facilitator script, metrics and session
-  sheet; `python -m eval.usability logs/usability/P1.sqlite` gives time to decision from a
-  session's audit database. Session data lives in `logs/` and is never committed.
-- Sim: `make sim-build`, `make sim-up`, `make fly`, `make sim-down`
-- Scenarios and eval: scenario files in `scenarios/`; `make record-all` records every run with
-  ground truth into `eval/recordings` (simulator, about 1.5 h); `make eval` regenerates
-  `eval/results.json` and `eval/results.md`; CI fails if the committed table differs from the
-  recordings. Ground truth is evaluation-only: the trust engine never sees it.
-- Time from GNSS loss to descent: `python -m eval.blind_land` (reads `eval/recordings`).
-- Lost link (issue 75): `make record-lost-link` records only the `link_loss` family in
-  `scenarios/lost_link` into `eval/lost_link/recordings` (`make record-all` runs it after the main
-  set); `make eval` also regenerates `eval/lost_link/results.md` (`python -m eval.link_loss`); CI
-  fails if the committed table differs from the recordings.
-- Onboard monitor (issue 76): `python -m eval.onboard_replay eval/lost_link/recordings` replays
-  recordings through it (CI checks that it never acts in the nominal, jamming, stuck, wrong-fix and
-  link-only recordings); `sim/record_onboard_runs.sh` records `link_and_frozen` with the monitor
-  running (simulator, resumable) into `eval/lost_link/onboard`.
-- Frozen-position matrix (issue 81): `sim/record_frozen_matrix.sh` (simulator, resumable),
-  `python -m eval.frozen_matrix tests/replay/data/experiments/matrix`; the results note is
-  `docs/validation/frozen-position-matrix.md` and a test checks it against the recordings.
-- LAND under a frozen position with PX4's flight modes (issue 141): `sim/record_land_diagnosis.sh`
-  (simulator, resumable), `python -m eval.land_diagnosis tests/replay/data/experiments/land-diagnosis`.
-- Fleet mission completion (M-04): `make record-fleet` (three vehicles, one lost, scripted
-  operator; simulator, about 80 min), `make eval-fleet` writes `eval/fleet/results.md`; CI checks it.
+`make help` lists the targets. `tools/worktree.sh <name>` makes a ready worktree for a task.
+- `make eval-all` is the one command that refreshes every committed eval table. Run it after
+  editing a file the engine fingerprint covers (`navtrust/*.py`, `c2/recommender.py`,
+  `c2/allocator.py`, `c2/fleet.py`, `c2/messages.py`). CI fails if a table differs from its
+  recordings or carries an old fingerprint. `make eval-fleet` does the same for
+  `eval/fleet/results.md`.
+- Ground truth is evaluation-only: the trust engine never sees it. Session data in `logs/` is never
+  committed.
+- Simulator recording scripts (`sim/record_*.sh`, `make record-*`) are resumable, run one at a time
+  and refuse to start on a busy machine.
+- No make target for these, run them as modules: `python -m eval.usability logs/usability/P1.sqlite`
+  (time to decision from a session), `python -m eval.blind_land` (GNSS loss to descent, from
+  `eval/recordings`), `python -m eval.onboard_replay eval/lost_link/recordings` (CI checks the
+  onboard monitor never acts in the nominal, jamming, stuck, wrong-fix and link-only recordings),
+  `python -m eval.frozen_matrix tests/replay/data/experiments/matrix` (a test checks
+  `docs/validation/frozen-position-matrix.md` against it), `python -m eval.land_diagnosis
+  tests/replay/data/experiments/land-diagnosis`.
+- Simulator scripts with no make target: `sim/record_onboard_runs.sh` (`link_and_frozen` with the
+  monitor running, into `eval/lost_link/onboard`), `sim/record_frozen_matrix.sh`,
+  `sim/record_land_diagnosis.sh`. `make record-fleet` (three vehicles, one lost, scripted operator;
+  about 80 min) is not in `make help`.
 
 ## Rules
 - CI must not need Gazebo: replay recorded bags.

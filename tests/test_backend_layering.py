@@ -1,4 +1,5 @@
-"""The backend and the trust engine do not depend on the simulator package (issue 177).
+"""The backend and the trust engine do not depend on the simulator package (issue 177), and the
+trust engine does not depend on the backend (issue 181).
 
 The backend imported a constant from the simulator package inside an endpoint, and its entry point
 imported the MAVSDK executor. The limit now lives with the policy rules both sides share, and the
@@ -27,18 +28,32 @@ def imported_modules(node: ast.AST) -> list[str]:
     return []
 
 
-def modules_importing_the_simulator() -> list[str]:
+# a lower layer never imports a higher one: the trust engine, then the backend, then the simulator
+FORBIDDEN = {"navtrust": ("c2", "sim"), "c2": ("sim",)}
+
+
+def layering_violations(root: Path) -> list[str]:
     offenders = []
-    for folder in ("c2", "navtrust"):
-        for path in sorted((ROOT / folder).rglob("*.py")):
+    for folder, forbidden in FORBIDDEN.items():
+        for path in sorted((root / folder).rglob("*.py")):
             for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
-                if any(n == "sim" or n.startswith("sim.") for n in imported_modules(node)):
-                    offenders.append(f"{path.relative_to(ROOT)}:{getattr(node, 'lineno', 0)}")
+                for name in imported_modules(node):
+                    if any(name == f or name.startswith(f + ".") for f in forbidden):
+                        offenders.append(f"{path.relative_to(root)}:{getattr(node, 'lineno', 0)}")
     return offenders
 
 
-def test_no_module_of_the_backend_or_the_trust_engine_imports_the_simulator_package() -> None:
-    assert modules_importing_the_simulator() == []
+def test_no_lower_layer_imports_a_higher_one() -> None:
+    assert layering_violations(ROOT) == []
+
+
+def test_a_violating_import_is_reported_and_a_permitted_one_is_not(tmp_path: Path) -> None:
+    for folder in ("navtrust", "c2"):
+        (tmp_path / folder).mkdir()
+    (tmp_path / "navtrust" / "engine.py").write_text("import c2.hub\n", encoding="utf-8")
+    (tmp_path / "c2" / "server.py").write_text("from sim.backend import run\n", encoding="utf-8")
+    (tmp_path / "c2" / "hub.py").write_text("from navtrust.engine import X\n", encoding="utf-8")
+    assert layering_violations(tmp_path) == ["navtrust/engine.py:1", "c2/server.py:1"]
 
 
 def test_the_data_link_loss_limit_sits_with_the_policy_rules_that_must_stay_below_it() -> None:
