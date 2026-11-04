@@ -1,6 +1,6 @@
 # Believed-vs-real clip (issue 184)
 
-`run.sh` renders a 1080x1920 MP4 of about 24 s for LinkedIn. It tells one story the console never
+`run.sh` renders a 1080x1920 MP4 of about 24 s for social video feeds. It tells one story the console never
 shows on one canvas: a drone's GPS freezes, it keeps reporting the old position, and two recorded
 runs of the same fault are shown side by side, one with no action and one with a LAND approved 15 s
 after the fault. Distances from launch: 5320 m and 450 m, the figures in ADR 0003.

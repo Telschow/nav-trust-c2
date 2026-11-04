@@ -3,7 +3,7 @@
 ## In short
 
 The code, tests and most documents were written by
-an AI coding agent, Claude Code, working in the maintainer's repository: it proposed options and a recommendation at each decision point, the maintainer chose, and the maintainer merged every pull request. 
+an AI coding agent, Claude Code, working in the maintainer's repository: it proposed options and a recommendation at each decision point, the maintainer chose, and the maintainer reviewed and merged every pull request.
 
 ## Tools and models
 
@@ -24,21 +24,23 @@ for CI. ROS 2 was in the original spec and is not used.
 | Usability sessions | Plans and runs them | Wrote the kit and the extractor |
 | Weekly status, risk log | Owns them | Drafts |
 
-## Facts from git (snapshot of 2026-10-10)
+## Facts from git (snapshot of 2026-11-04)
 
 | | |
 |---|---|
-| Repository history | 8 to 10 October 2026 (the planning before it is not in the repository) |
-| Non-merge commits on `main` | 27, all authored by the agent |
-| Merge commits on `main` | 18, all by the maintainer |
-| Pull requests | 17 merged, 2 open when this was written |
-| Issues | 14 closed, 5 open |
-| Python / TypeScript / YAML / Markdown lines | about 6,900 / 1,700 / 160 / 1,200 (before these docs; excludes dependencies) |
-| Tests | 269 Python, 23 console; CI runs lint, types and tests with no simulator |
-| Recordings | 32 simulated runs with ground truth, with a results table CI regenerates |
-| Architecture decision records | 3, each recorded on the maintainer's instruction |
+| Repository history | 8 October to 4 November 2026 (the planning before it is not in the repository) |
+| Non-merge commits on `main` | 174; 158 carry the `Co-Authored-By: Claude` trailer |
+| Merge commits on `main` | 114, all by the maintainer |
+| Pull requests | 107 merged, none open |
+| Issues | 54 closed, 24 open |
+| Tracked lines (Python / TypeScript / Markdown) | about 15,500 / 4,100 / 3,900 (includes tests, excludes dependencies) |
+| Tests | 632 Python (8 skipped), 172 console; CI runs lint, types and tests with no simulator |
+| Architecture decision records | 5, each recorded on the maintainer's instruction |
 
-Reproduce: `git log --no-merges --format=%an | sort | uniq -c`, `gh pr list --state all`.
+The author name on a commit is not a reliable guide to who wrote it: some commits were made
+without a git identity and show as "Anonymous". The trailer is the record.
+
+Reproduce: `git log --no-merges --format=%B | grep -c 'Co-Authored-By: Claude'`, `gh pr list --state all`.
 
 ## The decisions, and who made them
 
@@ -72,8 +74,6 @@ A public list. Each row is a mistake in the agent's work, found by the method in
 The pattern: the agent's own checks (tests, the type checker, CI) passed in most of these. What
 found the problems was running the system, measuring it against ground truth, and reading the
 numbers back.
-
-<span style="color:aquamarine"> *Luckily the agent collected and archived the errors and will use it as context to avoid them in the future*</span>
 
 ## What the agent could not do or did not verify
 

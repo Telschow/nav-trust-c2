@@ -2,8 +2,7 @@
 
 **Maintainer checklist for the settings: the last section of this file.**
 
-`run.sh` records a 1080x1920 LinkedIn cut of the replay demo (about 38 s), built to the portfolio
-visual strategy: the question in large text over moving footage from the first frame; all three
+`run.sh` records a 1080x1920 vertical cut of the replay demo (about 38 s): the question in large text over moving footage from the first frame; all three
 drones TRUSTED; uav2 DO NOT TRUST with its reason; the one number, with its denominator, read from
 the committed results files (frozen position flagged in 3.0 to 4.5 s, 7 simulation runs); the
 recommendation; the press-and-hold approval ("Nothing moves until a person approves."); the decided
@@ -51,6 +50,6 @@ with `curl` and unpack it to `~/Library/Caches/ms-playwright/ffmpeg-1011/` with 
       `https://telschow.github.io/nav-trust-c2/`.
 - [ ] **Social preview:** Settings, General, Social preview, upload `docs/media/social-preview.png`
       (1280x640, a crop of the real console).
-- [ ] **LinkedIn post:** upload `docs/media/vertical/clip.mp4`, add `clip.srt` as the captions file
-      (burned-in captions are already in the video), use `poster.jpg` as the thumbnail, and take the
-      alt text from `manifest.json` (`alt_text`). Keep "Simulation only" in the post text.
+- [ ] **Posting the clip:** upload `docs/media/vertical/clip.mp4` with `clip.srt` as captions
+      (burned-in captions are already in the video), `poster.jpg` as the thumbnail and the alt text
+      from `manifest.json` (`alt_text`). Keep "Simulation only" in the post text.
