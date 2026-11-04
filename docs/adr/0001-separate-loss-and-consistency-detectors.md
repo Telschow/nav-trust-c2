@@ -1,6 +1,7 @@
 # ADR 0001: Separate detectors for GNSS loss and GNSS inconsistency
 
-Status: accepted, 2026-10-09. Decided by the maintainer; written down by Claude on their instruction.
+Status: accepted, 2026-10-09; reason precedence amended 2026-11-04 (issue 160). Decided by the
+maintainer; written down by Claude on their instruction.
 
 ## Context
 
@@ -39,7 +40,12 @@ Two independent detectors feed one state machine.
    Produces `INCONSISTENT_INNOVATION` and `BIAS_DRIFT`.
 
 The state machine combines both, applies hysteresis, and outputs state, reason and
-horizontal bound. Loss takes precedence in the reason code.
+horizontal bound. The reason is taken from the findings that set the state, and among those loss
+comes first. (Amended 2026-11-04: the first text said "Loss takes precedence in the reason code"
+without qualification. That was written when a degraded fix could only produce AMBER. With a 2D
+fix and an inconsistency the state is RED only because of the inconsistency, yet the reason said
+`GNSS_LOSS`, so no LAND was recommended and the onboard contingency did not match. No recording
+covers this combination; it is tested in `tests/test_engine.py` only.)
 
 ## Consequences
 

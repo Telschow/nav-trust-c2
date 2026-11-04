@@ -135,6 +135,7 @@ class TrustEngine:
         if not findings:
             return TrustState.GREEN, None
         state = max((s for s, _ in findings), key=_RANK.__getitem__)
+        # the reason explains the state: among the findings that set it, loss comes first (ADR 0001)
         order = [ReasonCode.GNSS_LOSS, ReasonCode.STALE, ReasonCode.INCONSISTENT_INNOVATION]
-        reason = min((r for _, r in findings), key=order.index)
+        reason = min((r for s, r in findings if s is state), key=order.index)
         return state, reason
