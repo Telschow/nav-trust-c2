@@ -72,15 +72,42 @@ def test_inconsistency_is_red_at_once_with_its_own_reason() -> None:
     assert math.isinf(out.horizontal_bound_m) and out.confidence == 0.0
 
 
-def test_loss_wins_the_reason_code_over_inconsistency_and_state_is_the_worst() -> None:
+def test_the_reason_comes_from_the_finding_that_set_the_state() -> None:
+    # ADR 0001, amended 2026-11-04 (issue 160): a short loss is only AMBER, so the RED comes from
+    # the inconsistency and the reason says so
     e = TrustEngine("uav1")
     t = start_green(e)
     e.update_fix(t + 1, "NO_GPS")
     for dt in range(1, 5):
         good(e, t + dt, pos=2.0, vel=0.1)
     out = e.report(t + 4)
-    assert out.reason is ReasonCode.GNSS_LOSS  # loss precedence (ADR 0001)
-    assert out.state is TrustState.RED  # inconsistency alone already makes it RED
+    assert (out.state, out.reason) == (TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION)
+
+
+def test_a_degraded_fix_with_an_inconsistency_reports_the_inconsistency() -> None:
+    e = TrustEngine("uav1")
+    t = start_green(e)
+    e.update_fix(t + 1, "FIX_2D")
+    for dt in range(1, 5):
+        good(e, t + dt, pos=2.0, vel=0.1)
+    out = e.report(t + 4)
+    assert (out.state, out.reason) == (TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION)
+
+
+def test_loss_still_wins_the_reason_when_it_is_RED_too() -> None:
+    e = TrustEngine("uav1")
+    t = start_green(e)
+    e.update_fix(t + 1, "NO_GPS")
+    dt = 1
+    while (e.report(t + dt).state, e.report(t + dt).reason) != (
+        TrustState.RED,
+        ReasonCode.GNSS_LOSS,
+    ):
+        good(e, t + dt, pos=2.0, vel=0.1)
+        dt += 1
+        assert dt < 60
+    out = e.report(t + dt)
+    assert (out.state, out.reason) == (TrustState.RED, ReasonCode.GNSS_LOSS)
 
 
 def test_recovery_goes_back_to_green_only_after_the_detector_holds() -> None:
