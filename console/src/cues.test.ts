@@ -49,6 +49,20 @@ describe("which tone a change deserves (issues 116, 117)", () => {
     expect(step(s, link("NO_LINK")).cues).toEqual(["link-lost"]);
   });
 
+  it("a vehicle the console first hears of when its link drops still sounds (the hub announces no first LINK_OK)", () => {
+    expect(step(initialState, link("NO_LINK")).cues).toEqual(["link-lost"]);
+  });
+
+  it("losing the connection to the backend sounds the link-lost tone", () => {
+    const connected = reducer(initialState, { type: "connection", connected: true });
+    expect(step(connected, { type: "connection", connected: false }).cues).toEqual(["link-lost"]);
+  });
+
+  it("connecting, or a connection that was never up, is silent", () => {
+    expect(step(initialState, { type: "connection", connected: true }).cues).toEqual([]);
+    expect(step(initialState, { type: "connection", connected: false }).cues).toEqual([]);
+  });
+
   it("a link restored is silent", () => {
     const s = step(step(initialState, link("LINK_OK")).next, link("NO_LINK")).next;
     expect(step(s, link("LINK_OK")).cues).toEqual([]);

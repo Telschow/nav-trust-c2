@@ -1,7 +1,7 @@
 import type { Action, ConsoleState } from "./store";
 
 /** A sound the console can make. Every one has an on-screen equivalent, so nothing depends on
- * sound alone: the decision band and the no-link badge. */
+ * sound alone: the decision band, the no-link badge and the backend-lost banner. */
 export type Cue = "decision-required" | "link-lost";
 
 /** The only thing that makes sound, behind an interface so tests never need audio. */
@@ -12,6 +12,8 @@ export interface CuePlayer {
 /** Which sounds a change deserves, from the state before and after one action. Only a live event
  * can sound: a fresh snapshot is what was already there, and marking a decision seen is quiet. */
 export function cuesFor(prev: ConsoleState, action: Action, next: ConsoleState): Cue[] {
+  // the console's own connection to the backend dropping is a lost link too
+  if (action.type === "connection") return prev.connected && !action.connected ? ["link-lost"] : [];
   if (action.type !== "server") return [];
   const { event } = action;
   if (event.type === "recommendation") {
@@ -19,8 +21,9 @@ export function cuesFor(prev: ConsoleState, action: Action, next: ConsoleState):
     return isNew && !next.decisions[event.data.id] ? ["decision-required"] : [];
   }
   if (event.type === "link") {
+    // the hub announces no first LINK_OK, so a vehicle the console has not heard of was up
     const before = prev.links[event.data.vehicle_id]?.state;
-    return before !== undefined && before !== "NO_LINK" && event.data.state === "NO_LINK" ? ["link-lost"] : [];
+    return before !== "NO_LINK" && event.data.state === "NO_LINK" ? ["link-lost"] : [];
   }
   return [];
 }
