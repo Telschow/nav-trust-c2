@@ -1,9 +1,14 @@
 # Believed-vs-real clip (issue 184)
 
-`run.sh` renders a 1080x1920 MP4 of about 24 s for social video feeds. It tells one story the console never
-shows on one canvas: a drone's GPS freezes, it keeps reporting the old position, and two recorded
-runs of the same fault are shown side by side, one with no action and one with a LAND approved 15 s
-after the fault. Distances from launch: 5320 m and 450 m, the figures in ADR 0003.
+`run.sh` renders a 1080x1920 MP4 of 22 s for social video feeds. It opens with an analogy for
+readers who do not know the field: a map app loses GPS in a tunnel, its dot freezes and you keep
+moving, with no warning. The analogy uses the same two symbols as the drone view (amber ring: what
+the app shows; cyan dot: where you really are), so nothing new has to be decoded. Then the same thing for a drone: two recorded runs of one fault are shown side by side,
+one with no action and one with a LAND approved 15 s after the fault. Distances from launch: 5320 m
+and 450 m, the figures in ADR 0003.
+
+The rendered clip is committed at `docs/media/vertical/story.mp4` (22 s, 3.1 MB, re-encoded at CRF 23 from the render of this
+code at the commit that added it).
 
 ```
 tools/story/run.sh                                       # logs/story/story.mp4 (not committed)
@@ -17,12 +22,18 @@ project dependency: Remotion 4.0.499 is installed outside the repository, in `$S
 - `build_story.py` reads `tests/replay/data/experiments/stuck-action-{none,land}.jsonl` and writes
   the tracks, the fault, approval and touchdown times and a sha256 of each recording. The scene
   code holds no result. `tests/test_story_data.py` checks the distances against ADR 0003.
-- `src/Story.tsx` is the scene. Time is sped up (the on-screen clock says simulated time since the
-  fault): 4x from the fault to touchdown, about 19x after it.
+- `src/Story.tsx` is the scene. The first 5 s are the analogy (`MapAnalogy`, drawn, no data); the rest
+  are the two recorded runs. Time is sped up (the on-screen clock says simulated time since the
+  fault): about 5x from the fault to touchdown, about 25x after it.
 - The truth track is evaluation-only ground truth, drawn here to show the gap, never an input to the
   trust engine.
 
 ## Accuracy rules
+
+- The tunnel scene is tagged "Analogy, not data" and the footer says it is not footage or data. It must not
+  suggest the drone sees anything: the system compares the drone's sensors with each other, which
+  is how the README describes the consistency detector.
+- Wording stays plain: "GPS", "the system", no detector or engine names on screen.
 
 - The clip says "SIMULATION (PX4 SITL), recorded runs replayed" and that the operator is scripted.
 - One recorded run per action in one simulator; the end card says so. It is not a rate.

@@ -2,7 +2,7 @@ import { AbsoluteFill, interpolate, useCurrentFrame } from "remotion";
 import story from "./story.json";
 
 export const FPS = 30;
-export const DURATION_FRAMES = 24 * FPS;
+export const DURATION_FRAMES = 22 * FPS;
 
 type Row = { t: number; truth: [number, number, number]; reported: [number, number] };
 type Run = {
@@ -31,11 +31,12 @@ const MONO = "'SF Mono', Menlo, Consolas, monospace";
 // video seconds -> simulated seconds relative to the fault (the clock on screen says which)
 const TIME_MAP: [number, number][] = [
   [0, -8],
-  [3, 0],
-  [3.7, 0],
-  [9, 24.3],
-  [17, 173],
-  [24, 173],
+  [5.4, -8],
+  [6.2, 0],
+  [7.0, 0],
+  [12.0, 24.3],
+  [18.0, 173],
+  [22, 173],
 ];
 const simTime = (videoS: number) =>
   interpolate(videoS, TIME_MAP.map((p) => p[0]), TIME_MAP.map((p) => p[1]), { extrapolateRight: "clamp" });
@@ -131,11 +132,11 @@ function Panel({ run, rel, kind }: { run: Run; rel: number; kind: "none" | "land
 
       <div style={{ position: "absolute", top: 20, left: 24, right: 24, display: "flex", justifyContent: "space-between", alignItems: "flex-start", fontFamily: FONT }}>
         <div>
-          <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: 1.5, color: C.text }}>{kind === "none" ? "NO ACTION" : "OPERATOR APPROVES LAND"}</div>
+          <div style={{ fontSize: 30, fontWeight: 700, letterSpacing: 1.5, color: C.text }}>{kind === "none" ? "NOBODY ACTS" : "A PERSON APPROVES LAND"}</div>
           <div style={{ fontSize: 24, color: C.muted, marginTop: 4, height: 30 }}>
             {kind === "land" && approvedAgo !== null && approvedAgo >= 0 && !landed && "LAND approved, descending"}
             {kind === "land" && landed && "On the ground"}
-            {kind === "none" && afterFault && rel > 12 && "Still flying, still reporting its old position"}
+            {kind === "none" && afterFault && rel > 12 && "Still flying, still reporting the old position"}
           </div>
         </div>
         <div style={{ textAlign: "right" }}>
@@ -143,6 +144,94 @@ function Panel({ run, rel, kind }: { run: Run; rel: number; kind: "none" | "land
           <div style={{ fontSize: 22, color: C.muted, marginTop: 4 }}>from launch</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+
+const FREEZE_S = 1.6;
+const SPEED = 250; // px per second along the route
+
+// a map-app route: bottom left up to top right, sampled once
+const ROUTE: { x: number; y: number; d: number }[] = (() => {
+  const P = [[150, 1230], [150, 700], [850, 760], [850, 170]];
+  const pts: { x: number; y: number; d: number }[] = [];
+  let d = 0;
+  for (let i = 0; i <= 240; i++) {
+    const u = i / 240;
+    const b = (k: number) => {
+      const m = 1 - u;
+      return m * m * m * P[0][k] + 3 * m * m * u * P[1][k] + 3 * m * u * u * P[2][k] + u * u * u * P[3][k];
+    };
+    const x = b(0);
+    const y = b(1);
+    if (i > 0) d += Math.hypot(x - pts[i - 1].x, y - pts[i - 1].y);
+    pts.push({ x, y, d });
+  }
+  return pts;
+})();
+const ROUTE_LEN = ROUTE[ROUTE.length - 1].d;
+const routeAt = (dist: number) => {
+  const dd = clamp(dist, 0, ROUTE_LEN);
+  const k = ROUTE.findIndex((p) => p.d >= dd);
+  if (k <= 0) return ROUTE[0];
+  const a = ROUTE[k - 1];
+  const b = ROUTE[k];
+  const f = (dd - a.d) / Math.max(b.d - a.d, 1e-9);
+  return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, d: dd };
+};
+const TUNNEL_FROM = SPEED * FREEZE_S; // the dot freezes where the tunnel begins
+const TUNNEL_TO = ROUTE_LEN * 0.8;
+
+/** The analogy: a map app's dot freezes in a tunnel while you keep moving. Same symbols as the
+ * drone panels: the ring is what the app shows, the dot is where you really are. Not data. */
+function MapAnalogy({ s }: { s: number }) {
+  const real = routeAt(s * SPEED);
+  const shown = routeAt(Math.min(s * SPEED, TUNNEL_FROM));
+  const frozen = s >= FREEZE_S;
+  const pulse = frozen ? (s * 1.4) % 1 : 0;
+  const gap = fade(s, FREEZE_S + 0.3, FREEZE_S + 1.0);
+  const line = (a: number, b: number) =>
+    ROUTE.filter((p) => p.d >= a && p.d <= b).map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const portal = (dist: number) => {
+    const a = routeAt(dist - 6);
+    const b = routeAt(dist + 6);
+    const nx = -(b.y - a.y);
+    const ny = b.x - a.x;
+    const n = Math.hypot(nx, ny) || 1;
+    const c = routeAt(dist);
+    return { x1: c.x + (nx / n) * 34, y1: c.y + (ny / n) * 34, x2: c.x - (nx / n) * 34, y2: c.y - (ny / n) * 34 };
+  };
+  const inn = portal(TUNNEL_FROM);
+  const out = portal(TUNNEL_TO);
+  const mid = routeAt((TUNNEL_FROM + TUNNEL_TO) / 2);
+  return (
+    <div style={{ position: "relative", width: W, height: 1330, background: C.panel, border: `2px solid ${C.line}`, overflow: "hidden", fontFamily: FONT }}>
+      <svg width={W} height={1330} style={{ position: "absolute", inset: 0 }}>
+        <defs>
+          <filter id="ma-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" /></filter>
+        </defs>
+        {Array.from({ length: 11 }, (_, i) => <line key={`h${i}`} x1={0} x2={W} y1={i * 133} y2={i * 133} stroke="#6f8bb0" strokeOpacity={0.09} />)}
+        {Array.from({ length: 8 }, (_, i) => <line key={`v${i}`} y1={0} y2={1330} x1={i * 143} x2={i * 143} stroke="#6f8bb0" strokeOpacity={0.09} />)}
+        {/* the road, and the tunnel as a covered stretch */}
+        <polyline points={line(0, ROUTE_LEN)} fill="none" stroke="#1e2b3d" strokeWidth={34} strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={line(0, ROUTE_LEN)} fill="none" stroke="#3b4d66" strokeWidth={4} strokeDasharray="22 18" />
+        <polyline points={line(TUNNEL_FROM, TUNNEL_TO)} fill="none" stroke="#05080d" strokeWidth={50} strokeLinecap="butt" strokeLinejoin="round" />
+        <polyline points={line(TUNNEL_FROM, TUNNEL_TO)} fill="none" stroke="#56677f" strokeWidth={4} strokeDasharray="10 14" />
+        {[inn, out].map((q, k) => <line key={k} {...q} stroke="#8aa0bd" strokeWidth={8} strokeLinecap="round" />)}
+        <text x={mid.x + 54} y={mid.y + 8} fill="#8aa0bd" fontSize={34} fontWeight={700} letterSpacing={3}>TUNNEL</text>
+        {/* what the app shows, and where you really are */}
+        {frozen && <line x1={shown.x} y1={shown.y} x2={real.x} y2={real.y} stroke={C.believed} strokeWidth={3} strokeDasharray="10 9" strokeOpacity={0.85 * gap} />}
+        <circle cx={shown.x} cy={shown.y} r={26 + pulse * 30} fill="none" stroke={C.believed} strokeOpacity={frozen ? (1 - pulse) * 0.5 : 0} strokeWidth={3} />
+        <circle cx={shown.x} cy={shown.y} r={26} fill="none" stroke={C.believed} strokeWidth={6} />
+        <circle cx={real.x} cy={real.y} r={26} fill={C.truth} fillOpacity={0.4} filter="url(#ma-glow)" />
+        <circle cx={real.x} cy={real.y} r={12} fill={C.truth} />
+      </svg>
+      <div style={{ position: "absolute", top: 22, left: 26, display: "flex", flexDirection: "column", gap: 14, fontSize: 30, fontWeight: 600 }}>
+        <div style={{ color: C.truth }}>● where you really are</div>
+        <div style={{ color: C.believed }}>◯ what the app shows</div>
+      </div>
+      <div style={{ position: "absolute", top: 26, right: 26, fontSize: 24, letterSpacing: 2, color: C.muted }}>ANALOGY, NOT DATA</div>
     </div>
   );
 }
@@ -160,37 +249,44 @@ export const Story = () => {
   const frame = useCurrentFrame();
   const s = frame / FPS;
   const rel = simTime(s);
-  const endCard = fade(s, 17, 18);
+  const endCard = fade(s, 18.2, 18.9);
+  const toDrone = fade(s, 5.0, 5.5);
   return (
     <AbsoluteFill style={{ background: C.bg, fontFamily: FONT, color: C.text }}>
       <div style={{ position: "absolute", left: 40, right: 40, top: 70, height: 230 }}>
-        <Text from={0.2} to={3.4}>A drone's GPS freezes.</Text>
-        <Text from={0.9} to={3.4} size={44} weight={500} color={C.muted}>
-          <div style={{ marginTop: 100 }}>It keeps reporting a position. That position is now wrong.</div>
+        <Text from={0.2} to={2.6} size={68}>Your map app loses GPS in a tunnel.</Text>
+        <Text from={0.9} to={2.6} size={44} weight={500} color={C.muted}>
+          <div style={{ marginTop: 150 }}>The dot freezes. You keep moving.</div>
         </Text>
-        <Text from={3.7} to={9.2} size={60}>One run did nothing.<br />The other had an operator approve LAND.</Text>
-        <Text from={9.4} to={17.2} size={60}>No PX4 failsafe fires:<br />the position still looks valid.</Text>
-        <Text from={17.6} to={24} size={72} color={C.text}>Same fault.<br />Very different outcome.</Text>
+        <Text from={2.7} to={4.9} size={62}>No warning. The app still<br />looks fine. You are far ahead.</Text>
+        <Text from={5.0} to={7.6}>The same thing<br />happens to a drone.</Text>
+        <Text from={7.7} to={11.8} size={60}>No alarm fires: the frozen position still looks valid.</Text>
+        <Text from={11.9} to={15.3} size={56}>The system notices:<br />other sensors disagree.<br />A person decides.</Text>
+        <Text from={15.6} to={22} size={72}>Same fault.<br />Very different outcome.</Text>
       </div>
 
-      <div style={{ position: "absolute", left: 0, right: 0, top: 900, textAlign: "center", zIndex: 5, fontSize: 120, fontWeight: 800, letterSpacing: 4, color: C.believed, opacity: fade(s, 2.95, 3.1) * (1 - fade(s, 3.5, 3.8)), textShadow: "0 0 40px rgba(255,176,32,0.8), 0 0 8px #000" }}>
+      <div style={{ position: "absolute", left: 0, right: 0, top: 900, textAlign: "center", zIndex: 5, fontSize: 120, fontWeight: 800, letterSpacing: 4, color: C.believed, opacity: fade(s, 6.15, 6.3) * (1 - fade(s, 6.7, 7.0)), textShadow: "0 0 40px rgba(255,176,32,0.8), 0 0 8px #000" }}>
         GPS FROZEN
       </div>
-      <div style={{ position: "absolute", left: 40, top: 330 }}>
+
+      <div style={{ position: "absolute", left: 40, top: 330, opacity: 1 - toDrone }}>
+        <MapAnalogy s={s} />
+      </div>
+      <div style={{ position: "absolute", left: 40, top: 330, opacity: toDrone }}>
         <Panel run={RUNS.none} rel={Math.min(rel, RUNS.none.end_rel_s)} kind="none" />
       </div>
-      <div style={{ position: "absolute", left: 40, top: 1010 }}>
+      <div style={{ position: "absolute", left: 40, top: 1010, opacity: toDrone }}>
         <Panel run={RUNS.land} rel={Math.min(rel, RUNS.land.end_rel_s)} kind="land" />
       </div>
 
-      <div style={{ position: "absolute", left: 40, right: 40, top: 1690, height: 200, opacity: 1 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-          <div style={{ fontFamily: MONO, fontSize: 40, color: C.text }}>
-            simulated time since the fault {clock(rel)}
-          </div>
+      <div style={{ position: "absolute", left: 40, right: 40, top: 1690, height: 200 }}>
+        <div style={{ fontFamily: MONO, fontSize: 40, color: C.text, opacity: toDrone }}>
+          simulated time since the fault {clock(rel)}
         </div>
         <div style={{ marginTop: 18, fontSize: 25, lineHeight: 1.35, color: C.muted, opacity: 1 - endCard }}>
-          SIMULATION (PX4 SITL), recorded runs replayed. The operator is scripted: LAND 15 s after the fault.
+          {s < 5.2
+            ? "An illustration to explain the idea. It is not footage and not data. The ring and the dot mean the same in the drone view."
+            : "SIMULATION (PX4 SITL), recorded runs replayed. The operator is scripted: LAND 15 s after the fault."}
         </div>
         <div style={{ position: "absolute", left: 0, right: 0, top: 54, opacity: endCard, fontSize: 28, lineHeight: 1.4, color: C.text }}>
           Nothing moves without an operator's approval.
