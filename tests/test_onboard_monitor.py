@@ -1,5 +1,5 @@
-"""Issue 76, ADR 0004 item 3: the vehicle acts only when the link has been down longer than the
-policy's wait time, the trust reason matches an entry and the policy is still valid."""
+"""LL-02, issue 76, ADR 0004 item 3: the vehicle acts only when the link has been down longer than
+the policy's wait time, the trust reason matches an entry and the policy is still valid."""
 
 from navtrust.types import NavTrust, ReasonCode, TrustState
 from sim.onboard_monitor import LAND_RETRY_S, MAX_LAND_ATTEMPTS, OnboardMonitor
