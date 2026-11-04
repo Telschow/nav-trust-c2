@@ -149,74 +149,89 @@ function Panel({ run, rel, kind }: { run: Run; rel: number; kind: "none" | "land
 }
 
 
-const mod = (a: number, n: number) => ((a % n) + n) % n;
 const FREEZE_S = 1.6;
+const SPEED = 250; // px per second along the route
 
-/** The analogy: a satnav whose map freezes while the car keeps driving. An illustration, not data. */
-function Satnav({ s }: { s: number }) {
-  const road = Math.min(s, 99);
-  const mapT = Math.min(s, FREEZE_S);
+// a map-app route: bottom left up to top right, sampled once
+const ROUTE: { x: number; y: number; d: number }[] = (() => {
+  const P = [[150, 1230], [150, 700], [850, 760], [850, 170]];
+  const pts: { x: number; y: number; d: number }[] = [];
+  let d = 0;
+  for (let i = 0; i <= 240; i++) {
+    const u = i / 240;
+    const b = (k: number) => {
+      const m = 1 - u;
+      return m * m * m * P[0][k] + 3 * m * m * u * P[1][k] + 3 * m * u * u * P[2][k] + u * u * u * P[3][k];
+    };
+    const x = b(0);
+    const y = b(1);
+    if (i > 0) d += Math.hypot(x - pts[i - 1].x, y - pts[i - 1].y);
+    pts.push({ x, y, d });
+  }
+  return pts;
+})();
+const ROUTE_LEN = ROUTE[ROUTE.length - 1].d;
+const routeAt = (dist: number) => {
+  const dd = clamp(dist, 0, ROUTE_LEN);
+  const k = ROUTE.findIndex((p) => p.d >= dd);
+  if (k <= 0) return ROUTE[0];
+  const a = ROUTE[k - 1];
+  const b = ROUTE[k];
+  const f = (dd - a.d) / Math.max(b.d - a.d, 1e-9);
+  return { x: a.x + (b.x - a.x) * f, y: a.y + (b.y - a.y) * f, d: dd };
+};
+const TUNNEL_FROM = SPEED * FREEZE_S; // the dot freezes where the tunnel begins
+const TUNNEL_TO = ROUTE_LEN * 0.8;
+
+/** The analogy: a map app's dot freezes in a tunnel while you keep moving. Same symbols as the
+ * drone panels: the ring is what the app shows, the dot is where you really are. Not data. */
+function MapAnalogy({ s }: { s: number }) {
+  const real = routeAt(s * SPEED);
+  const shown = routeAt(Math.min(s * SPEED, TUNNEL_FROM));
   const frozen = s >= FREEZE_S;
-  const pulse = frozen ? 0 : (s * 1.2) % 1;
-  const wheel = (road * 420) % 360;
-  const still = fade(s, FREEZE_S + 0.5, FREEZE_S + 1.0);
+  const pulse = frozen ? (s * 1.4) % 1 : 0;
+  const gap = fade(s, FREEZE_S + 0.3, FREEZE_S + 1.0);
+  const line = (a: number, b: number) =>
+    ROUTE.filter((p) => p.d >= a && p.d <= b).map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ");
+  const portal = (dist: number) => {
+    const a = routeAt(dist - 6);
+    const b = routeAt(dist + 6);
+    const nx = -(b.y - a.y);
+    const ny = b.x - a.x;
+    const n = Math.hypot(nx, ny) || 1;
+    const c = routeAt(dist);
+    return { x1: c.x + (nx / n) * 34, y1: c.y + (ny / n) * 34, x2: c.x - (nx / n) * 34, y2: c.y - (ny / n) * 34 };
+  };
+  const inn = portal(TUNNEL_FROM);
+  const out = portal(TUNNEL_TO);
+  const mid = routeAt((TUNNEL_FROM + TUNNEL_TO) / 2);
   return (
     <div style={{ position: "relative", width: W, height: 1330, background: C.panel, border: `2px solid ${C.line}`, overflow: "hidden", fontFamily: FONT }}>
       <svg width={W} height={1330} style={{ position: "absolute", inset: 0 }}>
         <defs>
-          <filter id="sn-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8" /></filter>
-          <clipPath id="sn-screen"><rect x={330} y={745} width={340} height={520} rx={22} /></clipPath>
+          <filter id="ma-glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7" /></filter>
         </defs>
-        {/* the road: lamps and hills move past the car */}
-        <polyline fill="#0f1826" stroke="none" points={`0,430 ${Array.from({ length: 11 }, (_, i) => `${i * 100 - mod(road * 60, 200)},${390 - 26 * Math.abs(Math.sin((i + Math.floor(road * 60 / 200) * 2) * 1.3))}`).join(" ")} 1100,430`} />
-        <rect x={0} y={430} width={W} height={210} fill="#161f2d" />
-        <rect x={0} y={430} width={W} height={4} fill="#26364b" />
-        {Array.from({ length: 14 }, (_, i) => (
-          <rect key={i} x={i * 90 - mod(road * 520, 90) - 90} y={532} width={50} height={7} rx={3} fill="#5d6f88" />
-        ))}
-        {Array.from({ length: 5 }, (_, i) => {
-          const x = i * 300 - mod(road * 330, 300) - 40;
-          return (
-            <g key={i}>
-              <rect x={x} y={300} width={6} height={130} fill="#34455c" />
-              <circle cx={x + 3} cy={298} r={16} fill={C.believed} fillOpacity={0.45} filter="url(#sn-glow)" />
-              <circle cx={x + 3} cy={298} r={6} fill="#ffd27a" />
-            </g>
-          );
-        })}
-        {/* the car */}
-        <g transform="translate(330 438)">
-          <polygon points="250,52 420,20 420,92" fill="#fff4cf" fillOpacity={0.10} />
-          <path d="M0 80 L0 52 Q0 40 14 38 L70 36 L104 6 Q110 0 122 0 L196 0 Q208 0 216 10 L240 38 L258 42 Q270 46 270 58 L270 80 Z" fill="#c9d4e4" />
-          <path d="M112 12 L190 12 L212 38 L96 38 Z" fill="#1d2a3c" />
-          <rect x={256} y={50} width={14} height={9} rx={3} fill="#ffe9a8" />
-          {[62, 206].map((cx) => (
-            <g key={cx} transform={`translate(${cx} 82) rotate(${wheel})`}>
-              <circle r={26} fill="#0a0f18" stroke="#3a4a60" strokeWidth={4} />
-              <line x1={-18} x2={18} stroke="#6f84a0" strokeWidth={4} />
-              <line y1={-18} y2={18} stroke="#6f84a0" strokeWidth={4} />
-            </g>
-          ))}
-        </g>
-
-        {/* the phone */}
-        <rect x={300} y={715} width={400} height={580} rx={44} fill="#05080d" stroke="#2c3b50" strokeWidth={5} />
-        <rect x={330} y={745} width={340} height={520} rx={22} fill="#0f1a2a" />
-        <g clipPath="url(#sn-screen)">
-          {Array.from({ length: 8 }, (_, i) => (
-            <line key={i} x1={330} x2={670} y1={mod(i * 90 + mapT * 150, 720) + 700} y2={mod(i * 90 + mapT * 150, 720) + 700} stroke="#27405f" strokeWidth={6} />
-          ))}
-          <line x1={500} x2={500} y1={745} y2={1265} stroke={C.truth} strokeOpacity={0.35} strokeWidth={16} />
-          <rect x={330} y={745} width={340} height={78} fill="#0b3a2a" />
-          <text x={348} y={793} fill="#bff2d8" fontSize={30} fontWeight={600}>↑  Continue straight</text>
-          <circle cx={500} cy={1090} r={18 + pulse * 40} fill="none" stroke={C.truth} strokeOpacity={(1 - pulse) * 0.6} strokeWidth={3} />
-          <circle cx={500} cy={1090} r={20} fill={C.truth} stroke="#fff" strokeWidth={5} />
-          <text x={500} y={1150} fill={C.text} fontSize={24} textAnchor="middle">You are here</text>
-        </g>
+        {Array.from({ length: 11 }, (_, i) => <line key={`h${i}`} x1={0} x2={W} y1={i * 133} y2={i * 133} stroke="#6f8bb0" strokeOpacity={0.09} />)}
+        {Array.from({ length: 8 }, (_, i) => <line key={`v${i}`} y1={0} y2={1330} x1={i * 143} x2={i * 143} stroke="#6f8bb0" strokeOpacity={0.09} />)}
+        {/* the road, and the tunnel as a covered stretch */}
+        <polyline points={line(0, ROUTE_LEN)} fill="none" stroke="#1e2b3d" strokeWidth={34} strokeLinecap="round" strokeLinejoin="round" />
+        <polyline points={line(0, ROUTE_LEN)} fill="none" stroke="#3b4d66" strokeWidth={4} strokeDasharray="22 18" />
+        <polyline points={line(TUNNEL_FROM, TUNNEL_TO)} fill="none" stroke="#05080d" strokeWidth={50} strokeLinecap="butt" strokeLinejoin="round" />
+        <polyline points={line(TUNNEL_FROM, TUNNEL_TO)} fill="none" stroke="#56677f" strokeWidth={4} strokeDasharray="10 14" />
+        {[inn, out].map((q, k) => <line key={k} {...q} stroke="#8aa0bd" strokeWidth={8} strokeLinecap="round" />)}
+        <text x={mid.x + 54} y={mid.y + 8} fill="#8aa0bd" fontSize={34} fontWeight={700} letterSpacing={3}>TUNNEL</text>
+        {/* what the app shows, and where you really are */}
+        {frozen && <line x1={shown.x} y1={shown.y} x2={real.x} y2={real.y} stroke={C.believed} strokeWidth={3} strokeDasharray="10 9" strokeOpacity={0.85 * gap} />}
+        <circle cx={shown.x} cy={shown.y} r={26 + pulse * 30} fill="none" stroke={C.believed} strokeOpacity={frozen ? (1 - pulse) * 0.5 : 0} strokeWidth={3} />
+        <circle cx={shown.x} cy={shown.y} r={26} fill="none" stroke={C.believed} strokeWidth={6} />
+        <circle cx={real.x} cy={real.y} r={26} fill={C.truth} fillOpacity={0.4} filter="url(#ma-glow)" />
+        <circle cx={real.x} cy={real.y} r={12} fill={C.truth} />
       </svg>
-      <div style={{ position: "absolute", top: 18, left: 24, fontSize: 24, letterSpacing: 2, color: C.muted }}>ANALOGY, NOT FOOTAGE</div>
-      <div style={{ position: "absolute", top: 18, right: 24, fontSize: 28, fontWeight: 700, color: C.believed, opacity: still }}>Still driving</div>
-      <div style={{ position: "absolute", left: 0, right: 0, top: 664, textAlign: "center", fontSize: 26, color: C.muted, opacity: still }}>The screen looks fine. The car has moved on.</div>
+      <div style={{ position: "absolute", top: 22, left: 26, display: "flex", flexDirection: "column", gap: 14, fontSize: 30, fontWeight: 600 }}>
+        <div style={{ color: C.truth }}>● where you really are</div>
+        <div style={{ color: C.believed }}>◯ what the app shows</div>
+      </div>
+      <div style={{ position: "absolute", top: 26, right: 26, fontSize: 24, letterSpacing: 2, color: C.muted }}>ANALOGY, NOT DATA</div>
     </div>
   );
 }
@@ -235,16 +250,16 @@ export const Story = () => {
   const s = frame / FPS;
   const rel = simTime(s);
   const endCard = fade(s, 18.2, 18.9);
-  const toDrone = fade(s, 4.9, 5.5);
+  const toDrone = fade(s, 5.0, 5.5);
   return (
     <AbsoluteFill style={{ background: C.bg, fontFamily: FONT, color: C.text }}>
       <div style={{ position: "absolute", left: 40, right: 40, top: 70, height: 230 }}>
-        <Text from={0.2} to={2.6}>Your satnav freezes.</Text>
+        <Text from={0.2} to={2.6} size={68}>Your map app loses GPS in a tunnel.</Text>
         <Text from={0.9} to={2.6} size={44} weight={500} color={C.muted}>
-          <div style={{ marginTop: 100 }}>The car keeps driving.</div>
+          <div style={{ marginTop: 150 }}>The dot freezes. You keep moving.</div>
         </Text>
-        <Text from={2.7} to={4.9} size={64}>No beep. No warning.<br />The screen still looks fine.</Text>
-        <Text from={5.0} to={7.6}>Now the car<br />is a drone.</Text>
+        <Text from={2.7} to={4.9} size={62}>No warning. The app still<br />looks fine. You are far ahead.</Text>
+        <Text from={5.0} to={7.6}>The same thing<br />happens to a drone.</Text>
         <Text from={7.7} to={11.8} size={60}>No alarm fires: the frozen position still looks valid.</Text>
         <Text from={11.9} to={15.3} size={56}>The system notices:<br />other sensors disagree.<br />A person decides.</Text>
         <Text from={15.6} to={22} size={72}>Same fault.<br />Very different outcome.</Text>
@@ -255,7 +270,7 @@ export const Story = () => {
       </div>
 
       <div style={{ position: "absolute", left: 40, top: 330, opacity: 1 - toDrone }}>
-        <Satnav s={s} />
+        <MapAnalogy s={s} />
       </div>
       <div style={{ position: "absolute", left: 40, top: 330, opacity: toDrone }}>
         <Panel run={RUNS.none} rel={Math.min(rel, RUNS.none.end_rel_s)} kind="none" />
@@ -270,7 +285,7 @@ export const Story = () => {
         </div>
         <div style={{ marginTop: 18, fontSize: 25, lineHeight: 1.35, color: C.muted, opacity: 1 - endCard }}>
           {s < 5.2
-            ? "An illustration to explain the idea. It is not footage and not data."
+            ? "An illustration to explain the idea. It is not footage and not data. The ring and the dot mean the same in the drone view."
             : "SIMULATION (PX4 SITL), recorded runs replayed. The operator is scripted: LAND 15 s after the fault."}
         </div>
         <div style={{ position: "absolute", left: 0, right: 0, top: 54, opacity: endCard, fontSize: 28, lineHeight: 1.4, color: C.text }}>
