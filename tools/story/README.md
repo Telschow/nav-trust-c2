@@ -7,7 +7,7 @@ the app shows; cyan dot: where you really are), so nothing new has to be decoded
 one with no action and one with a LAND approved 15 s after the fault. Distances from launch: 5320 m
 and 450 m, the figures in ADR 0003.
 
-The rendered clip is committed at `docs/media/vertical/story.mp4` (22 s, 6.6 MB, rendered by this
+The rendered clip is committed at `docs/media/vertical/story.mp4` (22 s, 3.1 MB, re-encoded at CRF 23 from the render of this
 code at the commit that added it).
 
 ```
