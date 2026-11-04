@@ -85,9 +85,10 @@ flowchart TB
 - No weapons, no targeting, no effectors, no real platform parameters, no swarm attack behaviour.
 - The operator approves vehicle commands. Only PX4's own failsafes act without approval today.
   A contingency approved before the mission (ADR 0004, LAND only) is partly built: the backend
-  records the approval and checks every onboard report against it, and a simulated vehicle's
-  monitor can land itself under it in recorded experiments. Handing an approved policy to a
-  vehicle is not built (issue 76).
+  records the approval and checks every onboard report against it, and a vehicle-side monitor
+  decides within it (unit tested, and replayed to confirm it never acts in the nominal, jamming,
+  stuck, wrong-fix and link-only recordings). A simulated landing under it is not yet recorded, and
+  handing an approved policy to a vehicle is not built (issue 76).
 
 ## Non-goals
 
