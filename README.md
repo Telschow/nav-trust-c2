@@ -46,6 +46,9 @@ act on the decision unaided, the console was then redesigned, and that has not b
 **Demo video (about 3 minutes):** https://youtu.be/L7DrhOYMQ5A. A one-minute captioned version is
 on the [project page](https://telschow.github.io/nav-trust-c2/).
 
+**New to the field?** A two-minute interactive explainer, no background needed:
+[Which dot can you trust?](https://telschow.github.io/nav-trust-c2/media/explainer.html)
+
 **How it was built, including the mistakes:** [docs/how-this-was-built.md](docs/how-this-was-built.md).
 
 ## How it works

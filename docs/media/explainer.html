@@ -1,0 +1,649 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Which dot can you trust? | nav-trust-c2</title>
+<meta name="description" content="An interactive explainer for people outside the field: what happens when a drone's position goes wrong, and what the system and an operator do about it. Simulation only.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: a map stage beside a plain-language panel; five true steps, stacked on phones.
+   Palette follows the console: dark navy ground, one blue for "reported", green/amber/red for trust. */
+:root {
+  --bg: #0a1017; --panel: #111a24; --panel2: #162231; --map: #0d1620; --bandalt: #101c29;
+  --road: #2b3c50; --tunnel: #04080c; --water: #0f2a40; --line: #223245;
+  --fg: #e8eef5; --muted: #8fa2b6;
+  --blue: #5aaeff; --red: #ff6b6b; --amber: #f2a64b; --green: #3ecf9a;
+  --onaccent: #06121f;
+  --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f3f6f9; --panel: #ffffff; --panel2: #eaf0f6; --map: #e6edf4; --bandalt: #dbe4ee;
+    --road: #b4c2d1; --tunnel: #8d9fb2; --water: #b7d3ec; --line: #cbd6e2;
+    --fg: #0f1b28; --muted: #4f6174;
+    --blue: #1366d6; --red: #c62f3a; --amber: #9a5700; --green: #0b7a55;
+    --onaccent: #ffffff; color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f3f6f9; --panel: #ffffff; --panel2: #eaf0f6; --map: #e6edf4; --bandalt: #dbe4ee;
+  --road: #b4c2d1; --tunnel: #8d9fb2; --water: #b7d3ec; --line: #cbd6e2;
+  --fg: #0f1b28; --muted: #4f6174;
+  --blue: #1366d6; --red: #c62f3a; --amber: #9a5700; --green: #0b7a55;
+  --onaccent: #ffffff; color-scheme: light;
+}
+
+[hidden] { display: none !important; }
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 16px; line-height: 1.5;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1080px; margin: 0 auto; display: grid; gap: 20px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font-size: clamp(26px, 4.4vw, 40px); line-height: 1.1; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+h2 { font-size: 22px; line-height: 1.25; font-weight: 600; text-wrap: balance; }
+.eyebrow, .mono { font-family: var(--mono); font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--muted); max-width: 62ch; }
+header { display: grid; gap: 10px; }
+
+/* step strip: a real sequence, so numbers are information */
+.steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+.steps button {
+  width: 100%; text-align: left; border: 0; border-top: 3px solid var(--line); background: transparent;
+  color: var(--muted); font: inherit; padding: 8px 4px 6px; cursor: pointer; min-width: 0;
+}
+.steps button .n { font-family: var(--mono); font-size: 12px; display: block; }
+.steps button .l { font-size: 13px; display: block; overflow-wrap: anywhere; }
+.steps button[aria-current="step"] { border-top-color: var(--blue); color: var(--fg); }
+.steps button.done { border-top-color: var(--muted); }
+.steps button:hover { color: var(--fg); }
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 2px; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.grid.wide { grid-template-columns: minmax(0, 1fr); }
+.grid.wide .stagecol { display: none; }
+.stagecol { display: grid; gap: 12px; min-width: 0; }
+.stage { position: relative; background: var(--map); border: 1px solid var(--line); border-radius: 2px; overflow: hidden; }
+.stage svg { display: block; width: 100%; height: auto; }
+.tag {
+  position: absolute; left: 10px; top: 10px; z-index: 2; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+  text-transform: uppercase; background: var(--panel); color: var(--amber); border: 1px solid var(--amber); padding: 3px 7px;
+}
+.caption { font-size: 18px; line-height: 1.4; min-height: 3.6em; text-wrap: pretty; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn {
+  font: inherit; font-size: 14px; min-height: 44px; padding: 0 16px; border: 1px solid var(--line); border-radius: 2px;
+  background: var(--panel2); color: var(--fg); cursor: pointer;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--blue); border-color: var(--blue); color: var(--onaccent); font-weight: 600; }
+.btn.pulse { animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 35%, transparent); } }
+.btn[disabled] { opacity: 0.45; cursor: default; }
+
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 2px; padding: 18px; display: grid; gap: 14px; min-width: 0; align-content: start; }
+.panel p { color: var(--muted); }
+.panel p strong, .panel li strong { color: var(--fg); font-weight: 600; }
+
+.legend { display: grid; gap: 10px; list-style: none; margin: 0; padding: 0; }
+.legend li { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: center; color: var(--muted); font-size: 15px; }
+.legend svg { width: 34px; height: 34px; }
+
+/* vehicle cards, same three trust states as the console */
+.cards { display: grid; gap: 8px; }
+.card { border: 1px solid var(--line); border-left: 4px solid var(--line); background: var(--panel2); padding: 10px 12px; display: grid; gap: 6px; }
+.card.ok { border-left-color: var(--green); }
+.card.bad { border-left-color: var(--red); background: color-mix(in srgb, var(--red) 10%, var(--panel2)); }
+.chead { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.name { font-family: var(--mono); font-weight: 500; }
+.pill { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; padding: 2px 6px; border: 1px solid var(--line); color: var(--muted); text-transform: uppercase; }
+.card.ok .pill { color: var(--green); border-color: var(--green); }
+.card.bad .pill { color: var(--red); border-color: var(--red); }
+.rows { display: grid; gap: 2px; font-size: 14px; color: var(--muted); }
+.rows div { display: flex; justify-content: space-between; gap: 12px; }
+.rows dd { margin: 0; color: var(--fg); text-align: right; }
+.rows dt { margin: 0; }
+.rows[hidden], .rows .why[hidden] { display: none; }
+.why { color: var(--red); font-size: 14px; }
+.mv { display: inline-block; width: 38px; height: 6px; vertical-align: middle; margin-right: 6px; background: repeating-linear-gradient(90deg, var(--blue) 0 6px, transparent 6px 12px); background-size: 12px 100%; animation: mv 0.7s linear infinite; }
+@keyframes mv { to { background-position: 12px 0; } }
+
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.checks li { display: grid; grid-template-columns: 22px 1fr; gap: 8px; color: var(--muted); font-size: 15px; }
+.checks .y { color: var(--green); font-weight: 600; }
+.checks .x { color: var(--red); font-weight: 600; }
+
+.question { border: 1px solid var(--blue); padding: 12px; display: grid; gap: 10px; background: color-mix(in srgb, var(--blue) 8%, var(--panel)); }
+.question[hidden] { display: none; }
+.opts { display: flex; gap: 8px; flex-wrap: wrap; }
+.result { padding: 10px 12px; border-left: 4px solid var(--muted); background: var(--panel2); color: var(--fg); }
+.result.good { border-left-color: var(--green); }
+.result.miss { border-left-color: var(--amber); }
+
+.rec { border: 1px solid var(--line); background: var(--panel2); padding: 14px; display: grid; gap: 10px; }
+.rec ul { margin: 0; padding-left: 18px; color: var(--muted); display: grid; gap: 4px; }
+.rec .big { font-size: 18px; font-weight: 600; }
+.hold {
+  position: relative; overflow: hidden; min-height: 52px; flex: 1 1 180px; border: 1px solid var(--blue); background: transparent; color: var(--fg);
+  font: inherit; font-weight: 600; border-radius: 2px; cursor: pointer; touch-action: none; user-select: none; -webkit-user-select: none;
+}
+.hold .fill { position: absolute; inset: 0; background: var(--blue); transform-origin: left; transform: scaleX(var(--p, 0)); }
+.hold .txt { position: relative; mix-blend-mode: normal; padding: 0 12px; }
+.hold[disabled] { opacity: 0.4; cursor: default; }
+.log { font-family: var(--mono); font-size: 13px; color: var(--green); border: 1px solid var(--green); padding: 8px 10px; }
+.log.denied { color: var(--amber); border-color: var(--amber); }
+
+/* evidence */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+.tile { border: 1px solid var(--line); background: var(--panel2); padding: 14px; display: grid; gap: 6px; align-content: start; }
+.tile .v { font-family: var(--mono); font-size: 30px; line-height: 1.1; color: var(--fg); font-variant-numeric: tabular-nums; }
+.tile .d { font-size: 14px; color: var(--muted); }
+.tile .s { font-family: var(--mono); font-size: 11px; color: var(--muted); overflow-wrap: anywhere; }
+.notshown { border-left: 4px solid var(--amber); padding: 8px 12px; background: var(--panel2); color: var(--muted); font-size: 15px; }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 520px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); font-weight: 500; }
+td:first-child { color: var(--fg); }
+td:nth-child(2) { color: var(--muted); }
+.links { display: flex; gap: 8px; flex-wrap: wrap; }
+.links a { color: var(--fg); border: 1px solid var(--line); padding: 10px 14px; text-decoration: none; background: var(--panel2); border-radius: 2px; }
+.links a:hover { border-color: var(--blue); }
+
+/* svg */
+.road { fill: none; stroke: var(--road); stroke-width: 20; stroke-linecap: round; stroke-linejoin: round; }
+.roadc { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 8 10; opacity: 0.6; }
+.tun { fill: none; stroke: var(--tunnel); stroke-width: 30; stroke-linecap: butt; }
+.t { font-family: var(--mono); font-size: 18px; fill: var(--muted); }
+.t.fg { fill: var(--fg); }
+.halo { paint-order: stroke; stroke: var(--map); stroke-width: 5px; stroke-linejoin: round; }
+.gridline { stroke: var(--line); stroke-width: 1; opacity: 0.7; }
+.river { fill: none; stroke: var(--water); stroke-width: 40; stroke-linecap: round; }
+
+@media (max-width: 860px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .steps button .l { display: none; }
+  .caption { font-size: 17px; }
+}
+@media (prefers-reduced-motion: reduce) { .btn.pulse, .mv { animation: none; } }
+</style>
+</head>
+<body>
+<noscript><p style="padding:16px">This explainer needs JavaScript. The measured results are in the project README.</p></noscript>
+<div class="wrap">
+  <header>
+    <span class="eyebrow">nav-trust-c2 · explainer</span>
+    <h1>Which dot can you trust?</h1>
+    <p class="lede">A two-minute walk through the problem. The pictures are illustrations. The measured results come last, with their sources. Simulation only.</p>
+  </header>
+
+  <ol class="steps" id="steps" aria-label="Steps"></ol>
+
+  <div class="grid" id="grid">
+    <div class="stagecol">
+      <div class="stage">
+        <div class="tag" id="tag">Illustration, not data</div>
+        <svg id="map" viewBox="0 0 800 460" role="img" aria-label="Animated illustration"></svg>
+      </div>
+      <p class="caption" id="cap" aria-live="polite"></p>
+      <div class="controls">
+        <button class="btn" id="back">Back</button>
+        <button class="btn" id="replay">Replay</button>
+        <button class="btn" id="pause">Pause</button>
+        <button class="btn primary" id="next">Next</button>
+      </div>
+    </div>
+    <section class="panel" id="panel" aria-live="polite"></section>
+  </div>
+</div>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  var W = 800, H = 460;
+  var svg = document.getElementById('map');
+  var panel = document.getElementById('panel');
+  var capEl = document.getElementById('cap');
+  var gridEl = document.getElementById('grid');
+  var tagEl = document.getElementById('tag');
+  var nextBtn = document.getElementById('next');
+  var backBtn = document.getElementById('back');
+  var pauseBtn = document.getElementById('pause');
+  var replayBtn = document.getElementById('replay');
+  var stepsEl = document.getElementById('steps');
+  var reduce = false;
+  try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) {}
+
+  var clamp = function (v, a, b) { return Math.max(a, Math.min(b, v)); };
+  var lerp = function (a, b, t) { return a + (b - a) * t; };
+  var ease = function (t) { return t * t * (3 - 2 * t); };
+
+  function el(tag, attrs, parent) {
+    var n = document.createElementNS(NS, tag);
+    for (var k in attrs) { if (attrs.hasOwnProperty(k)) n.setAttribute(k, attrs[k]); }
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+  function setT(n, x, y) { n.setAttribute('x', x.toFixed(1)); n.setAttribute('y', y.toFixed(1)); }
+
+  /* shared map ground */
+  var base = el('g', {}, svg);
+  el('rect', { x: 0, y: 0, width: W, height: H, fill: 'var(--map)' }, base);
+  for (var gx = 40; gx < W; gx += 80) el('line', { x1: gx, y1: 0, x2: gx, y2: H, 'class': 'gridline' }, base);
+  for (var gy = 30; gy < H; gy += 80) el('line', { x1: 0, y1: gy, x2: W, y2: gy, 'class': 'gridline' }, base);
+  el('path', { d: 'M -20 430 C 200 380 330 470 520 400 S 760 300 840 330', 'class': 'river' }, base);
+  var layer = el('g', {}, svg);
+
+  var state = { i: 0, t: 0, paused: false, built: null, lastMode: '' };
+  var fleet = { guess: null, guessT: 0, tApprove: null, tLand: null, decision: null };
+  var scenes = [];
+
+  /* ------------------------------------------------------------ scene 1: the phone in a tunnel */
+  var ROAD = 'M 40 390 C 190 392 210 150 390 160 S 610 330 760 90';
+  var A = 0.34, B = 0.68, T1 = 13;
+
+  function buildPhone() {
+    layer.innerHTML = '';
+    var r = {};
+    r.road = el('path', { d: ROAD, 'class': 'road' }, layer);
+    el('path', { d: ROAD, 'class': 'roadc' }, layer);
+    r.len = r.road.getTotalLength();
+    var L = r.len;
+    el('path', { d: ROAD, 'class': 'tun', 'stroke-dasharray': '0 ' + (L * A) + ' ' + (L * (B - A)) + ' ' + L }, layer);
+    var mid = r.road.getPointAtLength(L * (A + B) / 2);
+    var tl = el('text', { 'class': 't halo', 'text-anchor': 'middle' }, layer);
+    tl.textContent = 'tunnel'; setT(tl, mid.x, mid.y + 40);
+
+    r.link = el('line', { stroke: 'var(--red)', 'stroke-width': 2.5, 'stroke-dasharray': '6 6', opacity: 0 }, layer);
+
+    r.dot = el('g', {}, layer);
+    el('circle', { r: 26, fill: 'var(--blue)', 'fill-opacity': 0.18, stroke: 'var(--blue)', 'stroke-opacity': 0.55, 'stroke-width': 1.5 }, r.dot);
+    el('circle', { r: 9, fill: 'var(--blue)', stroke: '#fff', 'stroke-width': 3.5 }, r.dot);
+    r.dotLabel = el('text', { 'class': 't halo fg', 'text-anchor': 'middle', opacity: 0 }, layer);
+    r.dotLabel.textContent = 'map says: here';
+
+    r.van = el('g', {}, layer);
+    el('rect', { x: -15, y: -9, width: 30, height: 18, rx: 5, fill: 'var(--amber)', stroke: 'var(--map)', 'stroke-width': 2 }, r.van);
+    el('rect', { x: 2, y: -6, width: 9, height: 12, rx: 2, fill: 'var(--map)', opacity: 0.75 }, r.van);
+    r.vanLabel = el('text', { 'class': 't halo fg', 'text-anchor': 'middle', opacity: 0 }, layer);
+    r.vanLabel.textContent = 'you are really here';
+    return r;
+  }
+  function updatePhone(r, t) {
+    var p = clamp(t / T1, 0, 1), L = r.len;
+    var vp = r.road.getPointAtLength(L * p);
+    var vq = r.road.getPointAtLength(Math.min(L, L * p + 2));
+    var ang = Math.atan2(vq.y - vp.y, vq.x - vp.x) * 180 / Math.PI;
+    var dp = r.road.getPointAtLength(L * Math.min(p, A));
+    r.van.setAttribute('transform', 'translate(' + vp.x.toFixed(1) + ' ' + vp.y.toFixed(1) + ') rotate(' + ang.toFixed(1) + ')');
+    r.dot.setAttribute('transform', 'translate(' + dp.x.toFixed(1) + ' ' + dp.y.toFixed(1) + ')');
+    var gap = p > A + 0.2;
+    r.link.setAttribute('opacity', gap ? 0.9 : 0);
+    r.link.setAttribute('x1', dp.x); r.link.setAttribute('y1', dp.y);
+    r.link.setAttribute('x2', vp.x); r.link.setAttribute('y2', vp.y);
+    r.dotLabel.setAttribute('opacity', gap ? 1 : 0);
+    r.vanLabel.setAttribute('opacity', gap ? 1 : 0);
+    setT(r.dotLabel, clamp(dp.x, 90, 710), dp.y - 40);
+    setT(r.vanLabel, clamp(vp.x, 110, 690), vp.y + 40);
+    var c;
+    if (p < A) c = 'You are driving. The blue dot is where your map thinks you are.';
+    else if (p < A + 0.2) c = 'The signal drops in the tunnel. The dot stops, but it stays blue and sure of itself.';
+    else if (p < 1) c = 'You keep moving. The dot does not. Nothing on the screen warns you.';
+    else c = 'You are here. The map says you are there. A drone can fail the same way, and it looks just as fine.';
+    capEl.textContent = c;
+    nextBtn.classList.toggle('pulse', p >= 1);
+  }
+  function panelPhone() {
+    panel.innerHTML =
+      '<span class="eyebrow">Step 1 · Your phone</span>' +
+      '<h2>The dot looks fine</h2>' +
+      '<p>A map dot is a <strong>belief</strong>, not a fact. When the signal goes, the belief can stay the same while the truth moves on.</p>' +
+      '<ul class="legend">' +
+      '<li><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="12" fill="var(--blue)" fill-opacity=".18" stroke="var(--blue)" stroke-opacity=".55"/><circle cx="17" cy="17" r="5" fill="var(--blue)" stroke="#fff" stroke-width="2"/></svg><span><strong>Blue dot.</strong> Where the map thinks you are.</span></li>' +
+      '<li><svg viewBox="0 0 34 34"><circle cx="17" cy="17" r="13" fill="none" stroke="var(--blue)" stroke-dasharray="3 3"/></svg><span><strong>Circle.</strong> How sure it claims to be.</span></li>' +
+      '<li><svg viewBox="0 0 34 34"><rect x="5" y="10" width="24" height="14" rx="4" fill="var(--amber)"/></svg><span><strong>Van.</strong> Where you really are.</span></li>' +
+      '</ul>' +
+      '<p>Some phones grey the dot out. A drone’s position can stay confident and be wrong. That silent case is the one this project is built to catch.</p>';
+  }
+
+  /* ------------------------------------------------------------ scenes 2-4: the fleet */
+  var NAMES = ['uav1', 'uav2', 'uav3'];
+  var BAND = [105, 235, 365], SPD = [0.085, 0.07, 0.08], PH = [0.1, 0.55, 0.8];
+  var FREEZE = 2.0, ASK_AT = 6;
+  var tri = function (u) { u = ((u % 2) + 2) % 2; return u < 1 ? u : 2 - u; };
+
+  function truePos(i, t) {
+    var tt = t;
+    if (i === 1 && fleet.tLand !== null) tt = Math.min(t, fleet.tLand);
+    var x = 70 + tri(tt * SPD[i] + PH[i]) * 660;
+    var y = BAND[i] + 16 * Math.sin(tt * 0.8 + i * 2);
+    if (i === 0 && fleet.tApprove !== null) {
+      var w = ease(clamp((t - fleet.tApprove) / 2.5, 0, 1));
+      var m = 0.5 + 0.5 * Math.sin((t - fleet.tApprove) * 0.7 - 1.5708);
+      y = lerp(y, BAND[1] + 16 * Math.sin(t * 0.8), m * w);
+    }
+    return { x: x, y: y };
+  }
+  function reported(i, t) { return i === 1 ? truePos(1, Math.min(t, FREEZE)) : truePos(i, t); }
+
+  function fleetMode() { return state.i === 1 ? 'watch' : (fleet.tApprove !== null ? 'approved' : 'reveal'); }
+
+  function buildFleet() {
+    layer.innerHTML = '';
+    var r = { d: [] };
+    for (var s = 0; s < 3; s++) {
+      el('rect', { x: 40, y: 40 + s * 130, width: 720, height: 130, fill: s % 2 ? 'var(--bandalt)' : 'var(--map)', stroke: 'var(--line)' }, layer);
+      var sl = el('text', { 'class': 't', x: 52, y: 64 + s * 130 }, layer); sl.textContent = 'S' + (s + 1);
+    }
+    r.cover = el('rect', { x: 40, y: 170, width: 720, height: 130, fill: 'var(--green)', 'fill-opacity': 0, 'pointer-events': 'none' }, layer);
+    for (var i = 0; i < 3; i++) {
+      var d = {};
+      d.trail = el('polyline', { fill: 'none', stroke: 'var(--blue)', 'stroke-width': 2.5, 'stroke-opacity': 0.45, 'stroke-linejoin': 'round' }, layer);
+      if (i === 1) {
+        d.link = el('line', { stroke: 'var(--red)', 'stroke-width': 2.5, 'stroke-dasharray': '6 6', opacity: 0 }, layer);
+        d.real = el('g', { opacity: 0 }, layer);
+        el('circle', { r: 11, fill: 'var(--map)', stroke: 'var(--red)', 'stroke-width': 3, 'stroke-dasharray': '4 3' }, d.real);
+        d.realLabel = el('text', { 'class': 't halo fg', 'text-anchor': 'middle', opacity: 0 }, layer);
+      }
+      d.g = el('g', { style: 'cursor:pointer' }, layer);
+      d.hit = el('circle', { r: 30, fill: 'transparent' }, d.g);
+      d.ring = el('circle', { r: 18, fill: 'var(--blue)', 'fill-opacity': 0.14, stroke: 'var(--blue)', 'stroke-width': 2 }, d.g);
+      d.dot = el('circle', { r: 7, fill: 'var(--blue)', stroke: '#fff', 'stroke-width': 3 }, d.g);
+      d.name = el('text', { 'class': 't halo fg', 'text-anchor': 'middle' }, layer); d.name.textContent = NAMES[i];
+      d.badge = el('text', { 'class': 't halo', 'text-anchor': 'middle', opacity: 0 }, layer);
+      (function (idx) { d.g.addEventListener('click', function () { doGuess(idx); }); })(i);
+      r.d.push(d);
+    }
+    state.lastMode = '';
+    return r;
+  }
+
+  function updateFleet(r, t) {
+    var mode = fleetMode();
+    for (var i = 0; i < 3; i++) {
+      var d = r.d[i], rp = reported(i, t);
+      var pts = [];
+      for (var k = 24; k >= 0; k--) { var q = reported(i, Math.max(0, t - k * 0.12)); pts.push(q.x.toFixed(1) + ',' + q.y.toFixed(1)); }
+      d.trail.setAttribute('points', pts.join(' '));
+      d.g.setAttribute('transform', 'translate(' + rp.x.toFixed(1) + ' ' + rp.y.toFixed(1) + ')');
+      setT(d.name, clamp(rp.x, 60, 740), rp.y - 28);
+      setT(d.badge, clamp(rp.x, 90, 710), rp.y + 40);
+      if (mode !== state.lastMode) {
+        var col = mode === 'watch' ? 'var(--blue)' : (i === 1 ? 'var(--red)' : 'var(--green)');
+        d.ring.setAttribute('stroke', col); d.ring.setAttribute('fill', col);
+        d.dot.setAttribute('fill', col);
+        d.trail.setAttribute('stroke', col);
+        d.badge.setAttribute('opacity', mode === 'watch' ? 0 : 1);
+        d.badge.setAttribute('fill', col);
+        d.badge.textContent = i === 1 ? 'NOT TRUSTED' : 'TRUSTED';
+        d.g.style.cursor = mode === 'watch' ? 'pointer' : 'default';
+      }
+      if (i === 1) {
+        var tp = truePos(1, t), show = mode !== 'watch';
+        d.real.setAttribute('opacity', show ? 1 : 0);
+        d.real.setAttribute('transform', 'translate(' + tp.x.toFixed(1) + ' ' + tp.y.toFixed(1) + ')');
+        d.link.setAttribute('opacity', show ? 0.9 : 0);
+        d.link.setAttribute('x1', rp.x); d.link.setAttribute('y1', rp.y);
+        d.link.setAttribute('x2', tp.x); d.link.setAttribute('y2', tp.y);
+        d.realLabel.setAttribute('opacity', show ? 1 : 0);
+        d.realLabel.textContent = fleet.tLand !== null ? 'landed here' : 'really here';
+        setT(d.realLabel, clamp(tp.x, 70, 730), tp.y + 36);
+      }
+    }
+    if (mode === 'approved') r.cover.setAttribute('fill-opacity', (0.12 * ease(clamp((t - fleet.tApprove) / 2.5, 0, 1))).toFixed(3));
+    else r.cover.setAttribute('fill-opacity', 0);
+    if (mode !== state.lastMode) { state.lastMode = mode; syncCards(); }
+    fleetCaption(t, mode);
+    gameGate(t, mode);
+  }
+
+  function fleetCaption(t, mode) {
+    var c;
+    if (mode === 'watch') {
+      if (t < ASK_AT) c = 'Three drones survey an area. You see only the dots, like a dispatcher watching vans. Watch for a few seconds.';
+      else if (fleet.guess === null) c = 'Which dot can you no longer trust? Tap it on the map, or pick below.';
+      else c = fleet.guess === 1 ? 'You spotted it. Now see what the system saw.' : 'Look again. One dot has stopped while the drone kept flying.';
+    } else if (mode === 'reveal') {
+      c = 'The system compared each position with the vehicle’s own sensors. It flags uav2 within seconds and says why. The dashed line is how far off the dot is.';
+    } else {
+      c = fleet.decision === 'approve'
+        ? 'You approved. uav2 lands where it is and uav1 takes over its sector. The decision is logged.'
+        : (fleet.decision === 'deny' ? 'You denied. Nothing was sent. uav2 keeps flying on a position that is wrong.' : 'The system recommends one action and waits. Nothing moves until a person decides.');
+    }
+    capEl.textContent = c;
+  }
+
+  function cardHTML(i) {
+    return '<div class="card" data-i="' + i + '"><div class="chead"><span class="name">' + NAMES[i] + '</span><span class="pill">no verdict</span></div>' +
+      '<dl class="rows"><div><dt>Position fix</dt><dd>Reported OK</dd></div><div><dt>Own sensors</dt><dd><span class="mv"></span>moving</dd></div>' +
+      '<div class="bound" hidden><dt>Position bound</dt><dd class="bv">known</dd></div></dl>' +
+      '<div class="why" hidden>Why: the position froze while the vehicle’s own sensors say it is moving.</div></div>';
+  }
+  function syncCards() {
+    var mode = fleetMode();
+    var cards = panel.querySelectorAll('.card');
+    for (var k = 0; k < cards.length; k++) {
+      var c = cards[k], i = +c.getAttribute('data-i');
+      var pill = c.querySelector('.pill'), why = c.querySelector('.why'), bound = c.querySelector('.bound'), bv = c.querySelector('.bv');
+      c.classList.remove('ok', 'bad');
+      if (mode === 'watch') { pill.textContent = 'no verdict'; why.hidden = true; bound.hidden = true; }
+      else {
+        bound.hidden = false;
+        if (i === 1) { c.classList.add('bad'); pill.textContent = mode === 'approved' ? 'Not trusted · landed' : 'Not trusted'; why.hidden = false; bv.textContent = 'unknown'; }
+        else { c.classList.add('ok'); pill.textContent = 'Trusted'; why.hidden = true; bv.textContent = 'known'; }
+      }
+    }
+  }
+
+  /* game */
+  function gameGate(t, mode) {
+    var q = document.getElementById('question');
+    if (q && mode === 'watch') q.hidden = !(t >= ASK_AT && fleet.guess === null);
+  }
+  function doGuess(i) {
+    if (state.i !== 1 || state.t < ASK_AT || fleet.guess !== null) return;
+    fleet.guess = i; fleet.guessT = state.t;
+    var res = document.getElementById('result'), nx = document.getElementById('toReveal');
+    if (!res) return;
+    if (i === 1) {
+      res.className = 'result good';
+      res.textContent = 'Yes, uav2. Its dot has not moved for about ' + Math.max(1, Math.round(state.t - FREEZE)) + ' seconds while the drone kept flying.';
+    } else {
+      res.className = 'result miss';
+      res.textContent = NAMES[i] + ' is fine. The dot that stopped is uav2, and its drone kept flying.';
+    }
+    res.hidden = false; nx.hidden = false; nextBtn.classList.add('pulse');
+    document.getElementById('question').hidden = true;
+  }
+  function panelGame() {
+    panel.innerHTML =
+      '<span class="eyebrow">Step 2 · Spot the liar</span>' +
+      '<h2>Which drone has a dot you cannot trust?</h2>' +
+      '<div class="cards">' + cardHTML(0) + cardHTML(1) + cardHTML(2) + '</div>' +
+      '<div class="question" id="question" hidden><strong>Which dot can you no longer trust?</strong>' +
+      '<div class="opts"><button class="btn" data-g="0">uav1</button><button class="btn" data-g="1">uav2</button><button class="btn" data-g="2">uav3</button></div></div>' +
+      '<div class="result" id="result" hidden></div>' +
+      '<button class="btn primary" id="toReveal" hidden>See what the system saw</button>';
+    var bs = panel.querySelectorAll('[data-g]');
+    for (var k = 0; k < bs.length; k++) (function (b) { b.addEventListener('click', function () { doGuess(+b.getAttribute('data-g')); }); })(bs[k]);
+    document.getElementById('toReveal').addEventListener('click', function () { go(2); });
+    syncCards();
+  }
+
+  function panelReveal() {
+    var lead = '';
+    if (fleet.guess !== null) lead = fleet.guess === 1 ? 'You found it by eye in ' + Math.round(fleet.guessT) + ' seconds. ' : 'You picked ' + NAMES[fleet.guess] + '. ';
+    panel.innerHTML =
+      '<span class="eyebrow">Step 3 · What the system sees</span>' +
+      '<h2>Two plain questions per drone</h2>' +
+      '<div class="cards">' + cardHTML(0) + cardHTML(1) + cardHTML(2) + '</div>' +
+      '<ul class="checks">' +
+      '<li><span class="y">✓</span><span><strong>Is a position fix being reported?</strong> Yes, for all three. uav2 still reports a good fix.</span></li>' +
+      '<li><span class="x">✗</span><span><strong>Does the position agree with the vehicle’s own sensors?</strong> Not for uav2. Its sensors say it is moving. Its position says it is not.</span></li>' +
+      '</ul>' +
+      '<p>' + lead + 'With three dots that is easy. A person supervising many vehicles cannot watch every dot at all times, so the system watches for them.</p>' +
+      '<button class="btn primary" id="toDecide">What happens next</button>';
+    document.getElementById('toDecide').addEventListener('click', function () { go(3); });
+    syncCards();
+  }
+
+  /* decision */
+  var holding = false, holdStart = 0, holdKeyDown = false;
+  function stamp() { var d = new Date(); var p = function (n) { return (n < 10 ? '0' : '') + n; }; return p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds()); }
+  function panelDecide() {
+    panel.innerHTML =
+      '<span class="eyebrow">Step 4 · You decide</span>' +
+      '<h2>One recommendation, and it waits for you</h2>' +
+      '<div class="cards">' + cardHTML(0) + cardHTML(1) + cardHTML(2) + '</div>' +
+      '<div class="rec"><span class="eyebrow">Recommendation</span><div class="big">Land uav2 and hand over sector S2</div>' +
+      '<p>Why: uav2’s position froze while its sensors say it is moving.</p>' +
+      '<span class="eyebrow">If you approve</span><ul><li>uav2 lands where it is.</li><li>uav1 takes over sector S2.</li><li>Nothing else happens.</li></ul>' +
+      '<div class="opts"><button class="btn" id="deny">Deny</button>' +
+      '<button class="hold" id="hold" aria-label="Hold to approve. Press and hold for one second."><span class="fill"></span><span class="txt">Hold to approve</span></button></div></div>' +
+      '<div id="logline" hidden></div>' +
+      '<div class="opts"><button class="btn" id="again" hidden>Try the other choice</button><button class="btn primary" id="toEvidence" hidden>Show the measured results</button></div>';
+    syncCards();
+    var hold = document.getElementById('hold');
+    hold.addEventListener('pointerdown', function (e) { e.preventDefault(); startHold(); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach(function (ev) { hold.addEventListener(ev, endHold); });
+    hold.addEventListener('keydown', function (e) { if ((e.key === ' ' || e.key === 'Enter') && !e.repeat) { e.preventDefault(); startHold(); } });
+    hold.addEventListener('keyup', function (e) { if (e.key === ' ' || e.key === 'Enter') endHold(); });
+    document.getElementById('deny').addEventListener('click', function () { decide('deny'); });
+    document.getElementById('again').addEventListener('click', function () { go(3); });
+    document.getElementById('toEvidence').addEventListener('click', function () { go(4); });
+  }
+  function startHold() { if (fleet.decision) return; holding = true; holdStart = performance.now(); }
+  function endHold() { holding = false; setHold(0); }
+  function setHold(p) { var h = document.getElementById('hold'); if (h) h.style.setProperty('--p', p.toFixed(3)); }
+  function decide(kind) {
+    if (fleet.decision) return;
+    fleet.decision = kind; holding = false; setHold(0);
+    var log = document.getElementById('logline');
+    if (kind === 'approve') {
+      fleet.tApprove = state.t; fleet.tLand = state.t;
+      log.className = 'log'; log.textContent = 'AUDIT  ' + stamp() + '  approved by you  → command gate → land uav2, re-task S2 to uav1';
+    } else {
+      log.className = 'log denied'; log.textContent = 'AUDIT  ' + stamp() + '  denied by you  → nothing sent';
+    }
+    log.hidden = false;
+    document.getElementById('hold').disabled = true; document.getElementById('deny').disabled = true;
+    document.getElementById('again').hidden = false; document.getElementById('toEvidence').hidden = false;
+    nextBtn.classList.add('pulse');
+    syncCards();
+  }
+
+  /* ------------------------------------------------------------ scene 5: evidence */
+  function panelEvidence() {
+    layer.innerHTML = '';
+    panel.innerHTML =
+      '<span class="eyebrow">Step 5 · The evidence</span>' +
+      '<h2>That was an illustration. This is what the simulation measured.</h2>' +
+      '<p class="mono">PX4 SITL and Gazebo · ground truth from the simulator · no real hardware</p>' +
+      '<div class="tiles">' +
+      tile('1.0 to 1.4 s', 'to detect GNSS loss, in 12 runs. No alert in 9 nominal runs.', 'eval/results.md') +
+      tile('3.0 to 4.5 s', 'to flag a frozen position, the case in the game above.', 'eval/results.md') +
+      tile('99.72%', 'of 5,308 reports on an independent set stayed inside the displayed 3 m bound.', 'docs/validation/heldout-report.md') +
+      tile('100% vs 87%', 'of the area covered with one of three drones lost: re-task approved vs denied (3 runs each, scripted operator).', 'eval/fleet/results.md') +
+      '</div>' +
+      '<div class="notshown"><strong>Not shown.</strong> Real hardware, real interference, or a usability result. Two people did not act on the decision unaided, the console was redesigned, and that has not been re-tested.</div>' +
+      '<h2>How the illustration maps to the system</h2>' +
+      '<div class="tablewrap"><table><thead><tr><th>In the illustration</th><th>In the system</th></tr></thead><tbody>' +
+      row('Blue dot', 'Reported position') +
+      row('Circle around the dot', 'Position bound, shown with its measured coverage') +
+      row('Tunnel', 'GNSS loss, or a frozen position') +
+      row('Dot stopped while the vehicle moves', 'Position inconsistency (own sensors disagree with the position)') +
+      row('Dispatcher', 'Operator') +
+      row('“Land uav2?”', 'Recommendation') +
+      row('Hold to approve', 'Recorded approval, then the one command gate') +
+      '</tbody></table></div>' +
+      '<div class="links"><a href="https://github.com/Telschow/nav-trust-c2" target="_blank" rel="noopener">Repository</a>' +
+      '<a href="https://youtu.be/L7DrhOYMQ5A" target="_blank" rel="noopener">3 minute demo video</a>' +
+      '<a href="https://telschow.github.io/nav-trust-c2/" target="_blank" rel="noopener">Project page</a></div>';
+    capEl.textContent = '';
+  }
+  function tile(v, d, s) { return '<div class="tile"><span class="v">' + v + '</span><span class="d">' + d + '</span><span class="s">' + s + '</span></div>'; }
+  function row(a, b) { return '<tr><td>' + a + '</td><td>' + b + '</td></tr>'; }
+
+  /* ------------------------------------------------------------ scene registry and control */
+  scenes = [
+    { label: 'Your phone', stage: true, tag: true, rest: T1,
+      enter: function () { state.built = buildPhone(); panelPhone(); },
+      update: function () { updatePhone(state.built, state.t); } },
+    { label: 'Spot the liar', stage: true, tag: true, rest: 8,
+      enter: function () { fleet.guess = null; fleet.tApprove = null; fleet.tLand = null; fleet.decision = null; state.built = buildFleet(); panelGame(); },
+      update: function () { updateFleet(state.built, state.t); } },
+    { label: 'What it sees', stage: true, tag: true, rest: 8,
+      enter: function () { fleet.tApprove = null; fleet.tLand = null; fleet.decision = null; state.built = buildFleet(); panelReveal(); },
+      update: function () { updateFleet(state.built, state.t); } },
+    { label: 'You decide', stage: true, tag: true, rest: 8,
+      enter: function () { fleet.tApprove = null; fleet.tLand = null; fleet.decision = null; state.built = buildFleet(); panelDecide(); },
+      update: function () { updateFleet(state.built, state.t); } },
+    { label: 'Evidence', stage: false, tag: false, rest: 0,
+      enter: function () { state.built = null; panelEvidence(); },
+      update: function () {} }
+  ];
+
+  scenes.forEach(function (s, i) {
+    var li = document.createElement('li'), b = document.createElement('button');
+    b.innerHTML = '<span class="n">0' + (i + 1) + '</span><span class="l">' + s.label + '</span>';
+    b.addEventListener('click', function () { go(i); });
+    li.appendChild(b); stepsEl.appendChild(li);
+  });
+
+  function go(i) {
+    var prev = state.i, prevT = state.t;
+    i = clamp(i, 0, scenes.length - 1);
+    var s = scenes[i];
+    state.i = i; holding = false;
+    if (i === 0 || i === 1) state.t = 0;
+    else if (i === 2 || i === 3) state.t = Math.max(prev >= 1 && prev <= 3 ? prevT : 0, 7);
+    else state.t = 0;
+    if (reduce) { state.paused = true; state.t = Math.max(state.t, s.rest); }
+    else state.paused = false;
+    pauseBtn.textContent = state.paused ? 'Play' : 'Pause';
+    gridEl.classList.toggle('wide', !s.stage);
+    tagEl.style.display = s.tag ? '' : 'none';
+    nextBtn.classList.remove('pulse');
+    s.enter();
+    s.update();
+    var bs = stepsEl.querySelectorAll('button');
+    for (var k = 0; k < bs.length; k++) {
+      if (k === i) bs[k].setAttribute('aria-current', 'step'); else bs[k].removeAttribute('aria-current');
+      bs[k].classList.toggle('done', k < i);
+    }
+    backBtn.disabled = i === 0;
+    nextBtn.disabled = i === scenes.length - 1;
+    replayBtn.disabled = !s.stage;
+    pauseBtn.disabled = !s.stage;
+  }
+
+  nextBtn.addEventListener('click', function () { go(state.i + 1); });
+  backBtn.addEventListener('click', function () { go(state.i - 1); });
+  replayBtn.addEventListener('click', function () { var i = state.i; state.i = -1; go(i === 2 || i === 3 ? 1 : i); });
+  pauseBtn.addEventListener('click', function () { state.paused = !state.paused; pauseBtn.textContent = state.paused ? 'Play' : 'Pause'; });
+
+  var last = performance.now();
+  function frame(now) {
+    var dt = Math.min(0.05, (now - last) / 1000); last = now;
+    var s = scenes[state.i];
+    if (!state.paused && s.stage) state.t += dt;
+    if (holding) {
+      var p = (now - holdStart) / 1100;
+      setHold(clamp(p, 0, 1));
+      if (p >= 1) decide('approve');
+    }
+    if (s.stage && state.built) s.update();
+    requestAnimationFrame(frame);
+  }
+  go(0);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
