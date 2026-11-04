@@ -274,8 +274,7 @@ Severity: P0 safety/authority bypass, P1 serious, P2 should fix, P3 minor.
   approved = [
       e
       for e in self._audit.events("policy_approved")
-      if e.id == report.get("policy_audit_id")
-      and e.payload["sha256"] == report.get("policy_sha256")
+      if e.id == report.get("policy_audit_id") and e.payload["sha256"] == report.get("policy_sha256")
   ]
   ```
   Only id and hash are compared. `action`, `reason` and `link_down_s` versus the policy's
