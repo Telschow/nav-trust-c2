@@ -90,9 +90,9 @@ export function titleOf(rec: Recommendation): string {
 export function commandEndingText(c: CommandOutcome): string {
   switch (c.kind) {
     case "command_executed":
-      return `Executed: ${(c.actions ?? []).join("; ") || "nothing to send"}`;
+      return `Executed: ${(c.actions ?? []).join("; ") || "nothing to send"} (the vehicle's action is not confirmed)`;
     case "command_not_acknowledged":
-      return `Not acknowledged: ${c.action ?? "the command"} had no answer${c.timeout_s ? ` in ${c.timeout_s} s` : ""}`;
+      return `Not acknowledged: ${c.action ?? "the command"} had no answer${c.timeout_s ? ` in ${c.timeout_s} s` : ""}; outcome unknown`;
     case "command_failed":
       return `Failed: ${c.error ?? "unknown error"}`;
     case "command_blocked":

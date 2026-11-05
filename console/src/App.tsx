@@ -17,9 +17,9 @@ const OPERATOR_KEY = "nav-trust-operator";
 
 function storedOperator(): string {
   try {
-    return localStorage.getItem(OPERATOR_KEY) ?? "operator";
+    return localStorage.getItem(OPERATOR_KEY) ?? "";
   } catch {
-    return "operator";
+    return "";
   }
 }
 
@@ -70,7 +70,7 @@ export function App() {
     async (rec: Recommendation, outcome: "APPROVED" | "DENIED") => {
       setBusy(true);
       try {
-        const decision = await postDecision(rec.id, outcome, operator.trim() || "operator");
+        const decision = await postDecision(rec.id, outcome, operator.trim());
         dispatch({ type: "decided", decision });
         setConfirming(null);
         const failed = decision.execution && !decision.execution.executed;
