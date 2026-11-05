@@ -7,6 +7,11 @@ import type { Recommendation } from "../types";
  * operators). Landing is the one irreversible command, so approving it takes a deliberate act. */
 export const HOLD_TO_CONFIRM_MS = 1500;
 
+/** How long the two-step route stays armed before it disarms (a proposal, to be tested with
+ * operators): long enough for a switch user to move to the second button, short enough that a
+ * stale arm does not wait for a stray click. */
+export const ARMED_MS = 5000;
+
 type HoldPhase = "idle" | "holding" | "released";
 
 function useHold(durationMs: number, onComplete: () => void, enabled: boolean) {
@@ -62,6 +67,18 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
   const cancelButtonRef = useRef<HTMLButtonElement>(null);
   const canConfirm = !busy && !backendLost && !unavailable && operator.trim() !== "";
   const hold = useHold(HOLD_TO_CONFIRM_MS, onConfirm, canConfirm);
+  // The two-step route for operators whose assistive technology cannot press and hold (issue 119):
+  // one click arms a separate button, a second click on it approves.
+  const [armed, setArmed] = useState(false);
+  const [expired, setExpired] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = window.setTimeout(() => {
+      setArmed(false);
+      setExpired(true);
+    }, ARMED_MS);
+    return () => window.clearTimeout(t);
+  }, [armed]);
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
   // Once, when the dialog opens. The console re-renders on every keystroke and live update with a
@@ -136,8 +153,38 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
               ? "Holding. Keep holding to confirm the landing."
               : hold.phase === "released"
                 ? "Released. Nothing was approved."
-                : ""}
+                : armed
+                  ? `Armed. Press Confirm landing within ${ARMED_MS / 1000} seconds to approve the landing.`
+                  : expired
+                    ? "Disarmed. Nothing was approved."
+                    : ""}
           </span>
+        )}
+
+        {landing && (
+          <div className="mt-4 text-sm">
+            {armed ? (
+              <button
+                type="button"
+                disabled={!canConfirm}
+                onClick={onConfirm}
+                className="h-10 w-full rounded-[3px] border border-bad text-sm font-semibold text-bad disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                Confirm landing
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setExpired(false);
+                  setArmed(true);
+                }}
+                className="text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+              >
+                Use two steps instead
+              </button>
+            )}
+          </div>
         )}
 
         <label className="mt-4 block text-sm">

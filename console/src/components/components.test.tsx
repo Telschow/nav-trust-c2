@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { ConfirmDialog, HOLD_TO_CONFIRM_MS } from "./ConfirmDialog";
+import { ARMED_MS, ConfirmDialog, HOLD_TO_CONFIRM_MS } from "./ConfirmDialog";
 import { DecisionBanner } from "./DecisionBanner";
 import { ordinal, titleOf } from "../language";
 import { DecidedRow, RecommendationCard } from "./RecommendationCard";
@@ -482,6 +482,60 @@ describe("ConfirmDialog: landing needs a deliberate hold (issue 113)", () => {
     fireEvent.pointerDown(holdButton());
     vi.advanceTimersByTime(HOLD_TO_CONFIRM_MS * 2);
     expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("approves a landing with plain clicks: arm, then Confirm landing (issue 119)", () => {
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole("button", { name: "Use two steps instead" }));
+    fireEvent.click(screen.getByRole("button", { name: "Confirm landing" }));
+    expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it("arming alone does not approve, and the armed step expires (issue 119)", () => {
+    vi.useFakeTimers();
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    expect(screen.queryByRole("button", { name: "Confirm landing" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Use two steps instead" }));
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: "Confirm landing" })).toBeTruthy();
+    act(() => void vi.advanceTimersByTime(ARMED_MS + 100));
+    expect(screen.queryByRole("button", { name: "Confirm landing" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Use two steps instead" })).toBeTruthy();
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["a blank operator name", { operator: "  " }],
+    ["a request in flight", { busy: true }],
+    ["a lost backend", { backendLost: true }],
+    ["a recommendation that is no longer open", { unavailable: "It expired." }],
+  ])("the two-step route is blocked by %s like the hold (issue 119)", (_why, extra) => {
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} {...extra} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole("button", { name: "Use two steps instead" }));
+    const confirm = screen.getByRole("button", { name: "Confirm landing" }) as HTMLButtonElement;
+    expect(confirm.disabled).toBe(true);
+    fireEvent.click(confirm);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
+  it("tells a screen reader when the two-step route is armed and when it expires (issue 119)", () => {
+    vi.useFakeTimers();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "Use two steps instead" }));
+    expect(screen.getByRole("status").textContent).toMatch(/Armed.*Confirm landing/);
+    act(() => void vi.advanceTimersByTime(ARMED_MS + 100));
+    expect(screen.getByRole("status").textContent).toMatch(/Disarmed. Nothing was approved/);
+  });
+
+  it("a re-task has no two-step control and the landing hold is still offered (issue 119)", () => {
+    const { unmount } = render(<ConfirmDialog {...base} rec={retask} onConfirm={vi.fn()} />);
+    expect(screen.queryByRole("button", { name: "Use two steps instead" })).toBeNull();
+    unmount();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={vi.fn()} />);
+    expect(holdButton()).toBeTruthy();
   });
 
   it("a re-task with no vehicle command still confirms with one click and opens on Confirm", () => {
