@@ -8,6 +8,10 @@ run (between the same `session_started` rows, because every run restarts the clo
 recommendation counter), and that the run approved the recommendation once. It also checks that no
 recommendation id was used twice. A database from before issue 159 has no such citations and
 fails: that is the point, it cannot prove the link.
+
+This is a linkage check, not tamper evidence: the log is append-only in the application, but
+someone who edits the SQLite file directly is not detected, and a `command_sent` row proves an
+approval existed, not that the vehicle then did anything.
 """
 
 from __future__ import annotations
