@@ -105,7 +105,8 @@ export type CommandKind =
   | "command_not_acknowledged"
   | "command_executed"
   | "command_failed"
-  | "command_blocked";
+  | "command_blocked"
+  | "command_moves_blocked";
 
 export interface CommandOutcome {
   kind: CommandKind;
@@ -116,6 +117,8 @@ export interface CommandOutcome {
   reason?: string;
   error?: string;
   timeout_s?: number;
+  /** on command_executed: why the approved sector moves were dropped while the command went out */
+  moves_blocked?: string;
 }
 
 /** Messages from the backend WebSocket. `server_s` is the backend clock. */

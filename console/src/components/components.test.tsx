@@ -725,4 +725,15 @@ describe("DecidedRow shows how a command ended, also when another console approv
     render(<ul><DecidedRow rec={rec} decision={approved} command={{ kind: "command_executed", vehicle_id: "uav2", recommendation_id: "r1", actions: ["HOLD uav2"] }} /></ul>);
     expect(screen.getByText(/Executed: HOLD uav2/)).toBeTruthy();
   });
+
+  it("says when the sector moves were dropped but the command went out (issue 203)", () => {
+    render(<ul><DecidedRow rec={rec} decision={approved} command={{ kind: "command_executed", vehicle_id: "uav2", recommendation_id: "r1", actions: ["LAND uav2"], moves_blocked: "uav3 is RED" }} /></ul>);
+    expect(screen.getByText(/Executed: LAND uav2.*re-task not sent: uav3 is RED/)).toBeTruthy();
+  });
+
+  it("says the same from the answer the approving console gets", () => {
+    const decision = { ...approved, execution: { executed: true, reason: "moves_blocked: uav3 is RED", actions: ["LAND uav2"] } };
+    render(<ul><DecidedRow rec={rec} decision={decision} /></ul>);
+    expect(screen.getByText(/Executed: LAND uav2.*re-task not sent: uav3 is RED/)).toBeTruthy();
+  });
 });

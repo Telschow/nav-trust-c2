@@ -5,8 +5,9 @@ gate, so the only way to a vehicle command is `execute(recommendation_id)`. It r
 the hub holds an APPROVED decision for that recommendation, and only once. Every outcome is
 written to the audit log: command_sent then command_acknowledged (the vehicle answered) or
 command_not_acknowledged (no answer within the timeout), and command_executed, command_blocked or
-command_failed. A command that was never acknowledged is audited, not resent: its approval is
-spent, and the operator decides again.
+command_failed, and command_moves_blocked when a command went out but its sector moves were
+dropped because the fleet had changed. A command that was never acknowledged is audited, not
+resent: its approval is spent, and the operator decides again.
 
 PX4's own failsafes are not commands from the C2 and never pass through here.
 """
@@ -90,16 +91,15 @@ class CommandGate:
         sector_moves = rec.sector_moves
         stale = self._stale_reason(rec)
         if stale is not None:
-            # the operator approved a command and moves; the moves were planned for a fleet that
-            # has changed, so they are dropped and the command still goes out
-            self._hub.record_command(
-                "command_blocked",
-                rec.vehicle_id,
-                {"recommendation_id": recommendation_id, "reason": f"stale_moves: {stale}"},
-            )
-            sector_moves = ()
+            # the moves were planned for a fleet that has changed, so they are dropped. With a
+            # command the operator approved it still goes out (the row is not an ending); with
+            # nothing else to send the approval ends here, blocked
+            reason = {"recommendation_id": recommendation_id, "reason": f"stale_moves: {stale}"}
             if rec.command is None:
+                self._hub.record_command("command_blocked", rec.vehicle_id, reason)
                 return GateResult(False, f"moves_blocked: {stale}", [])
+            self._hub.record_command("command_moves_blocked", rec.vehicle_id, reason)
+            sector_moves = ()
         done: list[str] = []
         moved = False
         original = {v: list(s) for v, s in self._fleet.assignment.items()}
@@ -152,7 +152,11 @@ class CommandGate:
         self._hub.record_command(
             "command_executed",
             rec.vehicle_id,
-            {"recommendation_id": recommendation_id, "actions": done},
+            {
+                "recommendation_id": recommendation_id,
+                "actions": done,
+                **({} if stale is None else {"moves_blocked": stale}),
+            },
         )
         return GateResult(True, None if stale is None else f"moves_blocked: {stale}", done)
 
