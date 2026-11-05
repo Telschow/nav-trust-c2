@@ -71,8 +71,10 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
   // one click arms a separate button, a second click on it approves.
   const [armed, setArmed] = useState(false);
   const [expired, setExpired] = useState(false);
+  const armedConfirmRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!armed) return;
+    armedConfirmRef.current?.focus();
     const t = window.setTimeout(() => {
       setArmed(false);
       setExpired(true);
@@ -143,7 +145,7 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
         {landing && (
           <p id="hold-hint" className="mt-4 border border-bad/60 px-3 py-2 text-sm font-medium text-bad">
             Landing cannot be undone. Press and hold the button for {HOLD_TO_CONFIRM_MS / 1000} seconds to
-            confirm; release early to cancel.
+            confirm; release early to cancel. If you cannot hold, use the two-step control below.
           </p>
         )}
 
@@ -162,26 +164,27 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
         )}
 
         {landing && (
-          <div className="mt-4 text-sm">
-            {armed ? (
+          <div className="mt-4 flex flex-col items-start gap-2 text-sm">
+            {/* stays in place once armed, so a double click re-arms instead of landing on Confirm landing */}
+            <button
+              type="button"
+              onClick={() => {
+                setExpired(false);
+                setArmed(true);
+              }}
+              className="text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+            >
+              Use two steps instead
+            </button>
+            {armed && (
               <button
                 type="button"
+                ref={armedConfirmRef}
                 disabled={!canConfirm}
                 onClick={onConfirm}
                 className="h-10 w-full rounded-[3px] border border-bad text-sm font-semibold text-bad disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
               >
                 Confirm landing
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => {
-                  setExpired(false);
-                  setArmed(true);
-                }}
-                className="text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-              >
-                Use two steps instead
               </button>
             )}
           </div>

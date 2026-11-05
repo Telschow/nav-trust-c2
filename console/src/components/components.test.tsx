@@ -506,6 +506,15 @@ describe("ConfirmDialog: landing needs a deliberate hold (issue 113)", () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it("a double click on the arm control does not approve, and arming moves focus to Confirm landing (issue 119)", () => {
+    const onConfirm = vi.fn();
+    render(<ConfirmDialog {...base} rec={land} onConfirm={onConfirm} />);
+    fireEvent.click(screen.getByRole("button", { name: "Use two steps instead" }));
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Confirm landing" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use two steps instead" }));
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it.each([
     ["a blank operator name", { operator: "  " }],
     ["a request in flight", { busy: true }],
