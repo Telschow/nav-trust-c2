@@ -55,6 +55,8 @@ def system(
 ) -> tuple[Hub, CommandGate]:
     hub = Hub(AuditLog(), Clock())
     fleet = FleetState(assign(split_area(900, 900, 3), ["uav1", "uav2", "uav3"]))
+    if moves is TWO:
+        fleet.apply_moves([("S3", "uav2")])  # the gate only moves the lost vehicle's own sectors
     gate = CommandGate(hub, fleet, executor, ack_timeout_s=ack_s, retask_ack_timeout_s=retask_s)
     rec = Recommendation("r1", "uav2", 100.0, 160.0, ReasonCode.GNSS_LOSS, None, moves, "x")
     hub.add_recommendation(rec)

@@ -21,7 +21,8 @@ from typing import Protocol
 from c2.allocator import Assignment
 from c2.fleet import FleetState
 from c2.hub import Hub
-from c2.messages import Command, Outcome
+from c2.messages import Command, Outcome, Recommendation
+from navtrust.types import TrustState
 
 
 class Executor(Protocol):
@@ -86,6 +87,19 @@ class CommandGate:
             return self._blocked(recommendation_id, rec.vehicle_id, "already_executed")
         self._executed.add(recommendation_id)  # before any await: a second call cannot overlap
 
+        sector_moves = rec.sector_moves
+        stale = self._stale_reason(rec)
+        if stale is not None:
+            # the operator approved a command and moves; the moves were planned for a fleet that
+            # has changed, so they are dropped and the command still goes out
+            self._hub.record_command(
+                "command_blocked",
+                rec.vehicle_id,
+                {"recommendation_id": recommendation_id, "reason": f"stale_moves: {stale}"},
+            )
+            sector_moves = ()
+            if rec.command is None:
+                return GateResult(False, f"moves_blocked: {stale}", [])
         done: list[str] = []
         moved = False
         original = {v: list(s) for v, s in self._fleet.assignment.items()}
@@ -106,11 +120,11 @@ class CommandGate:
                 await send(f"RTL {rec.vehicle_id}", self._executor.return_to_launch(rec.vehicle_id))
             elif rec.command is Command.LAND:
                 await send(f"LAND {rec.vehicle_id}", self._executor.land(rec.vehicle_id))
-            if rec.sector_moves:
-                self._fleet.apply_moves([(m.sector_id, m.to_vehicle) for m in rec.sector_moves])
+            if sector_moves:
+                self._fleet.apply_moves([(m.sector_id, m.to_vehicle) for m in sector_moves])
                 moved = True
-                changed = sorted({rec.vehicle_id, *(m.to_vehicle for m in rec.sector_moves)})
-                moves = ", ".join(f"{m.sector_id}->{m.to_vehicle}" for m in rec.sector_moves)
+                changed = sorted({rec.vehicle_id, *(m.to_vehicle for m in sector_moves)})
+                moves = ", ".join(f"{m.sector_id}->{m.to_vehicle}" for m in sector_moves)
                 for vehicle in changed:  # one command, one window, one set of rows per vehicle
                     if not self._fleet.assignment.get(vehicle):
                         continue  # nothing left to fly (the lost vehicle): nothing to confirm
@@ -140,7 +154,22 @@ class CommandGate:
             rec.vehicle_id,
             {"recommendation_id": recommendation_id, "actions": done},
         )
-        return GateResult(True, None, done)
+        return GateResult(True, None if stale is None else f"moves_blocked: {stale}", done)
+
+    def _stale_reason(self, rec: Recommendation) -> str | None:
+        """Why the recommendation's sector moves no longer hold, or None if they still do."""
+        owned = {s.id for s in self._fleet.sectors_of(rec.vehicle_id)}
+        for m in rec.sector_moves:
+            if m.sector_id in self._fleet.done_sector_ids:
+                return f"{m.sector_id} is already done"
+            if m.sector_id not in owned:
+                return f"{m.sector_id} is no longer {rec.vehicle_id}'s"
+            if not self._hub.is_reachable(m.to_vehicle):
+                return f"{m.to_vehicle} has no link"
+            latest = self._hub.latest_trust(m.to_vehicle)
+            if latest is not None and latest.state is not TrustState.GREEN:
+                return f"{m.to_vehicle} is {latest.state.value}"
+        return None
 
     async def _send(
         self,
