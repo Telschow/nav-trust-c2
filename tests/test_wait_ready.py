@@ -18,6 +18,7 @@ def waiter(clock: Clock) -> Callable[[float], None]:
 
 def test_a_simulator_that_is_ready_at_once_is_not_waited_for() -> None:
     clock = Clock()
+    start = clock.t
     unmet = unmet_after_waiting(
         {"gazebo": lambda: True, "uav1": lambda: True},
         limit_s=100,
@@ -26,12 +27,13 @@ def test_a_simulator_that_is_ready_at_once_is_not_waited_for() -> None:
         sleep=waiter(clock),
     )
     assert unmet == []
-    assert clock.t == Clock.t
+    assert clock.t == start
 
 
 def test_it_waits_until_every_check_passes() -> None:
     clock = Clock()
-    ready_at = Clock.t + 30
+    start = clock.t
+    ready_at = start + 30
     unmet = unmet_after_waiting(
         {"gazebo": lambda: True, "uav1": lambda: clock.t >= ready_at},
         limit_s=100,
@@ -40,11 +42,12 @@ def test_it_waits_until_every_check_passes() -> None:
         sleep=waiter(clock),
     )
     assert unmet == []
-    assert Clock.t + 30 <= clock.t < Clock.t + 40
+    assert start + 30 <= clock.t < start + 40
 
 
 def test_at_the_limit_it_names_what_was_not_ready() -> None:
     clock = Clock()
+    start = clock.t
     unmet = unmet_after_waiting(
         {"gazebo": lambda: True, "uav1": lambda: False, "uav2": lambda: False},
         limit_s=20,
@@ -53,7 +56,7 @@ def test_at_the_limit_it_names_what_was_not_ready() -> None:
         sleep=waiter(clock),
     )
     assert unmet == ["uav1", "uav2"]
-    assert clock.t <= Clock.t + 25
+    assert clock.t <= start + 25
 
 
 def test_a_check_that_raises_counts_as_not_ready() -> None:

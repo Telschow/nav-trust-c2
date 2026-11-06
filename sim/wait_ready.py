@@ -2,7 +2,7 @@
 
 Run inside the simulator container, after it was restarted:
 
-    python -m sim.wait_ready --vehicles 1 [--limit 240]
+    python -m sim.wait_ready --vehicles 1 --limit 240
 
 Ready means the Gazebo world answers and every vehicle's PX4 reports a good global position and a
 home position (what the survey itself waits for before it takes off). Exit 0 when ready. At the
@@ -23,7 +23,6 @@ from functools import partial
 
 from mavsdk_grpc import System
 
-LIMIT_S = 240.0  # proposal: the fixed wait it replaces was 90 s and too short under load
 POLL_S = 5.0
 HEALTH_TRY_S = 20.0  # how long one look at a vehicle's health may take
 GRPC_PORT = 50100  # local mavsdk_server ports, apart from the ones the recorders use
@@ -37,7 +36,8 @@ def unmet_after_waiting(
     clock: Callable[[], float],
     sleep: Callable[[float], None],
 ) -> list[str]:
-    """Poll until every check passes or the limit. The names of the checks still failing."""
+    """Poll until every check passes or the limit. The names of the checks still failing.
+    A check that has passed is not run again."""
     deadline = clock() + limit_s
     pending = list(checks)
     while True:
@@ -62,6 +62,7 @@ def gazebo_world_answers() -> bool:
 
 
 async def _health_ok(index: int) -> bool:
+    # mavsdk_grpc stops its mavsdk_server when the System is collected and at exit
     drone = System(port=GRPC_PORT + index)
     await drone.connect(system_address=f"udpin://0.0.0.0:{MAVLINK_PORT + index}")
     async for health in drone.telemetry.health():
@@ -76,7 +77,7 @@ def vehicle_is_healthy(index: int) -> bool:
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--vehicles", type=int, required=True)
-    parser.add_argument("--limit", type=float, default=LIMIT_S)
+    parser.add_argument("--limit", type=float, required=True, help="seconds to wait")
     args = parser.parse_args(argv)
     checks: dict[str, Callable[[], bool]] = {"the Gazebo world": gazebo_world_answers}
     for i in range(1, args.vehicles + 1):

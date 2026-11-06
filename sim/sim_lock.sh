@@ -65,7 +65,8 @@ report_outcome() {
 
 # After `docker restart "${IMAGE}"`: wait until the simulator is ready (sim/wait_ready.py) instead
 # of sleeping a fixed time. If it is not ready within SIM_READY_LIMIT seconds (default 240, a
-# proposal), print the container's last log lines and stop the script.
+# proposal), print the container's last log lines and stop the script with exit code 4 (the lock
+# is released by the EXIT trap above).
 #
 #   wait_for_sim VEHICLES
 wait_for_sim() {
