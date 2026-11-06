@@ -7,6 +7,7 @@ window and its own audit rows, and a re-task may have a longer timeout than a HO
 import asyncio
 
 import pytest
+from support import Clock
 
 from c2.allocator import Assignment, assign, split_area
 from c2.audit import AuditLog
@@ -15,13 +16,6 @@ from c2.gate import CommandGate
 from c2.hub import Hub
 from c2.messages import Outcome, Recommendation, SectorMove
 from navtrust.types import ReasonCode
-
-
-class Clock:
-    t = 100.0
-
-    def __call__(self) -> float:
-        return self.t
 
 
 class SlowRetask:

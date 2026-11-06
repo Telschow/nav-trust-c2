@@ -89,15 +89,18 @@ class CommandGate:
         self._executed.add(recommendation_id)  # before any await: a second call cannot overlap
 
         sector_moves = rec.sector_moves
-        stale = self._stale_reason(rec)
-        if stale is not None:
+        dropped_because = self._why_moves_no_longer_hold(rec)
+        if dropped_because is not None:
             # the moves were planned for a fleet that has changed, so they are dropped. With a
             # command the operator approved it still goes out (the row is not an ending); with
             # nothing else to send the approval ends here, blocked
-            reason = {"recommendation_id": recommendation_id, "reason": f"stale_moves: {stale}"}
+            reason = {
+                "recommendation_id": recommendation_id,
+                "reason": f"stale_moves: {dropped_because}",
+            }
             if rec.command is None:
                 self._hub.record_command("command_blocked", rec.vehicle_id, reason)
-                return GateResult(False, f"moves_blocked: {stale}", [])
+                return GateResult(False, f"moves_blocked: {dropped_because}", [])
             self._hub.record_command("command_moves_blocked", rec.vehicle_id, reason)
             sector_moves = ()
         done: list[str] = []
@@ -122,12 +125,15 @@ class CommandGate:
                 await send(f"LAND {rec.vehicle_id}", self._executor.land(rec.vehicle_id))
             if sector_moves:
                 # the vehicle command took up to the ack timeout; the fleet may have changed in it
-                stale = self._stale_reason(rec)
-                if stale is not None:
+                dropped_because = self._why_moves_no_longer_hold(rec)
+                if dropped_because is not None:
                     self._hub.record_command(
                         "command_moves_blocked",
                         rec.vehicle_id,
-                        {"recommendation_id": recommendation_id, "reason": f"stale_moves: {stale}"},
+                        {
+                            "recommendation_id": recommendation_id,
+                            "reason": f"stale_moves: {dropped_because}",
+                        },
                     )
                     sector_moves = ()
             if sector_moves:
@@ -165,12 +171,14 @@ class CommandGate:
             {
                 "recommendation_id": recommendation_id,
                 "actions": done,
-                **({} if stale is None else {"moves_blocked": stale}),
+                **({} if dropped_because is None else {"moves_blocked": dropped_because}),
             },
         )
-        return GateResult(True, None if stale is None else f"moves_blocked: {stale}", done)
+        return GateResult(
+            True, None if dropped_because is None else f"moves_blocked: {dropped_because}", done
+        )
 
-    def _stale_reason(self, rec: Recommendation) -> str | None:
+    def _why_moves_no_longer_hold(self, rec: Recommendation) -> str | None:
         """Why the recommendation's sector moves no longer hold, or None if they still do."""
         owned = {s.id for s in self._fleet.sectors_of(rec.vehicle_id)}
         for m in rec.sector_moves:

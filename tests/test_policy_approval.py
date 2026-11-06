@@ -5,6 +5,7 @@ import itertools
 from typing import Any
 
 import pytest
+from support import Clock
 
 from c2.audit import AuditLog
 from c2.hub import (
@@ -22,13 +23,6 @@ UNBOUND = {
     "wait_s": 5.0,
 }
 POLICY = {**UNBOUND, "mission_id": "m1", "vehicles": ["uav1"]}  # ADR 0004 item 5, 2026-11-06
-
-
-class Clock:
-    t = 100.0
-
-    def __call__(self) -> float:
-        return self.t
 
 
 def make() -> tuple[Hub, AuditLog, Clock, list[dict[str, Any]]]:
