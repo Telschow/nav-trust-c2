@@ -143,7 +143,7 @@ no other figure is proposed until re-task times have been measured with this gat
 A contingency is an approval given in advance. The operator approves, before the mission, a
 policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached.
 
-- `POST /policy` `{operator, wait_s, entries}` with `entries` a list of `{reason, link, action}`
+- `POST /policy` `{operator, wait_s, mission_id, vehicles, entries}` with `entries` a list of `{reason, link, action}`
   (`reason` a ReasonCode, `link` only `NO_LINK`, `action` only `LAND`). `wait_s` is how long the C2
   must have been silent, above 0 and below PX4's data-link-loss time (`COM_DL_LOSS_T`, 10 s in the
   simulated vehicles): a policy no vehicle would accept is refused with 422 `invalid_policy`. A
@@ -152,11 +152,16 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
   spaces) and `max_age_s` (4 h, a proposal) is how long a vehicle may rely on it. The approval is
   an audit row `policy_approved`. There is no revocation, because the link may be down when one is
   wanted. This is integrity of the record, not authentication.
-- `POST /onboard-actions` `{vehicle_id, t_s, action, reason, link_down_s, policy_audit_id,
-  policy_sha256}` is a vehicle saying, once its link is back, what it did on its own. `t_s` is
+  `mission_id` is a non-blank string and `vehicles` a non-empty list of distinct non-blank vehicle
+  ids; both are part of the hashed policy, so changing either changes `sha256` (ADR 0004 item 5).
+  Without them: 422 `invalid_policy`.
+- `POST /onboard-actions` `{vehicle_id, t_s, mission_id, action, reason, link_down_s,
+  policy_audit_id, policy_sha256}` is a vehicle saying, once its link is back, what it did on its own. `t_s` is
   the vehicle's clock. It is accepted only if that policy approval is in the audit log with the
-  same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row) and the policy
-  authorises it: an entry with that `reason` and the link condition `NO_LINK`, the same `action`,
+  same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row), the vehicle is in
+  the policy's `vehicles` and `mission_id` is the policy's (else 422 `outside_binding`, a
+  `rejected_onboard_action` row with `rejected_because: outside_binding`, and the link state of the
+  vehicle is not touched) and the policy authorises it: an entry with that `reason` and the link condition `NO_LINK`, the same `action`,
   and `link_down_s` above the policy's `wait_s` (else 422 `outside_policy`, a
   `rejected_onboard_action` row with `rejected_because: outside_policy`, and the link state of the
   vehicle is not touched). It is audited as
