@@ -8,6 +8,8 @@ as it was."""
 import asyncio
 from collections.abc import Callable
 
+from support import Clock
+
 from c2.allocator import assign, split_area
 from c2.audit import AuditLog
 from c2.fleet import FleetState
@@ -15,13 +17,6 @@ from c2.gate import CommandGate, GateResult
 from c2.hub import Hub
 from c2.messages import Command, Outcome, Recommendation, SectorMove
 from navtrust.types import NavTrust, ReasonCode, TrustState
-
-
-class Clock:
-    t = 100.0
-
-    def __call__(self) -> float:
-        return self.t
 
 
 class Recorder:
