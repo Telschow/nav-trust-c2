@@ -40,9 +40,11 @@ operator approval; one gate is the only path to a command, and a test enforces i
 - Held-out validation: 7 of 8 pre-declared expectations met. The one that was not is reported,
   not excluded: [docs/validation/heldout-report.md](docs/validation/heldout-report.md).
 
-**What is not shown.** Real hardware, real interference, or a usability result: two people did not
-act on the decision unaided, the console was then redesigned, and that has not been re-tested
-([findings](docs/usability/findings-2026-10.md)). Targets in the documents are proposals.
+**What is not shown.** Real hardware, real interference, a slow gradual position drift (the
+simulator cannot inject one: PX4 offers GPS failure `off`, `stuck` and `wrong` only), or a
+usability result: two people did not act on the decision unaided, the console was then redesigned,
+and that has not been re-tested ([findings](docs/usability/findings-2026-10.md)). Targets in the
+documents are proposals.
 
 **Demo video (about 3 minutes):** https://youtu.be/L7DrhOYMQ5A. A one-minute captioned version is
 on the [project page](https://telschow.github.io/nav-trust-c2/).
