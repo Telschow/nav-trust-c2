@@ -4,8 +4,9 @@ import subprocess
 from collections.abc import Callable
 from pathlib import Path
 
+from support import Clock
+
 from sim.wait_ready import unmet_after_waiting
-from tests.support import Clock
 
 
 def waiter(clock: Clock) -> Callable[[float], None]:
