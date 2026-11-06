@@ -6,6 +6,7 @@ the operator approved still goes out; the moves are blocked and audited, and the
 as it was."""
 
 import asyncio
+from collections.abc import Callable
 
 from c2.allocator import assign, split_area
 from c2.audit import AuditLog
@@ -26,6 +27,7 @@ class Clock:
 class Recorder:
     def __init__(self) -> None:
         self.calls: list[str] = []
+        self.on_land: Callable[[], None] = lambda: None  # something that happens while LAND is sent
 
     async def hold(self, vehicle_id: str) -> None:
         self.calls.append(f"hold {vehicle_id}")
@@ -35,6 +37,7 @@ class Recorder:
 
     async def land(self, vehicle_id: str) -> None:
         self.calls.append(f"land {vehicle_id}")
+        self.on_land()
 
     async def retask(self, assignment, vehicles) -> None:  # type: ignore[no-untyped-def]
         self.calls.append(f"retask {vehicles}")
@@ -146,3 +149,29 @@ def test_a_second_recommendation_for_a_sector_already_moved_is_blocked() -> None
     assert not result.executed and result.reason == "moves_blocked: S2 is no longer uav2's"
     assert [s.id for s in fleet.assignment["uav3"]].count("S2") == 1
     assert "S2" not in [s.id for s in fleet.assignment["uav1"]]
+
+
+def test_a_move_out_of_an_earlier_moves_recipient_blocks_all_of_them() -> None:
+    """The recommender moves only the lost vehicle's own sectors, so this plan is not one it
+    makes; if one arrives, the moves are all dropped, not half applied."""
+    hub, fleet, gate, ex, _ = approved(command=None)
+    chained = Recommendation(
+        "r2", "uav2", 100.0, 160.0, ReasonCode.GNSS_LOSS, None,
+        (SectorMove("S2", "uav3"), SectorMove("S3", "uav1")), "x",
+    )  # fmt: skip
+    hub.add_recommendation(chained)
+    hub.decide("r2", Outcome.APPROVED, "daniel")
+    result = asyncio.run(gate.execute("r2"))
+    assert not result.executed and result.reason == "moves_blocked: S3 is no longer uav2's"
+    assert [s.id for s in fleet.assignment["uav2"]] == ["S2"]
+    assert [s.id for s in fleet.assignment["uav3"]] == ["S3"]
+
+
+def test_a_recipient_that_goes_red_while_the_command_is_sent_is_not_given_the_sector() -> None:
+    hub, fleet, gate, ex, _ = approved()
+    ex.on_land = lambda: hub.ingest_navtrust(trust("uav3", TrustState.RED, ReasonCode.GNSS_LOSS))
+    result = run(gate)
+    assert ex.calls == ["land uav2"]  # LAND went out; the re-task did not
+    assert [s.id for s in fleet.assignment["uav2"]] == ["S2"]
+    assert blocked_reasons(hub) == ["stale_moves: uav3 is RED"]
+    assert result.executed and result.reason == "moves_blocked: uav3 is RED"

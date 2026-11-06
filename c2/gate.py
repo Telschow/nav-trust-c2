@@ -121,6 +121,16 @@ class CommandGate:
             elif rec.command is Command.LAND:
                 await send(f"LAND {rec.vehicle_id}", self._executor.land(rec.vehicle_id))
             if sector_moves:
+                # the vehicle command took up to the ack timeout; the fleet may have changed in it
+                stale = self._stale_reason(rec)
+                if stale is not None:
+                    self._hub.record_command(
+                        "command_moves_blocked",
+                        rec.vehicle_id,
+                        {"recommendation_id": recommendation_id, "reason": f"stale_moves: {stale}"},
+                    )
+                    sector_moves = ()
+            if sector_moves:
                 self._fleet.apply_moves([(m.sector_id, m.to_vehicle) for m in sector_moves])
                 moved = True
                 changed = sorted({rec.vehicle_id, *(m.to_vehicle for m in sector_moves)})
