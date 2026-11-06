@@ -27,6 +27,7 @@ from c2.contingency import land_on_inconsistent_position, policy_sha256
 from navtrust.engine import TrustEngine
 from sim.estimator_status import parse_estimator_status
 from sim.onboard_monitor import OnboardAction, OnboardMonitor
+from sim.onboard_policy import Policy, PolicyRejected, load_policy
 
 if TYPE_CHECKING:
     import httpx
@@ -46,9 +47,34 @@ def experiment_approval(wait_s: float, now_s: float | None = None) -> dict[str, 
     return {"audit_id": 0, "approved_s": when, "sha256": policy_sha256(policy), "policy": policy}
 
 
+async def fetch_policy(
+    client: httpx.AsyncClient, backend: str, mission_id: str, vehicle_id: str
+) -> Policy:
+    """Pull the approved policy for this mission before launch (ADR 0004 handoff). The age limit
+    and the backend's clock come with the record, so the policy is aged from the backend's own
+    time once and then on the vehicle's clock (`Policy.valid_at`). Raises PolicyRejected if the
+    backend cannot be reached, refuses, or sends a policy the vehicle will not rely on; the caller
+    then has no policy and must not start a monitor."""
+    try:
+        response = await client.get(f"{backend}/policy/{mission_id}/{vehicle_id}")
+    except Exception as err:
+        raise PolicyRejected(f"could not fetch the policy: {err!r}") from err
+    if response.status_code != 200:
+        detail = response.json().get("detail") if response.content else None
+        raise PolicyRejected(f"backend refused the policy ({response.status_code}: {detail})")
+    record = response.json()
+    try:
+        return load_policy(record, record["server_s"], record["max_age_s"], mission_id, vehicle_id)
+    except (KeyError, TypeError) as err:
+        raise PolicyRejected(f"no usable delivery record: {err!r}") from err
+
+
 def action_report(action: OnboardAction) -> dict[str, Any]:
     """The body of POST /onboard-actions (docs/ICD.md)."""
-    return asdict(action)
+    body = asdict(action)
+    if body["mission_id"] is None:  # an experiment's own policy has no mission
+        del body["mission_id"]
+    return body
 
 
 async def report_actions(
@@ -57,6 +83,41 @@ async def report_actions(
     for action in actions:
         response = await client.post(f"{backend}/onboard-actions", json=action_report(action))
         response.raise_for_status()
+
+
+async def run_bound_monitor(
+    client: httpx.AsyncClient,
+    backend: str,
+    drone: System,
+    mission_id: str,
+    vehicle_id: str,
+    link_up: Callable[[], bool],
+    write: Callable[..., None],
+    **monitor_args: Any,
+) -> None:
+    """Pull the operator-approved policy for this mission and vehicle, then run the monitor under
+    it and report to the backend. If the pull fails or the policy is refused the vehicle has no
+    authority to act: this logs 'onboard_policy_refused' and returns without starting a monitor.
+    `monitor_args` go to `run_monitor`."""
+    try:
+        policy = await fetch_policy(client, backend, mission_id, vehicle_id)
+    except PolicyRejected as err:
+        write("onboard_policy_refused", mission_id=mission_id, reason=str(err))
+        return
+    write(
+        "onboard_policy_loaded", mission_id=mission_id, policy_audit_id=policy.audit_id,
+        policy_sha256=policy.sha256, wait_s=policy.wait_s, age_at_load_s=policy.age_at_load_s,
+    )  # fmt: skip
+    monitor = OnboardMonitor(
+        vehicle_id, policy, started_s=monitor_args.get("clock", time.monotonic)()
+    )
+
+    async def report(actions: list[OnboardAction]) -> None:
+        await report_actions(client, backend, actions)
+
+    await run_monitor(
+        drone, monitor, link_up, write, vehicle_id=vehicle_id, report=report, **monitor_args
+    )
 
 
 async def run_monitor(
@@ -133,6 +194,8 @@ async def run_monitor(
         # that name would overwrite it (recordings need t_s non-decreasing)
         fields = asdict(action)
         fields.pop("outcome")  # not known yet
+        if fields["mission_id"] is None:  # keeps an experiment's recording as it was
+            del fields["mission_id"]
         if attempts["n"] == 1:
             write("onboard_action", vehicle_clock_s=fields.pop("t_s"), **fields)
         else:  # the action is told to the backend once; a retry is only a line in the recording

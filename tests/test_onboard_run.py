@@ -409,3 +409,164 @@ def test_the_monitor_runs_without_the_simulator_packages(monkeypatch: pytest.Mon
 
     asyncio.run(go())
     assert heard == [(0.9, 2.0, 1.0)]
+
+
+BOUND_POLICY = {
+    "entries": [{"reason": "INCONSISTENT_INNOVATION", "link": "NO_LINK", "action": "LAND"}],
+    "wait_s": 5.0,
+    "mission_id": "m1",
+    "vehicles": ["uav1"],
+}
+
+
+def _delivery(**over: Any) -> dict[str, Any]:
+    return {
+        "audit_id": 7, "approved_s": 1000.0, "sha256": policy_sha256(BOUND_POLICY),
+        "max_age_s": 14400.0, "policy": BOUND_POLICY, "server_s": 1060.0, **over,
+    }  # fmt: skip
+
+
+def _fetch(handler: Any, mission_id: str = "m1", vehicle_id: str = "uav1") -> Any:
+    httpx = pytest.importorskip("httpx")
+    from sim.onboard_run import fetch_policy
+
+    async def go() -> Any:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            return await fetch_policy(client, "http://backend", mission_id, vehicle_id)
+
+    return asyncio.run(go())
+
+
+def test_the_vehicle_pulls_its_policy_and_ages_it_on_the_backends_clock() -> None:
+    httpx = pytest.importorskip("httpx")
+    paths: list[str] = []
+
+    def handler(request: Any) -> Any:
+        paths.append(request.url.path)
+        return httpx.Response(200, json=_delivery())
+
+    policy = _fetch(handler)
+    assert paths == ["/policy/m1/uav1"]
+    assert policy.audit_id == 7 and policy.mission_id == "m1"
+    assert policy.age_at_load_s == 60.0 and policy.max_age_s == 14400.0
+
+
+def test_a_refused_pull_leaves_the_vehicle_without_a_policy() -> None:
+    httpx = pytest.importorskip("httpx")
+    from sim.onboard_policy import PolicyRejected
+
+    with pytest.raises(PolicyRejected, match="outside_binding"):
+        _fetch(lambda r: httpx.Response(422, json={"detail": "outside_binding"}))
+
+
+def test_an_unreachable_backend_leaves_the_vehicle_without_a_policy() -> None:
+    httpx = pytest.importorskip("httpx")
+    from sim.onboard_policy import PolicyRejected
+
+    def handler(request: Any) -> Any:
+        raise httpx.ConnectError("down")
+
+    with pytest.raises(PolicyRejected, match="could not fetch"):
+        _fetch(handler)
+
+
+def test_a_delivered_policy_for_another_vehicle_is_refused() -> None:
+    httpx = pytest.importorskip("httpx")
+    from sim.onboard_policy import PolicyRejected
+
+    with pytest.raises(PolicyRejected, match="vehicle"):
+        _fetch(lambda r: httpx.Response(200, json=_delivery()), vehicle_id="uav9")
+
+
+def test_a_bound_policys_action_is_reported_with_its_mission() -> None:
+    from navtrust.types import NavTrust, ReasonCode, TrustState
+    from sim.onboard_monitor import OnboardMonitor
+
+    policy = load_policy(_delivery(), 1060.0, 14400.0, "m1", "uav1")
+    monitor = OnboardMonitor("uav1", policy, started_s=0.0)
+    monitor.c2_heard(0.0)
+    report = NavTrust("uav1", 10.0, TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION, 0.0, 1.0)
+    monitor.trust(10.0, report)
+    action = monitor.poll(10.0)
+    assert action is not None and action.mission_id == "m1"
+    assert action_report(action)["mission_id"] == "m1"
+
+
+def _run_bound(handler: Any, link: dict[str, bool], seconds: float) -> tuple[Any, list[Any]]:
+    httpx = pytest.importorskip("httpx")
+    from sim.onboard_run import run_bound_monitor
+
+    drone, written = _FakeDrone(), []
+
+    async def go() -> None:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            task = asyncio.create_task(
+                run_bound_monitor(
+                    client, "http://backend", drone, "m1", "uav1", lambda: link["up"],
+                    lambda e, **f: written.append((e, f)),
+                    engine=_FrozenEngine(), interval_s=0.02,
+                )
+            )  # fmt: skip
+            await asyncio.sleep(seconds)
+            link["up"] = True
+            await asyncio.sleep(0.2)
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    asyncio.run(go())
+    return drone, written
+
+
+def test_a_refused_pull_starts_no_monitor_and_is_recorded() -> None:
+    httpx = pytest.importorskip("httpx")
+    drone, written = _run_bound(
+        lambda r: httpx.Response(422, json={"detail": "outside_binding"}), {"up": False}, 0.3
+    )
+    assert drone.landed == 0
+    assert [e for e, _ in written] == ["onboard_policy_refused"]
+
+
+def test_a_delivered_policy_runs_the_monitor_and_the_report_carries_the_mission() -> None:
+    httpx = pytest.importorskip("httpx")
+    reports: list[dict[str, Any]] = []
+    policy = {**BOUND_POLICY, "wait_s": 0.1}
+
+    def handler(request: Any) -> Any:
+        if request.method == "GET":
+            return httpx.Response(200, json=_delivery(policy=policy, sha256=policy_sha256(policy)))
+        reports.append(json.loads(request.content))
+        return httpx.Response(204)
+
+    link = {"up": True}
+
+    async def cut_link() -> None:
+        await asyncio.sleep(0.1)
+        link["up"] = False
+
+    httpx_mod = httpx
+
+    async def go() -> Any:
+        from sim.onboard_run import run_bound_monitor
+
+        drone, written = _FakeDrone(), []
+        async with httpx_mod.AsyncClient(transport=httpx_mod.MockTransport(handler)) as client:
+            task = asyncio.create_task(
+                run_bound_monitor(
+                    client, "http://backend", drone, "m1", "uav1", lambda: link["up"],
+                    lambda e, **f: written.append((e, f)),
+                    engine=_FrozenEngine(), interval_s=0.02,
+                )
+            )  # fmt: skip
+            cutter = asyncio.create_task(cut_link())
+            await asyncio.sleep(0.6)
+            link["up"] = True
+            await asyncio.sleep(0.2)
+            task.cancel()
+            await asyncio.gather(task, cutter, return_exceptions=True)
+        return drone, written
+
+    drone, written = asyncio.run(go())
+    assert drone.landed == 1
+    assert written[0][0] == "onboard_policy_loaded"
+    assert written[0][1]["policy_audit_id"] == 7 and written[0][1]["mission_id"] == "m1"
+    assert [r["mission_id"] for r in reports] == ["m1"]
