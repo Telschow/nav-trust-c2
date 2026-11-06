@@ -3,7 +3,6 @@
 They are the tail of sim/sim_lock.sh, run here under bash with a stub recorder, so no simulator.
 """
 
-import json
 import subprocess
 import sys
 from pathlib import Path
@@ -13,7 +12,8 @@ FUNCTIONS = LOCK_SH.read_text(encoding="utf-8").split("\nrescued=()", 1)[1]
 STUB = (
     "import json, sys, time\n"
     "path, then = sys.argv[1], sys.argv[2]\n"
-    "records = [{'t_s': 0, 'event': 'header', 'schema': 1}, {'t_s': 9, 'event': 'recording_stopped'}]\n"
+    "records = [{'t_s': 0, 'event': 'header', 'schema': 1},\n"
+    "           {'t_s': 9, 'event': 'recording_stopped'}]\n"
     "open(path, 'w').write(''.join(json.dumps(r) + '\\n' for r in records))\n"
     "if then == 'hang':\n"
     "    time.sleep(60)\n"
