@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { Check, Hourglass, X } from "lucide-react";
-import { STATE_LABEL, actionsOf, commandEndingText, contextNote, executionText, formatDuration, noLinkWarning, ordinal, reasonText, titleOf, urgencyNote } from "../language";
+import { STATE_LABEL, actionsOf, coarseDuration, commandEndingText, contextNote, executionText, formatDuration, noLinkWarning, ordinal, reasonText, titleOf, urgencyNote } from "../language";
 import type { RaisedAgain } from "../store";
 import { TONE, vehicleColor } from "../tone";
 import type { CommandOutcome, Decision, NavTrust, Recommendation } from "../types";
@@ -74,7 +74,15 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
         <div className="mt-4">
           <div className={clsx("flex items-center gap-1.5 text-xs", expired ? "text-bad" : urgent ? "text-warn" : "text-muted")}>
             <Hourglass className="size-3.5" aria-hidden />
-            {remaining === null ? "Expiry unknown" : expired ? "Expired, no longer actionable" : `Expires in ${formatDuration(remaining)}`}
+            {remaining === null || expired ? (
+              <span>{remaining === null ? "Expiry unknown" : "Expired, no longer actionable"}</span>
+            ) : (
+              <>
+                {/* the second-by-second figure is for the eyes; the panel is a polite live region */}
+                <span aria-hidden="true">{`Expires in ${formatDuration(remaining)}`}</span>
+                <span className="sr-only">{`Expires in ${coarseDuration(remaining)}`}</span>
+              </>
+            )}
           </div>
           <div className="mt-1.5 h-1 bg-line-soft" aria-hidden>
             <div
@@ -95,7 +103,10 @@ export function RecommendationCard({ rec, now, raisedAgain, disabled, noLink = f
           </button>
           <button
             type="button"
-            onClick={onApprove}
+            onClick={(e) => {
+              e.currentTarget.focus(); // Safari does not focus a clicked button; focus returns here
+              onApprove();
+            }}
             disabled={disabled || expired || backendLost}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-[3px] bg-accent text-sm font-semibold text-[#08121d] hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
           >

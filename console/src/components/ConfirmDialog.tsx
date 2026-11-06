@@ -80,13 +80,43 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
   }, [armed]);
   const cancelRef = useRef(onCancel);
   cancelRef.current = onCancel;
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // Read while rendering, before the effect below moves focus into the dialog (issue 206).
+  const [opener] = useState(() => document.activeElement);
+  useEffect(
+    () => () => {
+      if (opener instanceof HTMLElement && opener.isConnected) opener.focus();
+    },
+    [opener],
+  );
   // Once, when the dialog opens. The console re-renders on every keystroke and live update with a
   // new onCancel; re-running this on each render pulled focus out of the name field onto
   // "Confirm approval", so a space typed in a name approved the command.
   useEffect(() => {
     // a landing does not open on its confirm control, so one stray key cannot start it
     (landing ? cancelButtonRef : confirmRef).current?.focus();
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && cancelRef.current();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") return cancelRef.current();
+      if (e.key !== "Tab" || !dialogRef.current) return;
+      // Tab stays inside the dialog: it wraps at either end and pulls in focus that has left.
+      const inside = Array.from(
+        dialogRef.current.querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled])"),
+      );
+      if (inside.length === 0) return;
+      const first = inside[0];
+      const last = inside[inside.length - 1];
+      const active = document.activeElement;
+      if (!dialogRef.current.contains(active)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, []);
@@ -94,6 +124,7 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
   return (
     <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" onMouseDown={onCancel}>
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="confirm-title"

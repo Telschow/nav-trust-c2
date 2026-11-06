@@ -53,6 +53,14 @@ export function ordinal(n: number): string {
 }
 
 /** 75 -> "1:15", 3725 -> "1:02:05" */
+/** The time left as a screen reader should hear it: a figure that changes every 15 s (or each
+ * minute from a minute out), not every second, so a polite live region is not interrupted. */
+export function coarseDuration(seconds: number): string {
+  const s = Math.max(0, seconds);
+  if (s > 60) return `about ${Math.ceil(s / 60)} minutes`;
+  return `less than ${Math.max(15, Math.ceil(s / 15) * 15)} seconds`;
+}
+
 export function formatDuration(seconds: number): string {
   const s = Math.max(0, Math.floor(seconds));
   const h = Math.floor(s / 3600);

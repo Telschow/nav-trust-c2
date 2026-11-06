@@ -737,3 +737,73 @@ describe("DecidedRow shows how a command ended, also when another console approv
     expect(screen.getByText(/Executed: LAND uav2.*re-task not sent: uav3 is RED/)).toBeTruthy();
   });
 });
+
+describe("ConfirmDialog keyboard and screen-reader behaviour (issue 206)", () => {
+  const base = { rec, operator: "daniel", demo: false, busy: false, onOperatorChange: vi.fn(), onCancel: vi.fn(), onConfirm: vi.fn() };
+  const focusables = () =>
+    Array.from(screen.getByRole("dialog").querySelectorAll<HTMLElement>("button:not([disabled]), input:not([disabled])"));
+
+  it("keeps Tab inside the dialog: from the last control to the first, and back with Shift+Tab", () => {
+    render(<ConfirmDialog {...base} />);
+    const [first, ...rest] = focusables();
+    const last = rest[rest.length - 1];
+    last.focus();
+    fireEvent.keyDown(last, { key: "Tab" });
+    expect(document.activeElement).toBe(first);
+    fireEvent.keyDown(first, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(last);
+  });
+
+  it("pulls focus back in if it is outside the dialog when Tab is pressed", () => {
+    render(<><button>outside</button><ConfirmDialog {...base} /></>);
+    const outside = screen.getByText("outside");
+    outside.focus();
+    fireEvent.keyDown(outside, { key: "Tab" });
+    expect(screen.getByRole("dialog").contains(document.activeElement)).toBe(true);
+  });
+
+  it("returns focus to the control that opened it when it closes", () => {
+    const opener = document.createElement("button");
+    document.body.appendChild(opener);
+    opener.focus();
+    const { unmount } = render(<ConfirmDialog {...base} />);
+    expect(document.activeElement).not.toBe(opener);
+    unmount();
+    expect(document.activeElement).toBe(opener);
+    opener.remove();
+  });
+});
+
+describe("RecommendationCard countdown for screen readers (issue 206)", () => {
+  const spoken = (now: number) => {
+    const { container } = render(<RecommendationCard rec={rec} now={now} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    const visible = screen.getByText(/^Expires in \d+:\d\d$/);
+    const sr = container.querySelector(".sr-only")?.textContent;
+    cleanup();
+    return { hidden: visible.closest("[aria-hidden='true']") !== null || visible.getAttribute("aria-hidden") === "true", sr };
+  };
+
+  it("hides the second-by-second countdown and speaks a coarse figure that does not change every second", () => {
+    const a = spoken(116); // 44 s left
+    const b = spoken(117); // 43 s left
+    expect(a.hidden && b.hidden).toBe(true);
+    expect(a.sr).toBe(b.sr);
+    expect(a.sr).toMatch(/Expires in less than 45 seconds/);
+  });
+
+  it("says minutes when there are more than a minute left, and says plainly when expired", () => {
+    const longer = { ...rec, expires_s: 400 };
+    render(<RecommendationCard rec={longer} now={100} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(document.querySelector(".sr-only")?.textContent).toMatch(/Expires in about 5 minutes/);
+    cleanup();
+    render(<RecommendationCard rec={rec} now={161} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    expect(screen.getByText(/Expired, no longer actionable/).getAttribute("aria-hidden")).not.toBe("true");
+  });
+
+  it("focuses the Approve button when it is clicked, so focus can return to it in browsers that do not", () => {
+    render(<RecommendationCard rec={rec} now={110} disabled={false} onApprove={vi.fn()} onDeny={vi.fn()} />);
+    const approve = screen.getByRole("button", { name: /Approve/ });
+    fireEvent.click(approve);
+    expect(document.activeElement).toBe(approve);
+  });
+});
