@@ -88,11 +88,15 @@ flowchart TB
 - Mission framing is search-and-rescue and area survey.
 - No weapons, no targeting, no effectors, no real platform parameters, no swarm attack behaviour.
 - The operator approves vehicle commands. Only PX4's own failsafes act without approval today.
-  A contingency approved before the mission (ADR 0004, LAND only) is partly built: the backend
-  records the approval and checks every onboard report against it, and a vehicle-side monitor
-  decides within it (unit tested, and replayed to confirm it never acts in the nominal, jamming,
-  stuck, wrong-fix and link-only recordings). A simulated landing under it is not yet recorded, and
-  handing an approved policy to a vehicle is not built (issue 76).
+  A contingency approved before the mission (ADR 0004, LAND only) is partly built, in simulation only: the
+  backend records the approval, a vehicle pulls the policy bound to its mission and vehicle
+  before launch, and a vehicle-side monitor decides within it (unit tested, and replayed to
+  confirm it never acts in the nominal, jamming, stuck, wrong-fix and link-only recordings). In 3
+  of 3 simulator runs under an approval made at the backend (`sim/record_onboard_approved_runs.sh`),
+  the vehicle landed itself 5.0 s after the link was cut and the backend accepted its report once
+  the link was back. The link signal is the cut relay's state and PX4 entering LAND is not a
+  measured touchdown; the recordings are in
+  `eval/lost_link/onboard-approved`. Reports are not authenticated (ADR 0004).
 
 ## Non-goals
 
