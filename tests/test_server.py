@@ -288,6 +288,8 @@ def test_a_vehicle_pulls_its_missions_policy_and_the_pull_is_audited(
     assert c.get("/policy/m2/uav1").status_code == 422  # no policy for that mission
     delivered = [e for e in c.get("/audit").json() if e["kind"] == "policy_delivered"]
     assert [e["vehicle_id"] for e in delivered] == ["uav1"]
+    refused = [e for e in c.get("/audit").json() if e["kind"] == "rejected_policy_delivery"]
+    assert len(refused) == 2
 
 
 def test_a_policy_without_a_mission_or_vehicles_is_refused(client: tuple[Console, Clock]) -> None:

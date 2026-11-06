@@ -331,9 +331,11 @@ class Hub:
             None,
         )
         if approval is None:
+            self._reject_delivery(mission_id, vehicle_id, UnknownPolicy.code)
             raise UnknownPolicy(mission_id)
         policy = approval.payload["policy"]
         if vehicle_id not in policy["vehicles"]:
+            self._reject_delivery(mission_id, vehicle_id, OutsideBinding.code)
             raise OutsideBinding(f"{vehicle_id} in mission {mission_id}")
         self._audit.append(
             self._clock(),
@@ -353,6 +355,14 @@ class Hub:
             "policy": policy,
             "server_s": self._clock(),
         }
+
+    def _reject_delivery(self, mission_id: str, vehicle_id: str, why: str) -> None:
+        self._audit.append(
+            self._clock(),
+            "rejected_policy_delivery",
+            vehicle_id,
+            {"mission_id": mission_id, "rejected_because": why},
+        )
 
     def report_onboard_action(self, report: dict[str, Any]) -> None:
         """A vehicle says what it did on its own, citing the policy it did it under. Accepted only

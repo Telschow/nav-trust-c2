@@ -50,6 +50,9 @@ def test_a_vehicle_the_policy_does_not_cover_is_refused_and_nothing_is_delivered
     with pytest.raises(OutsideBinding):
         hub.deliver_policy("m1", "uav3")
     assert audit.events("policy_delivered") == []
+    [row] = audit.events("rejected_policy_delivery")
+    assert row.vehicle_id == "uav3"
+    assert row.payload == {"mission_id": "m1", "rejected_because": "outside_binding"}
 
 
 def test_a_mission_with_no_approved_policy_is_refused() -> None:
@@ -58,6 +61,8 @@ def test_a_mission_with_no_approved_policy_is_refused() -> None:
     with pytest.raises(UnknownPolicy):
         hub.deliver_policy("m2", "uav1")
     assert audit.events("policy_delivered") == []
+    [row] = audit.events("rejected_policy_delivery")
+    assert row.payload == {"mission_id": "m2", "rejected_because": "unknown_policy"}
 
 
 def test_a_mission_approved_twice_delivers_the_latest_approval() -> None:

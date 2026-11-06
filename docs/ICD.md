@@ -155,6 +155,13 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
   `mission_id` is a non-blank string and `vehicles` a non-empty list of distinct non-blank vehicle
   ids; both are part of the hashed policy, so changing either changes `sha256` (ADR 0004 item 5).
   Without them: 422 `invalid_policy`.
+- `GET /policy/{mission_id}/{vehicle_id}`: a vehicle pulls its mission's policy before launch.
+  200 `{audit_id, approved_s, sha256, max_age_s, policy, server_s}` for the latest `POST /policy`
+  approval whose `mission_id` matches; `server_s` is the backend's clock now, and the vehicle ages
+  the policy on its own monotonic clock from it. 422 `outside_binding` if the vehicle is not in
+  the policy's `vehicles`, 422 `unknown_policy` if the mission has no approved policy. A 200 is an
+  audit row `policy_delivered` (`vehicle_id`, `mission_id`, `policy_audit_id`, `sha256`); a refusal
+  is a `rejected_policy_delivery` row (`vehicle_id`, `mission_id`, `rejected_because`).
 - `POST /onboard-actions` `{vehicle_id, t_s, mission_id, action, reason, link_down_s,
   policy_audit_id, policy_sha256}` is a vehicle saying, once its link is back, what it did on its own. `t_s` is
   the vehicle's clock. It is accepted only if that policy approval is in the audit log with the
@@ -182,7 +189,8 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
 Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendation`,
 `decision`, `rejected_decision`, `link_change`, `outage_summary`, `command_sent`,
 `command_acknowledged`, `command_not_acknowledged`, `command_executed`, `command_failed`,
-`command_blocked`, `policy_approved`, `onboard_action`, `rejected_onboard_action`,
+`command_blocked`, `policy_approved`, `policy_delivered`, `rejected_policy_delivery`, `onboard_action`,
+`rejected_onboard_action`,
 `session_started`), `vehicle_id`, JSON `payload`. Trust is logged on
 state or reason changes, not on every message. A `link_change` row has the `state`,
 `previous_state`, `last_report_age_s` (as in the `link` event) and `link_timeout_s`; one row per
