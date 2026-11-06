@@ -31,23 +31,14 @@ for run in $(seq 1 "${RUNS}"); do
     echo "=== ${name}"
     docker restart "${IMAGE}" >/dev/null
     sleep 90
-    if ! docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
+    record_one "${name}" "${out}" 300 docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
         python -m sim.record_run --scenario "${name}" --out "${out}.partial" \
         --mode stuck --zone 200 -50 280 150 --latch-fault \
         --width 600 --height 100 --spacing 100 --altitude 30 --speed 10 \
         --max-duration 300 --link-cut-after fault_start --link-cut-delay 5 \
-        --link-cut-direction uplink --onboard-wait "${WAIT}"; then
-        echo "!!! ${name} failed"
-        rm -f "${out}.partial"
-        failures+=("${name}")
-    else
-        mv "${out}.partial" "${out}"
-    fi
+        --link-cut-direction uplink --onboard-wait "${WAIT}" || true
 done
 
 docker stop "${IMAGE}" >/dev/null
 echo "recordings written to ${OUT_DIR}"
-if [ "${#failures[@]}" -gt 0 ]; then
-    echo "FAILED RUNS: ${failures[*]}"
-    exit 1
-fi
+report_outcome

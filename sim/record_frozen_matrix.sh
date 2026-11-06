@@ -37,17 +37,12 @@ for action in ${ACTIONS}; do
                 [ "${action}" != "none" ] && operator=(--operator-action "${action}" --operator-delay "${delay}")
                 docker restart "${IMAGE}" >/dev/null
                 sleep 90
-                if ! docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
+                record_one "${name}" "${out}" "${MAX_DURATION}" \
+                    docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
                     python -m sim.record_run --scenario "${name}" --out "${out}.partial" \
                     --mode stuck --zone 200 -50 280 150 --latch-fault \
                     --width 600 --height 100 --spacing 100 --altitude 30 --speed "${speed}" \
-                    --max-duration "${MAX_DURATION}" ${operator[@]+"${operator[@]}"}; then
-                    echo "!!! ${name} failed"
-                    rm -f "${out}.partial"
-                    failures+=("${name}")
-                else
-                    mv "${out}.partial" "${out}"
-                fi
+                    --max-duration "${MAX_DURATION}" ${operator[@]+"${operator[@]}"} || true
             done
         done
     done
@@ -55,7 +50,4 @@ done
 
 docker stop "${IMAGE}" >/dev/null
 echo "recordings written to ${OUT_DIR}"
-if [ "${#failures[@]}" -gt 0 ]; then
-    echo "FAILED RUNS: ${failures[*]}"
-    exit 1
-fi
+report_outcome

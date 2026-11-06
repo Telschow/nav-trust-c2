@@ -23,3 +23,40 @@ python3 -m sim.preflight || exit 3
 is_complete() {
     python3 -m sim.recording_check "$1" 2>/dev/null
 }
+
+# The recorder sometimes writes a complete recording and then does not exit (issue 178). It gets
+# its maximum duration plus RECORDER_MARGIN seconds. At the limit a complete partial file is kept
+# and the recorder ended; an incomplete one is discarded (sim/finish_recording.py).
+#
+#   record_one NAME OUT MAX_DURATION COMMAND...    COMMAND writes OUT.partial
+#
+# Returns 0 if a recording was kept. Otherwise it adds NAME to `failures` and returns 1. A rescued
+# run is added to `rescued` and reported by `report_outcome`. Both arrays are the caller's.
+rescued=()
+record_one() {
+    local name="$1" out="$2" max="$3" rc=0
+    shift 3
+    python3 -m sim.finish_recording --partial "${out}.partial" --final "${out}" \
+        --limit $((max + ${RECORDER_MARGIN:-60})) \
+        --stop "docker exec ${IMAGE} pkill -f sim.record_run" -- "$@" || rc=$?
+    case "${rc}" in
+        0) ;;
+        10) rescued+=("${name}") ;;
+        *)
+            echo "!!! ${name} failed"
+            failures+=("${name}")
+            return 1
+            ;;
+    esac
+}
+
+# The end of every script: say which runs were rescued and which failed, and exit 1 on a failure.
+report_outcome() {
+    if [ "${#rescued[@]}" -gt 0 ]; then
+        echo "RESCUED RUNS (the recorder did not exit, the recording was complete): ${rescued[*]}"
+    fi
+    if [ "${#failures[@]}" -gt 0 ]; then
+        echo "FAILED RUNS: ${failures[*]}"
+        exit 1
+    fi
+}
