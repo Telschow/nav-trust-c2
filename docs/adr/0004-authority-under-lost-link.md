@@ -1,6 +1,6 @@
 # ADR 0004: Authority under lost link
 
-Status: accepted, 2026-10-24; items 2 and 3 amended 2026-10-30 after issue 81. Decided by the
+Status: accepted, 2026-10-24; items 2 and 3 amended 2026-10-30 after issue 81; item 5 amended 2026-11-06 after the audit (NTC-A01). Decided by the
 maintainer; context and options written by Claude on their instruction (issue 72).
 
 ## Context
@@ -76,7 +76,7 @@ unbounded for fast faults, and no source in the research note uses it.
    accepts a policy only if it matches that audit row's id and hash, and only up to a fixed
    maximum age. There is no revocation, because the link may be down when one is wanted. This is
    integrity of the record, not authentication.
-   (DRAFT amendment, for the maintainer to accept, change or strike: the policy is also bound to
+   (Amended 2026-11-06: the policy is also bound to
    a **mission** and to the **vehicles** it covers. The policy names a mission id and a list of
    vehicle ids, and both are inside the hashed content, so changing either changes the hash. A
    vehicle accepts a policy only if its own id is in the list and the mission id is the one the
@@ -98,7 +98,7 @@ unbounded for fast faults, and no source in the research note uses it.
    operator approved before the mission counts as that approval for the fault, link condition and
    action it names, and for nothing else."
 
-## Open in the amendment draft
+## Open after the 2026-11-06 amendment
 
 Not decided; each needs the maintainer before issue 76's handoff is built.
 
