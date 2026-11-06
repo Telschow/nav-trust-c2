@@ -44,8 +44,8 @@ def run(
     try:
         code = proc.wait(timeout=limit_s)
     except subprocess.TimeoutExpired:
+        reason = incomplete_reason(partial)  # judged at the limit, before the recorder is ended
         _end(proc, stop_cmd)
-        reason = incomplete_reason(partial)
         if reason is None:
             partial.replace(final)
             print(f"rescued: the recorder did not exit within {limit_s:.0f} s", file=sys.stderr)
