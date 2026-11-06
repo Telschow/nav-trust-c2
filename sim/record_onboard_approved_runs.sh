@@ -59,7 +59,7 @@ PY
         --mode stuck --zone 200 -50 280 150 --latch-fault \
         --width 600 --height 100 --spacing 100 --altitude 30 --speed 10 \
         --max-duration 300 --link-cut-after fault_start --link-cut-delay 5 \
-        --link-cut-direction uplink \
+        --link-cut-direction uplink --link-cut-duration 60 \
         --onboard-backend "${BACKEND}" --onboard-mission "${MISSION}"; then
         echo "!!! ${name} failed"
         rm -f "${out}.partial"
