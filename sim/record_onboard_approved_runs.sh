@@ -18,6 +18,7 @@ IMAGE="${IMAGE:-nav-trust-c2-sim}"
 OUT_DIR="${OUT_DIR:-eval/lost_link/onboard-approved}"
 WAIT="${WAIT:-5}"
 RUNS="${RUNS:-3}"
+MAX_DURATION="${MAX_DURATION:-300}"
 MISSION="${MISSION:-m1}"
 PORT=8765
 BACKEND="http://127.0.0.1:${PORT}"
@@ -55,24 +56,17 @@ PY
         failures+=("${name}")
         continue
     fi
-    if ! ${IN} python -m sim.record_run --scenario "${name}" --out "${out}.partial" \
+    if record_one "${name}" "${out}" "${MAX_DURATION}" \
+        ${IN} python -m sim.record_run --scenario "${name}" --out "${out}.partial" \
         --mode stuck --zone 200 -50 280 150 --latch-fault \
         --width 600 --height 100 --spacing 100 --altitude 30 --speed 10 \
-        --max-duration 300 --link-cut-after fault_start --link-cut-delay 5 \
+        --max-duration "${MAX_DURATION}" --link-cut-after fault_start --link-cut-delay 5 \
         --link-cut-direction uplink --link-cut-duration 60 \
         --onboard-backend "${BACKEND}" --onboard-mission "${MISSION}"; then
-        echo "!!! ${name} failed"
-        rm -f "${out}.partial"
-        failures+=("${name}")
-    else
-        mv "${out}.partial" "${out}"
         ${IN} python -m c2.audit_verify "${db}" || failures+=("${name}: audit_verify")
     fi
 done
 
 docker stop "${IMAGE}" >/dev/null
 echo "recordings written to ${OUT_DIR}"
-if [ "${#failures[@]}" -gt 0 ]; then
-    echo "FAILED RUNS: ${failures[*]}"
-    exit 1
-fi
+report_outcome

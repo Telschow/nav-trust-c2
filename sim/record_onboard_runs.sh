@@ -18,6 +18,7 @@ IMAGE="${IMAGE:-nav-trust-c2-sim}"
 OUT_DIR="${OUT_DIR:-eval/lost_link/onboard}"
 WAIT="${WAIT:-5}"
 RUNS="${RUNS:-3}"
+MAX_DURATION="${MAX_DURATION:-300}"
 
 docker rm -f "${IMAGE}" >/dev/null 2>&1 || true
 docker run -d --name "${IMAGE}" -v "$PWD":/workspaces/nav-trust-c2 -e NUM_VEHICLES=1 "${IMAGE}" >/dev/null
@@ -31,23 +32,14 @@ for run in $(seq 1 "${RUNS}"); do
     echo "=== ${name}"
     docker restart "${IMAGE}" >/dev/null
     sleep 90
-    if ! docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
+    record_one "${name}" "${out}" "${MAX_DURATION}" docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
         python -m sim.record_run --scenario "${name}" --out "${out}.partial" \
         --mode stuck --zone 200 -50 280 150 --latch-fault \
         --width 600 --height 100 --spacing 100 --altitude 30 --speed 10 \
-        --max-duration 300 --link-cut-after fault_start --link-cut-delay 5 \
-        --link-cut-direction uplink --onboard-wait "${WAIT}"; then
-        echo "!!! ${name} failed"
-        rm -f "${out}.partial"
-        failures+=("${name}")
-    else
-        mv "${out}.partial" "${out}"
-    fi
+        --max-duration "${MAX_DURATION}" --link-cut-after fault_start --link-cut-delay 5 \
+        --link-cut-direction uplink --onboard-wait "${WAIT}" || true
 done
 
 docker stop "${IMAGE}" >/dev/null
 echo "recordings written to ${OUT_DIR}"
-if [ "${#failures[@]}" -gt 0 ]; then
-    echo "FAILED RUNS: ${failures[*]}"
-    exit 1
-fi
+report_outcome
