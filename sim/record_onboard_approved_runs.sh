@@ -40,7 +40,7 @@ for run in $(seq 1 "${RUNS}"); do
     docker exec -d -w /workspaces/nav-trust-c2 "${IMAGE}" \
         python -m c2.server --db "${db}" --port "${PORT}" --vehicles 1
     sleep 5
-    if ! ${IN} python - <<PY
+    if ! docker exec -i -w /workspaces/nav-trust-c2 "${IMAGE}" python - <<PY
 import httpx
 r = httpx.post("${BACKEND}/policy", json={
     "entries": [{"reason": "INCONSISTENT_INNOVATION", "link": "NO_LINK", "action": "LAND"}],
