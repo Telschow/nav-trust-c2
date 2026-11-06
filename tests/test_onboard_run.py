@@ -490,3 +490,83 @@ def test_a_bound_policys_action_is_reported_with_its_mission() -> None:
     action = monitor.poll(10.0)
     assert action is not None and action.mission_id == "m1"
     assert action_report(action)["mission_id"] == "m1"
+
+
+def _run_bound(handler: Any, link: dict[str, bool], seconds: float) -> tuple[Any, list[Any]]:
+    httpx = pytest.importorskip("httpx")
+    from sim.onboard_run import run_bound_monitor
+
+    drone, written = _FakeDrone(), []
+
+    async def go() -> None:
+        async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+            task = asyncio.create_task(
+                run_bound_monitor(
+                    client, "http://backend", drone, "m1", "uav1", lambda: link["up"],
+                    lambda e, **f: written.append((e, f)),
+                    engine=_FrozenEngine(), interval_s=0.02,
+                )
+            )  # fmt: skip
+            await asyncio.sleep(seconds)
+            link["up"] = True
+            await asyncio.sleep(0.2)
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
+
+    asyncio.run(go())
+    return drone, written
+
+
+def test_a_refused_pull_starts_no_monitor_and_is_recorded() -> None:
+    httpx = pytest.importorskip("httpx")
+    drone, written = _run_bound(
+        lambda r: httpx.Response(422, json={"detail": "outside_binding"}), {"up": False}, 0.3
+    )
+    assert drone.landed == 0
+    assert [e for e, _ in written] == ["onboard_policy_refused"]
+
+
+def test_a_delivered_policy_runs_the_monitor_and_the_report_carries_the_mission() -> None:
+    httpx = pytest.importorskip("httpx")
+    reports: list[dict[str, Any]] = []
+    policy = {**BOUND_POLICY, "wait_s": 0.1}
+
+    def handler(request: Any) -> Any:
+        if request.method == "GET":
+            return httpx.Response(200, json=_delivery(policy=policy, sha256=policy_sha256(policy)))
+        reports.append(json.loads(request.content))
+        return httpx.Response(204)
+
+    link = {"up": True}
+
+    async def cut_link() -> None:
+        await asyncio.sleep(0.1)
+        link["up"] = False
+
+    httpx_mod = httpx
+
+    async def go() -> Any:
+        from sim.onboard_run import run_bound_monitor
+
+        drone, written = _FakeDrone(), []
+        async with httpx_mod.AsyncClient(transport=httpx_mod.MockTransport(handler)) as client:
+            task = asyncio.create_task(
+                run_bound_monitor(
+                    client, "http://backend", drone, "m1", "uav1", lambda: link["up"],
+                    lambda e, **f: written.append((e, f)),
+                    engine=_FrozenEngine(), interval_s=0.02,
+                )
+            )  # fmt: skip
+            cutter = asyncio.create_task(cut_link())
+            await asyncio.sleep(0.6)
+            link["up"] = True
+            await asyncio.sleep(0.2)
+            task.cancel()
+            await asyncio.gather(task, cutter, return_exceptions=True)
+        return drone, written
+
+    drone, written = asyncio.run(go())
+    assert drone.landed == 1
+    assert written[0][0] == "onboard_policy_loaded"
+    assert written[0][1]["policy_audit_id"] == 7 and written[0][1]["mission_id"] == "m1"
+    assert [r["mission_id"] for r in reports] == ["m1"]

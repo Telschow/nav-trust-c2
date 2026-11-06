@@ -85,6 +85,41 @@ async def report_actions(
         response.raise_for_status()
 
 
+async def run_bound_monitor(
+    client: httpx.AsyncClient,
+    backend: str,
+    drone: System,
+    mission_id: str,
+    vehicle_id: str,
+    link_up: Callable[[], bool],
+    write: Callable[..., None],
+    **monitor_args: Any,
+) -> None:
+    """Pull the operator-approved policy for this mission and vehicle, then run the monitor under
+    it and report to the backend. If the pull fails or the policy is refused the vehicle has no
+    authority to act: this logs 'onboard_policy_refused' and returns without starting a monitor.
+    `monitor_args` go to `run_monitor`."""
+    try:
+        policy = await fetch_policy(client, backend, mission_id, vehicle_id)
+    except PolicyRejected as err:
+        write("onboard_policy_refused", mission_id=mission_id, reason=str(err))
+        return
+    write(
+        "onboard_policy_loaded", mission_id=mission_id, policy_audit_id=policy.audit_id,
+        policy_sha256=policy.sha256, wait_s=policy.wait_s, age_at_load_s=policy.age_at_load_s,
+    )  # fmt: skip
+    monitor = OnboardMonitor(
+        vehicle_id, policy, started_s=monitor_args.get("clock", time.monotonic)()
+    )
+
+    async def report(actions: list[OnboardAction]) -> None:
+        await report_actions(client, backend, actions)
+
+    await run_monitor(
+        drone, monitor, link_up, write, vehicle_id=vehicle_id, report=report, **monitor_args
+    )
+
+
 async def run_monitor(
     drone: System,
     monitor: OnboardMonitor,

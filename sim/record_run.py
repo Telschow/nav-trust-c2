@@ -32,9 +32,16 @@ from sim.interference import rectangle
 from sim.link_cut import LinkCutSchedule, UdpRelay, drive_link_cut, onboard_port, relay_ports
 from sim.onboard_monitor import OnboardMonitor
 from sim.onboard_policy import load_policy
-from sim.onboard_run import experiment_approval, run_monitor
+from sim.onboard_run import experiment_approval, run_bound_monitor, run_monitor
 from sim.scenario import LINK_CUT_AFTER, LINK_CUT_DIRECTIONS, LinkCut
 from sim.survey import GeoPoint
+
+
+async def run_bound_monitor_with_client(backend: str, *args: Any) -> None:
+    import httpx
+
+    async with httpx.AsyncClient(timeout=10.0) as client:
+        await run_bound_monitor(client, backend, *args)
 
 
 async def log_estimator_status(drone: System, log: JsonlLog) -> None:
@@ -125,7 +132,11 @@ def build_header(args: argparse.Namespace) -> dict[str, Any]:
                 "note": "this experiment's own policy, not an operator approval",
             }
             if args.onboard_wait is not None
-            else None
+            else (
+                {"source": "backend approval", "mission_id": args.onboard_mission}
+                if args.onboard_backend
+                else None
+            )
         ),
     }
 
@@ -179,7 +190,7 @@ async def run(args: argparse.Namespace) -> Path:
     # the onboard monitor has its own connection to PX4 that the link cut does not touch
     onboard_drone = (
         System(port=args.grpc_port + 1)
-        if args.onboard_wait is not None and schedule is not None
+        if (args.onboard_wait is not None or args.onboard_backend) and schedule is not None
         else drone
     )
     relay: UdpRelay | None = None
@@ -217,7 +228,22 @@ async def run(args: argparse.Namespace) -> Path:
             ]
             if args.ground_truth:
                 tasks.append(asyncio.create_task(log_ground_truth(log, ["uav1"])))
-            if args.onboard_wait is not None:
+            if args.onboard_backend:
+                # the operator's approved policy, pulled from the backend; the link signal is the
+                # link-cut relay as for the experiment policy
+                tasks.append(
+                    asyncio.create_task(
+                        run_bound_monitor_with_client(
+                            args.onboard_backend,
+                            onboard_drone,
+                            args.onboard_mission,
+                            "uav1",
+                            lambda: relay is None or not relay.is_cut,
+                            log.write,
+                        )
+                    )
+                )
+            elif args.onboard_wait is not None:
                 approval = experiment_approval(args.onboard_wait)
                 policy = load_policy(
                     approval, now_s=approval["approved_s"], max_age_s=POLICY_MAX_AGE_S
@@ -338,6 +364,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="run the onboard monitor with the ADR 0004 contingency (LAND on a position "
         "inconsistency, link down longer than this many seconds; below COM_DL_LOSS_T)",
     )
+    p.add_argument(
+        "--onboard-backend",
+        help="run the onboard monitor under the policy the operator approved at this backend "
+        "URL, pulled for --onboard-mission before launch (ADR 0004 handoff); not with "
+        "--onboard-wait",
+    )
+    p.add_argument("--onboard-mission", help="the mission id the policy was approved under")
     p.add_argument("--link-cut-cycles", type=int, default=1, help="cut and restore this many times")
     p.add_argument("--link-cut-gap", type=float, help="seconds between a restore and the next cut")
     p.add_argument("--link-cut-delay", type=float, default=0.0, help="seconds after the event")
@@ -366,6 +399,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="do not record Gazebo's true position (it is recorded when `gz` is available)",
     )
     args = p.parse_args(argv)
+    if args.onboard_backend and (args.onboard_mission is None or args.onboard_wait is not None):
+        p.error("--onboard-backend needs --onboard-mission and cannot be used with --onboard-wait")
     args.ground_truth = gz_available() and not args.no_ground_truth
     args.out = args.out or f"tests/replay/data/{args.scenario}.jsonl"
     return args
