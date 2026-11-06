@@ -319,6 +319,51 @@ class Hub:
             "policy": policy,
         }
 
+    def deliver_policy(self, mission_id: str, vehicle_id: str) -> dict[str, Any]:
+        """The approval record a vehicle needs for its mission (ADR 0004 handoff), with the
+        backend's clock now so the vehicle can age it on its own. Audited as policy_delivered."""
+        approval = next(
+            (
+                e
+                for e in reversed(self._audit.events("policy_approved"))
+                if e.payload["policy"]["mission_id"] == mission_id
+            ),
+            None,
+        )
+        if approval is None:
+            self._reject_delivery(mission_id, vehicle_id, UnknownPolicy.code)
+            raise UnknownPolicy(mission_id)
+        policy = approval.payload["policy"]
+        if vehicle_id not in policy["vehicles"]:
+            self._reject_delivery(mission_id, vehicle_id, OutsideBinding.code)
+            raise OutsideBinding(f"{vehicle_id} in mission {mission_id}")
+        self._audit.append(
+            self._clock(),
+            "policy_delivered",
+            vehicle_id,
+            {
+                "mission_id": mission_id,
+                "policy_audit_id": approval.id,
+                "sha256": approval.payload["sha256"],
+            },
+        )
+        return {
+            "audit_id": approval.id,
+            "approved_s": approval.t_s,
+            "sha256": approval.payload["sha256"],
+            "max_age_s": approval.payload["max_age_s"],
+            "policy": policy,
+            "server_s": self._clock(),
+        }
+
+    def _reject_delivery(self, mission_id: str, vehicle_id: str, why: str) -> None:
+        self._audit.append(
+            self._clock(),
+            "rejected_policy_delivery",
+            vehicle_id,
+            {"mission_id": mission_id, "rejected_because": why},
+        )
+
     def report_onboard_action(self, report: dict[str, Any]) -> None:
         """A vehicle says what it did on its own, citing the policy it did it under. Accepted only
         if that policy approval is in the audit log with the same hash and the policy authorises
