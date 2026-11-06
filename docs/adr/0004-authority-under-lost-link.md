@@ -98,22 +98,20 @@ unbounded for fast faults, and no source in the research note uses it.
    operator approved before the mission counts as that approval for the fault, link condition and
    action it names, and for nothing else."
 
-## Open after the 2026-11-06 amendment
+## Handoff of the bound policy (amended 2026-11-06)
 
-Not decided; each needs the maintainer before issue 76's handoff is built.
-
-1. **How the policy reaches the vehicle.** Pulled by the vehicle at start, pushed by the backend
-   before launch, or loaded by the operator with the mission. Only the first two keep a single
-   source; none is built.
-2. **Where the vehicle learns the mission id.** From the launch step, or only from the policy.
-   If only from the policy, a vehicle cannot tell a policy for another mission from the right
-   one, so the binding then rests on the vehicle list alone.
-3. **The time basis for the age limit.** The approval time is the backend's. A vehicle that
-   counts from when it received the policy is simpler and shorter-lived; one that compares clocks
-   needs them synchronised, which the simulator hides.
-4. **Duplicate and replayed reports** are not part of this binding. Issue 204 gives each report
-   an id; reporter authentication stays out of scope (this ADR claims integrity, not
-   authentication).
+1. **The vehicle pulls it.** Before launch the vehicle fetches its approval record from the
+   backend, by mission id and its own vehicle id. The fetch is audited as `policy_delivered`
+   (vehicle, mission, policy hash), so delivery is on record. A mission cannot launch without the
+   link, so needing it at start costs nothing.
+2. **The vehicle is given the mission id at launch,** with its vehicle id, and asks for that
+   mission's policy only. A policy for another mission is therefore refused on the vehicle, not
+   only by the backend.
+3. **The age limit uses the backend's clock once.** The fetch answer carries the backend's
+   current time (`server_s`); the vehicle ages the policy from there on its own monotonic clock,
+   as `load_policy` does now. No clock synchronisation is assumed.
+4. **Duplicate reports and reporter authentication are outside this binding.** Issue 204 gives
+   each report an id and accepts it once. This ADR still claims integrity, not authentication.
 
 ## Consequences
 
