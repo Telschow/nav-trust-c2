@@ -6,13 +6,14 @@ from typing import Any
 import pytest
 
 from c2.audit import AuditLog
-from c2.hub import Hub, InvalidPolicy, OutsidePolicy, UnknownPolicy
+from c2.hub import Hub, InvalidPolicy, OutsideBinding, OutsidePolicy, UnknownPolicy
 from navtrust.types import NavTrust, TrustState
 
-POLICY = {
+UNBOUND = {
     "entries": [{"reason": "INCONSISTENT_INNOVATION", "link": "NO_LINK", "action": "LAND"}],
     "wait_s": 5.0,
 }
+POLICY = {**UNBOUND, "mission_id": "m1", "vehicles": ["uav1"]}  # ADR 0004 item 5, 2026-11-06
 
 
 class Clock:
@@ -36,6 +37,7 @@ def report(hub: Hub, approval: dict[str, Any], **over: Any) -> None:
             "vehicle_id": "uav1", "t_s": 51.0, "action": "LAND",
             "reason": "INCONSISTENT_INNOVATION", "link_down_s": 5.2,
             "policy_audit_id": approval["audit_id"], "policy_sha256": approval["sha256"],
+            "mission_id": "m1",
             **over,
         }
     )  # fmt: skip
@@ -160,3 +162,49 @@ def test_the_outcome_of_an_onboard_land_is_audited_and_an_unknown_one_is_refused
     [rejected] = audit.events("rejected_onboard_action")
     assert rejected.payload["rejected_because"] == "invalid_outcome"
     assert len(audit.events("onboard_action")) == 1
+
+
+@pytest.mark.parametrize(
+    "policy",
+    [
+        UNBOUND,  # no mission, no vehicles
+        {**UNBOUND, "mission_id": "m1"},  # no vehicles
+        {**UNBOUND, "vehicles": ["uav1"]},  # no mission
+        {**POLICY, "mission_id": "  "},
+        {**POLICY, "vehicles": []},
+        {**POLICY, "vehicles": "uav1"},  # a string, not a list
+        {**POLICY, "vehicles": ["uav1", "uav1"]},
+    ],
+)
+def test_a_policy_not_bound_to_a_mission_and_its_vehicles_is_not_approved(
+    policy: dict[str, Any],
+) -> None:
+    hub, audit, _, _ = make()
+    with pytest.raises(InvalidPolicy):
+        hub.approve_policy(policy, "daniel", max_wait_s=10.0)
+    assert audit.events("policy_approved") == []
+
+
+@pytest.mark.parametrize(
+    "over",
+    [
+        {"vehicle_id": "uav2"},  # the policy covers uav1 only
+        {"mission_id": "m2"},  # a report for another mission than the one approved
+        {"mission_id": None},
+    ],
+)
+def test_a_report_outside_the_policys_mission_and_vehicles_is_refused_and_audited(
+    over: dict[str, Any],
+) -> None:
+    hub, audit, clock, events = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    hub.ingest_navtrust(NAV)
+    hub.ingest_navtrust(NavTrust("uav2", 1.0, TrustState.GREEN, None, 5.0, 0.99, 0.5))
+    clock.t += 10.0  # both vehicles silent: NO_LINK
+    with pytest.raises(OutsideBinding):
+        report(hub, approval, **over)
+    [row] = audit.events("rejected_onboard_action")
+    assert row.payload["rejected_because"] == "outside_binding"
+    assert audit.events("onboard_action") == []
+    assert hub.state()["links"][over.get("vehicle_id", "uav1")]["state"] == "NO_LINK"
+    assert not [e for e in events if e["type"] == "onboard_action"]

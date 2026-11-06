@@ -53,6 +53,21 @@ def validate_policy(policy: dict[str, Any], max_wait_s: float) -> None:
             raise ValueError(f"action {action!r} is not allowed: only LAND")
 
 
+def validate_binding(policy: dict[str, Any]) -> None:
+    """Raise ValueError unless the policy names the mission and the vehicles it covers (ADR 0004
+    item 5, amended 2026-11-06). Both are inside the hashed content."""
+    mission = policy.get("mission_id")
+    if not isinstance(mission, str) or not mission.strip():
+        raise ValueError("a policy needs a mission_id")
+    vehicles = policy.get("vehicles")
+    if not isinstance(vehicles, list) or not vehicles:
+        raise ValueError("a policy needs a list of vehicles")
+    if not all(isinstance(v, str) and v.strip() for v in vehicles) or len(set(vehicles)) != len(
+        vehicles
+    ):
+        raise ValueError("vehicles must be distinct, non-blank ids")
+
+
 @dataclass(frozen=True)
 class PolicyEntry:
     reason: str

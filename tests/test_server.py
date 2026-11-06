@@ -230,6 +230,8 @@ def test_positions_complete_sectors_only_while_trusted() -> None:
 POLICY_BODY = {
     "operator": "daniel",
     "wait_s": 5.0,
+    "mission_id": "m1",
+    "vehicles": ["uav1"],
     "entries": [{"reason": "INCONSISTENT_INNOVATION", "link": "NO_LINK", "action": "LAND"}],
 }
 
@@ -244,10 +246,12 @@ def test_the_operator_approves_a_policy_and_a_vehicle_reports_under_it(
     report = {
         "vehicle_id": "uav1", "t_s": 51.0, "action": "LAND", "reason": "INCONSISTENT_INNOVATION",
         "link_down_s": 5.2, "policy_audit_id": approval["audit_id"],
-        "policy_sha256": approval["sha256"],
+        "policy_sha256": approval["sha256"], "mission_id": "m1",
     }  # fmt: skip
     assert c.post("/onboard-actions", json=report).status_code == 204
     assert c.post("/onboard-actions", json={**report, "policy_sha256": "0" * 64}).status_code == 422
+    for outside in ({"vehicle_id": "uav2"}, {"mission_id": "m2"}):
+        assert c.post("/onboard-actions", json={**report, **outside}).status_code == 422
     kinds = [e["kind"] for e in c.get("/audit").json()]
     assert {"policy_approved", "onboard_action", "rejected_onboard_action"} <= set(kinds)
 
@@ -259,6 +263,8 @@ def test_the_operator_approves_a_policy_and_a_vehicle_reports_under_it(
         {"wait_s": 0},
         {"operator": " "},
         {"entries": [{"reason": "STALE", "link": "NO_LINK", "action": "HOLD"}]},
+        {"mission_id": " "},
+        {"vehicles": []},
     ],
 )
 def test_a_policy_a_vehicle_would_refuse_is_not_approved(
@@ -267,3 +273,10 @@ def test_a_policy_a_vehicle_would_refuse_is_not_approved(
     c, _ = client
     assert c.post("/policy", json={**POLICY_BODY, **change}).status_code == 422
     assert [e for e in c.get("/audit").json() if e["kind"] == "policy_approved"] == []
+
+
+def test_a_policy_without_a_mission_or_vehicles_is_refused(client: tuple[Console, Clock]) -> None:
+    c, _ = client
+    for missing in ("mission_id", "vehicles"):
+        body = {k: v for k, v in POLICY_BODY.items() if k != missing}
+        assert c.post("/policy", json=body).status_code == 422

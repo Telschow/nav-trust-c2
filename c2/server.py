@@ -41,6 +41,7 @@ from c2.hub import (
     InvalidOutcome,
     InvalidPolicy,
     NoLink,
+    OutsideBinding,
     OutsidePolicy,
     SupersededRecommendation,
     UnknownPolicy,
@@ -70,6 +71,7 @@ _STATUS = {
     SupersededRecommendation: 410,
     InvalidPolicy: 422,
     UnknownPolicy: 422,
+    OutsideBinding: 422,
     OutsidePolicy: 422,
     InvalidOutcome: 422,
     InvalidOperator: 422,
@@ -235,7 +237,12 @@ def create_app(
     async def post_policy(body: dict[str, Any] = Body(...)) -> dict[str, Any]:  # noqa: B008
         """The operator approves, before the mission, what a vehicle may do alone (ADR 0004)."""
         try:
-            policy = {"entries": body["entries"], "wait_s": body["wait_s"]}
+            policy = {
+                "entries": body["entries"],
+                "wait_s": body["wait_s"],
+                "mission_id": body["mission_id"],
+                "vehicles": body["vehicles"],
+            }
             return hub.approve_policy(policy, body["operator"], max_wait_s=COM_DL_LOSS_T_S)
         except HubError as err:
             raise HTTPException(_STATUS[type(err)], err.code) from err

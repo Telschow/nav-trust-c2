@@ -20,6 +20,7 @@ from c2.contingency import (
     matching_entry,
     policy_entries,
     policy_sha256,
+    validate_binding,
     validate_policy,
 )
 from c2.messages import (
@@ -82,6 +83,10 @@ class UnknownPolicy(HubError):
 
 class OutsidePolicy(HubError):
     code = "outside_policy"
+
+
+class OutsideBinding(HubError):
+    code = "outside_binding"
 
 
 class SupersededRecommendation(HubError):
@@ -294,6 +299,7 @@ class Hub:
             raise InvalidOperator(repr(operator))
         try:
             validate_policy(policy, max_wait_s)
+            validate_binding(policy)
         except (ValueError, TypeError, AttributeError) as err:
             raise InvalidPolicy(str(err)) from err
         sha = policy_sha256(policy)
@@ -327,7 +333,11 @@ class Hub:
         if not approved:
             self._reject_onboard_action(vehicle_id, report, UnknownPolicy.code)
             raise UnknownPolicy(str(report.get("policy_audit_id")))
-        if not self._within_policy(approved[0].payload["policy"], report):
+        policy = approved[0].payload["policy"]
+        if vehicle_id not in policy["vehicles"] or report.get("mission_id") != policy["mission_id"]:
+            self._reject_onboard_action(vehicle_id, report, OutsideBinding.code)
+            raise OutsideBinding(f"{vehicle_id} in mission {report.get('mission_id')}")
+        if not self._within_policy(policy, report):
             self._reject_onboard_action(vehicle_id, report, OutsidePolicy.code)
             raise OutsidePolicy(f"{report.get('action')} for {report.get('reason')}")
         outcome = report.get("outcome")  # absent from a vehicle that predates issue 166
