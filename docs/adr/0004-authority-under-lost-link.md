@@ -76,6 +76,17 @@ unbounded for fast faults, and no source in the research note uses it.
    accepts a policy only if it matches that audit row's id and hash, and only up to a fixed
    maximum age. There is no revocation, because the link may be down when one is wanted. This is
    integrity of the record, not authentication.
+   (DRAFT amendment, for the maintainer to accept, change or strike: the policy is also bound to
+   a **mission** and to the **vehicles** it covers. The policy names a mission id and a list of
+   vehicle ids, and both are inside the hashed content, so changing either changes the hash. A
+   vehicle accepts a policy only if its own id is in the list and the mission id is the one the
+   operator set when approving. The backend accepts an onboard report only if the reporting
+   vehicle is in the cited policy's list and the report names the same mission; a report outside
+   that binding is rejected and audited, and does not count as hearing from the vehicle. A policy
+   with no mission id or no vehicles is refused when it is approved. The age limit is measured
+   from the approval time the policy carries, on the backend's clock; how a vehicle with its own
+   clock applies it is open, see below. This closes the gap that a hash proves a policy was
+   approved but not that it was approved for this vehicle and this mission, audit NTC-A01.)
 6. **While `NO_LINK`, no command is proposed to that vehicle.** Its sector may still be
    re-assigned to a reachable vehicle. `NO_LINK` means telemetry silence only; an asymmetric link
    is not modelled.
@@ -86,6 +97,23 @@ unbounded for fast faults, and no source in the research note uses it.
    command except PX4 internal failsafes requires a recorded operator approval. A contingency the
    operator approved before the mission counts as that approval for the fault, link condition and
    action it names, and for nothing else."
+
+## Open in the amendment draft
+
+Not decided; each needs the maintainer before issue 76's handoff is built.
+
+1. **How the policy reaches the vehicle.** Pulled by the vehicle at start, pushed by the backend
+   before launch, or loaded by the operator with the mission. Only the first two keep a single
+   source; none is built.
+2. **Where the vehicle learns the mission id.** From the launch step, or only from the policy.
+   If only from the policy, a vehicle cannot tell a policy for another mission from the right
+   one, so the binding then rests on the vehicle list alone.
+3. **The time basis for the age limit.** The approval time is the backend's. A vehicle that
+   counts from when it received the policy is simpler and shorter-lived; one that compares clocks
+   needs them synchronised, which the simulator hides.
+4. **Duplicate and replayed reports** are not part of this binding. Issue 204 gives each report
+   an id; reporter authentication stays out of scope (this ADR claims integrity, not
+   authentication).
 
 ## Consequences
 
