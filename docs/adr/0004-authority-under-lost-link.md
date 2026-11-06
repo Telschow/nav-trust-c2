@@ -1,6 +1,6 @@
 # ADR 0004: Authority under lost link
 
-Status: accepted, 2026-10-24; items 2 and 3 amended 2026-10-30 after issue 81. Decided by the
+Status: accepted, 2026-10-24; items 2 and 3 amended 2026-10-30 after issue 81; item 5 amended 2026-11-06 after the audit (NTC-A01). Decided by the
 maintainer; context and options written by Claude on their instruction (issue 72).
 
 ## Context
@@ -76,6 +76,17 @@ unbounded for fast faults, and no source in the research note uses it.
    accepts a policy only if it matches that audit row's id and hash, and only up to a fixed
    maximum age. There is no revocation, because the link may be down when one is wanted. This is
    integrity of the record, not authentication.
+   (Amended 2026-11-06: the policy is also bound to
+   a **mission** and to the **vehicles** it covers. The policy names a mission id and a list of
+   vehicle ids, and both are inside the hashed content, so changing either changes the hash. A
+   vehicle accepts a policy only if its own id is in the list and the mission id is the one the
+   operator set when approving. The backend accepts an onboard report only if the reporting
+   vehicle is in the cited policy's list and the report names the same mission; a report outside
+   that binding is rejected and audited, and does not count as hearing from the vehicle. A policy
+   with no mission id or no vehicles is refused when it is approved. The age limit is measured
+   from the approval time the policy carries, on the backend's clock; how a vehicle with its own
+   clock applies it is open, see below. This closes the gap that a hash proves a policy was
+   approved but not that it was approved for this vehicle and this mission, audit NTC-A01.)
 6. **While `NO_LINK`, no command is proposed to that vehicle.** Its sector may still be
    re-assigned to a reachable vehicle. `NO_LINK` means telemetry silence only; an asymmetric link
    is not modelled.
@@ -86,6 +97,21 @@ unbounded for fast faults, and no source in the research note uses it.
    command except PX4 internal failsafes requires a recorded operator approval. A contingency the
    operator approved before the mission counts as that approval for the fault, link condition and
    action it names, and for nothing else."
+
+## Handoff of the bound policy (amended 2026-11-06)
+
+1. **The vehicle pulls it.** Before launch the vehicle fetches its approval record from the
+   backend, by mission id and its own vehicle id. The fetch is audited as `policy_delivered`
+   (vehicle, mission, policy hash), so delivery is on record. A mission cannot launch without the
+   link, so needing it at start costs nothing.
+2. **The vehicle is given the mission id at launch,** with its vehicle id, and asks for that
+   mission's policy only. A policy for another mission is therefore refused on the vehicle, not
+   only by the backend.
+3. **The age limit uses the backend's clock once.** The fetch answer carries the backend's
+   current time (`server_s`); the vehicle ages the policy from there on its own monotonic clock,
+   as `load_policy` does now. No clock synchronisation is assumed.
+4. **Duplicate reports and reporter authentication are outside this binding.** Issue 204 gives
+   each report an id and accepts it once. This ADR still claims integrity, not authentication.
 
 ## Consequences
 
