@@ -62,3 +62,17 @@ report_outcome() {
         exit 1
     fi
 }
+
+# After `docker restart "${IMAGE}"`: wait until the simulator is ready (sim/wait_ready.py) instead
+# of sleeping a fixed time. If it is not ready within SIM_READY_LIMIT seconds (default 240, a
+# proposal), print the container's last log lines and stop the script.
+#
+#   wait_for_sim VEHICLES
+wait_for_sim() {
+    if ! docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
+        python -m sim.wait_ready --vehicles "$1" --limit "${SIM_READY_LIMIT:-240}"; then
+        echo "!!! the simulator was not ready; the last lines of its log:" >&2
+        docker logs --tail 30 "${IMAGE}" >&2 || true
+        exit 4
+    fi
+}

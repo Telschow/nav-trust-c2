@@ -37,7 +37,7 @@ for run in $(seq 1 "${RUNS}"); do
     echo "=== ${name}"
     rm -f "${db}"
     docker restart "${IMAGE}" >/dev/null
-    sleep 90
+    wait_for_sim 1
     docker exec -d -w /workspaces/nav-trust-c2 "${IMAGE}" \
         python -m c2.server --db "${db}" --port "${PORT}" --vehicles 1
     sleep 5
