@@ -139,6 +139,18 @@ answer ends the sequence: the later vehicles are not sent anything, and nothing 
 `--retask-ack-timeout` sets the re-task window; by default it is the same as `--ack-timeout`, and
 no other figure is proposed until re-task times have been measured with this gate (issue 77).
 
+Stale sector moves (issue 203). The gate checks each move against the fleet as it is when the
+operator approves, and again just before the moves are applied, because the command can take up
+to the ack timeout. A move is stale if its recipient is not GREEN or has no link, or if the
+sector is no longer the lost vehicle's or is already done. A recipient with no trust report yet
+is not stale. All the moves are dropped together, never some of them. With a command, the command
+still goes out and a `command_moves_blocked` row (`recommendation_id`, `reason`
+`stale_moves: <why>`) is audited; it is not an ending. `command_executed` then carries
+`moves_blocked` (the reason without the prefix), because a console keeps only the last ending, and
+the decision's `execution` has `executed` true with reason `moves_blocked: <why>`. A
+recommendation with moves and no command ends as `command_blocked` with that `stale_moves`
+reason, nothing is sent and the assignment is unchanged.
+
 ## Onboard contingencies (issue 76, ADR 0004)
 A contingency is an approval given in advance. The operator approves, before the mission, a
 policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached.
@@ -177,7 +189,7 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
 Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendation`,
 `decision`, `rejected_decision`, `link_change`, `outage_summary`, `command_sent`,
 `command_acknowledged`, `command_not_acknowledged`, `command_executed`, `command_failed`,
-`command_blocked`, `policy_approved`, `onboard_action`, `rejected_onboard_action`,
+`command_blocked`, `command_moves_blocked`, `policy_approved`, `onboard_action`, `rejected_onboard_action`,
 `session_started`), `vehicle_id`, JSON `payload`. Trust is logged on
 state or reason changes, not on every message. A `link_change` row has the `state`,
 `previous_state`, `last_report_age_s` (as in the `link` event) and `link_timeout_s`; one row per
