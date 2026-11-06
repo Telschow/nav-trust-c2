@@ -90,7 +90,7 @@ export function titleOf(rec: Recommendation): string {
 export function commandEndingText(c: CommandOutcome): string {
   switch (c.kind) {
     case "command_executed":
-      return `Executed: ${(c.actions ?? []).join("; ") || "nothing to send"} (the vehicle's action is not confirmed)`;
+      return `Executed: ${(c.actions ?? []).join("; ") || "nothing to send"}${c.moves_blocked ? `; re-task not sent: ${c.moves_blocked}` : ""} (the vehicle's action is not confirmed)`;
     case "command_not_acknowledged":
       return `Not acknowledged: ${c.action ?? "the command"} had no answer${c.timeout_s ? ` in ${c.timeout_s} s` : ""}; outcome unknown`;
     case "command_failed":
@@ -99,14 +99,16 @@ export function commandEndingText(c: CommandOutcome): string {
       return `Not executed: ${c.reason ?? "unknown reason"}`;
     case "command_sent":
     case "command_acknowledged":
+    case "command_moves_blocked":
       return "Sent, waiting for the vehicle";
   }
 }
 
 /** The same sentence from the HTTP answer the approving console gets to its own decision. */
 export function executionText(execution: { executed: boolean; reason: string | null; actions: string[] }): string {
+  const dropped = execution.reason?.startsWith("moves_blocked: ") ? `; re-task not sent: ${execution.reason.slice("moves_blocked: ".length)}` : "";
   return execution.executed
-    ? `Executed: ${execution.actions.join("; ") || "nothing to send"}`
+    ? `Executed: ${execution.actions.join("; ") || "nothing to send"}${dropped}`
     : `Not executed: ${execution.reason ?? "unknown reason"}`;
 }
 

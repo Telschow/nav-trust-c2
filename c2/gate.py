@@ -5,8 +5,9 @@ gate, so the only way to a vehicle command is `execute(recommendation_id)`. It r
 the hub holds an APPROVED decision for that recommendation, and only once. Every outcome is
 written to the audit log: command_sent then command_acknowledged (the vehicle answered) or
 command_not_acknowledged (no answer within the timeout), and command_executed, command_blocked or
-command_failed. A command that was never acknowledged is audited, not resent: its approval is
-spent, and the operator decides again.
+command_failed, and command_moves_blocked when a command went out but its sector moves were
+dropped because the fleet had changed. A command that was never acknowledged is audited, not
+resent: its approval is spent, and the operator decides again.
 
 PX4's own failsafes are not commands from the C2 and never pass through here.
 """
@@ -21,7 +22,8 @@ from typing import Protocol
 from c2.allocator import Assignment
 from c2.fleet import FleetState
 from c2.hub import Hub
-from c2.messages import Command, Outcome
+from c2.messages import Command, Outcome, Recommendation
+from navtrust.types import TrustState
 
 
 class Executor(Protocol):
@@ -86,6 +88,18 @@ class CommandGate:
             return self._blocked(recommendation_id, rec.vehicle_id, "already_executed")
         self._executed.add(recommendation_id)  # before any await: a second call cannot overlap
 
+        sector_moves = rec.sector_moves
+        stale = self._stale_reason(rec)
+        if stale is not None:
+            # the moves were planned for a fleet that has changed, so they are dropped. With a
+            # command the operator approved it still goes out (the row is not an ending); with
+            # nothing else to send the approval ends here, blocked
+            reason = {"recommendation_id": recommendation_id, "reason": f"stale_moves: {stale}"}
+            if rec.command is None:
+                self._hub.record_command("command_blocked", rec.vehicle_id, reason)
+                return GateResult(False, f"moves_blocked: {stale}", [])
+            self._hub.record_command("command_moves_blocked", rec.vehicle_id, reason)
+            sector_moves = ()
         done: list[str] = []
         moved = False
         original = {v: list(s) for v, s in self._fleet.assignment.items()}
@@ -106,11 +120,21 @@ class CommandGate:
                 await send(f"RTL {rec.vehicle_id}", self._executor.return_to_launch(rec.vehicle_id))
             elif rec.command is Command.LAND:
                 await send(f"LAND {rec.vehicle_id}", self._executor.land(rec.vehicle_id))
-            if rec.sector_moves:
-                self._fleet.apply_moves([(m.sector_id, m.to_vehicle) for m in rec.sector_moves])
+            if sector_moves:
+                # the vehicle command took up to the ack timeout; the fleet may have changed in it
+                stale = self._stale_reason(rec)
+                if stale is not None:
+                    self._hub.record_command(
+                        "command_moves_blocked",
+                        rec.vehicle_id,
+                        {"recommendation_id": recommendation_id, "reason": f"stale_moves: {stale}"},
+                    )
+                    sector_moves = ()
+            if sector_moves:
+                self._fleet.apply_moves([(m.sector_id, m.to_vehicle) for m in sector_moves])
                 moved = True
-                changed = sorted({rec.vehicle_id, *(m.to_vehicle for m in rec.sector_moves)})
-                moves = ", ".join(f"{m.sector_id}->{m.to_vehicle}" for m in rec.sector_moves)
+                changed = sorted({rec.vehicle_id, *(m.to_vehicle for m in sector_moves)})
+                moves = ", ".join(f"{m.sector_id}->{m.to_vehicle}" for m in sector_moves)
                 for vehicle in changed:  # one command, one window, one set of rows per vehicle
                     if not self._fleet.assignment.get(vehicle):
                         continue  # nothing left to fly (the lost vehicle): nothing to confirm
@@ -138,9 +162,28 @@ class CommandGate:
         self._hub.record_command(
             "command_executed",
             rec.vehicle_id,
-            {"recommendation_id": recommendation_id, "actions": done},
+            {
+                "recommendation_id": recommendation_id,
+                "actions": done,
+                **({} if stale is None else {"moves_blocked": stale}),
+            },
         )
-        return GateResult(True, None, done)
+        return GateResult(True, None if stale is None else f"moves_blocked: {stale}", done)
+
+    def _stale_reason(self, rec: Recommendation) -> str | None:
+        """Why the recommendation's sector moves no longer hold, or None if they still do."""
+        owned = {s.id for s in self._fleet.sectors_of(rec.vehicle_id)}
+        for m in rec.sector_moves:
+            if m.sector_id in self._fleet.done_sector_ids:
+                return f"{m.sector_id} is already done"
+            if m.sector_id not in owned:
+                return f"{m.sector_id} is no longer {rec.vehicle_id}'s"
+            if not self._hub.is_reachable(m.to_vehicle):
+                return f"{m.to_vehicle} has no link"
+            latest = self._hub.latest_trust(m.to_vehicle)
+            if latest is not None and latest.state is not TrustState.GREEN:
+                return f"{m.to_vehicle} is {latest.state.value}"
+        return None
 
     async def _send(
         self,
