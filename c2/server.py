@@ -249,6 +249,14 @@ def create_app(
         except (KeyError, ValueError, TypeError) as err:
             raise bad_request(err) from err
 
+    @app.get("/policy/{mission_id}/{vehicle_id}")
+    async def get_policy(mission_id: str, vehicle_id: str) -> dict[str, Any]:
+        """A vehicle pulls the approved policy for its mission before launch (ADR 0004)."""
+        try:
+            return hub.deliver_policy(mission_id, vehicle_id)
+        except HubError as err:
+            raise HTTPException(_STATUS[type(err)], err.code) from err
+
     @app.post("/onboard-actions", status_code=204)
     async def post_onboard_action(body: dict[str, Any] = Body(...)) -> None:  # noqa: B008
         """A vehicle reports what it did on its own once the link is back."""
