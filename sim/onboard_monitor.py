@@ -21,6 +21,7 @@ truth, and no result may say it is.
 
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass, replace
 
 from navtrust.types import NavTrust, TrustState
@@ -44,6 +45,9 @@ class OnboardAction:
     policy_sha256: str
     outcome: str = "pending"  # then "acknowledged" (the vehicle accepted a LAND) or "failed"
     mission_id: str | None = None  # the mission the policy is bound to; None for an experiment
+    report_id: str | None = (
+        None  # the backend accepts a report with this id once; None for an experiment
+    )
 
 
 class OnboardMonitor:
@@ -88,6 +92,7 @@ class OnboardMonitor:
             self._vehicle_id, t_s, entry.action, reason, down_s,
             self._policy.audit_id, self._policy.sha256,
             mission_id=self._policy.mission_id,
+            report_id=uuid.uuid4().hex if self._policy.mission_id else None,
         )  # fmt: skip
 
     def land_result(self, action: OnboardAction, ok: bool, t_s: float) -> None:

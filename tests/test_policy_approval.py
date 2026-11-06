@@ -1,12 +1,20 @@
 """LL-02, issue 76, ADR 0004 item 5 and 7: the policy is approved once per mission as an audited
 approval, and what a vehicle did on its own is reported when the link returns and audited."""
 
+import itertools
 from typing import Any
 
 import pytest
 
 from c2.audit import AuditLog
-from c2.hub import Hub, InvalidPolicy, OutsideBinding, OutsidePolicy, UnknownPolicy
+from c2.hub import (
+    Hub,
+    InvalidPolicy,
+    MalformedReportId,
+    OutsideBinding,
+    OutsidePolicy,
+    UnknownPolicy,
+)
 from navtrust.types import NavTrust, TrustState
 
 UNBOUND = {
@@ -31,13 +39,16 @@ def make() -> tuple[Hub, AuditLog, Clock, list[dict[str, Any]]]:
     return hub, audit, clock, events
 
 
+_report_ids = itertools.count(1)
+
+
 def report(hub: Hub, approval: dict[str, Any], **over: Any) -> None:
     hub.report_onboard_action(
         {
             "vehicle_id": "uav1", "t_s": 51.0, "action": "LAND",
             "reason": "INCONSISTENT_INNOVATION", "link_down_s": 5.2,
             "policy_audit_id": approval["audit_id"], "policy_sha256": approval["sha256"],
-            "mission_id": "m1",
+            "mission_id": "m1", "report_id": f"r{next(_report_ids)}",
             **over,
         }
     )  # fmt: skip
@@ -208,3 +219,64 @@ def test_a_report_outside_the_policys_mission_and_vehicles_is_refused_and_audite
     assert audit.events("onboard_action") == []
     assert hub.state()["links"][over.get("vehicle_id", "uav1")]["state"] == "NO_LINK"
     assert not [e for e in events if e["type"] == "onboard_action"]
+
+
+def test_a_repeated_report_is_acknowledged_once_and_neither_audited_nor_published_again() -> None:
+    hub, audit, clock, events = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    hub.ingest_navtrust(NAV)
+    report(hub, approval, report_id="a1")
+    clock.t += 10.0  # silent again: NO_LINK
+    assert hub.state()["links"]["uav1"]["state"] == "NO_LINK"
+    report(hub, approval, report_id="a1")  # the vehicle sent it again; no error
+    assert len(audit.events("onboard_action")) == 1
+    [dup] = audit.events("duplicate_onboard_action")
+    assert dup.payload["report_id"] == "a1" and dup.vehicle_id == "uav1"
+    assert len([e for e in events if e["type"] == "onboard_action"]) == 1
+    assert hub.state()["links"]["uav1"]["state"] == "NO_LINK"  # no second sign of life
+
+
+def test_the_same_id_from_another_vehicle_or_mission_is_a_different_report() -> None:
+    hub, audit, _, _ = make()
+    bound = {**POLICY, "vehicles": ["uav1", "uav2"]}
+    approval = hub.approve_policy(bound, "daniel", max_wait_s=10.0)
+    report(hub, approval, report_id="a1")
+    report(hub, approval, report_id="a1", vehicle_id="uav2")
+    assert len(audit.events("onboard_action")) == 2
+
+
+def test_a_repeat_is_still_recognised_after_a_restart() -> None:
+    audit = AuditLog()
+    first = Hub(audit, Clock())
+    approval = first.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    report(first, approval, report_id="a1")
+    second = Hub(audit, Clock())  # the same audit log, a new run
+    report(second, approval, report_id="a1")
+    assert len(audit.events("onboard_action")) == 1
+
+
+@pytest.mark.parametrize("bad", [None, "", "   ", 7, "x" * 65, ["a"]])
+def test_a_report_without_a_usable_id_is_refused_and_audited(bad: Any) -> None:
+    hub, audit, clock, _ = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    hub.ingest_navtrust(NAV)
+    clock.t += 10.0
+    with pytest.raises(MalformedReportId):
+        report(hub, approval, report_id=bad)
+    [row] = audit.events("rejected_onboard_action")
+    assert row.payload["rejected_because"] == "malformed_report_id"
+    assert audit.events("onboard_action") == []
+    assert hub.state()["links"]["uav1"]["state"] == "NO_LINK"
+
+
+def test_a_report_with_no_id_field_at_all_is_refused() -> None:
+    hub, _, _, _ = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    body = {
+        "vehicle_id": "uav1", "t_s": 51.0, "action": "LAND",
+        "reason": "INCONSISTENT_INNOVATION", "link_down_s": 5.2,
+        "policy_audit_id": approval["audit_id"], "policy_sha256": approval["sha256"],
+        "mission_id": "m1",
+    }  # fmt: skip
+    with pytest.raises(MalformedReportId):
+        hub.report_onboard_action(body)
