@@ -43,6 +43,7 @@ class OnboardAction:
     policy_audit_id: int
     policy_sha256: str
     outcome: str = "pending"  # then "acknowledged" (the vehicle accepted a LAND) or "failed"
+    mission_id: str | None = None  # the mission the policy is bound to; None for an experiment
 
 
 class OnboardMonitor:
@@ -86,6 +87,7 @@ class OnboardMonitor:
         return OnboardAction(
             self._vehicle_id, t_s, entry.action, reason, down_s,
             self._policy.audit_id, self._policy.sha256,
+            mission_id=self._policy.mission_id,
         )  # fmt: skip
 
     def land_result(self, action: OnboardAction, ok: bool, t_s: float) -> None:

@@ -39,6 +39,7 @@ class Policy:
     sha256: str
     age_at_load_s: float
     max_age_s: float
+    mission_id: str | None = None  # None only for a recorded experiment's own policy
 
     def matches(self, reason: str | None, link: str) -> PolicyEntry | None:
         """The entry that authorises an action for this reason and link condition, if any."""
@@ -49,11 +50,19 @@ class Policy:
         return self.age_at_load_s + (local_s - loaded_local_s) <= self.max_age_s
 
 
-def load_policy(approval: dict[str, Any], now_s: float, max_age_s: float) -> Policy:
+def load_policy(
+    approval: dict[str, Any],
+    now_s: float,
+    max_age_s: float,
+    mission_id: str | None = None,
+    vehicle_id: str | None = None,
+) -> Policy:
     """Check an approval record and return the policy, or raise PolicyRejected.
 
     approval: {audit_id, approved_s, sha256, policy}. now_s is on the clock approved_s was
-    stamped with (the backend's); the age is measured from there.
+    stamped with (the backend's); the age is measured from there. If mission_id is given the
+    policy must name that mission, and if vehicle_id is given it must list that vehicle (ADR 0004
+    item 5); a recorded experiment's own policy is loaded with neither.
     """
     try:
         policy = approval["policy"]
@@ -75,6 +84,13 @@ def load_policy(approval: dict[str, Any], now_s: float, max_age_s: float) -> Pol
         validate_policy(policy, COM_DL_LOSS_T_S)
     except ValueError as err:
         raise PolicyRejected(str(err)) from err
+    if mission_id is not None and policy.get("mission_id") != mission_id:
+        raise PolicyRejected(
+            f"policy is for mission {policy.get('mission_id')!r}, not {mission_id!r}"
+        )
+    if vehicle_id is not None and vehicle_id not in (policy.get("vehicles") or []):
+        raise PolicyRejected(f"policy does not list vehicle {vehicle_id!r}")
     return Policy(
-        policy_entries(policy), float(policy["wait_s"]), audit_id, claimed, age_s, max_age_s
-    )
+        policy_entries(policy), float(policy["wait_s"]), audit_id, claimed, age_s, max_age_s,
+        policy.get("mission_id"),
+    )  # fmt: skip

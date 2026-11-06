@@ -114,3 +114,32 @@ def test_the_policy_ages_with_the_vehicles_own_clock_and_expires() -> None:
     assert policy.valid_at(local_s=50.0, loaded_local_s=50.0)
     assert policy.valid_at(local_s=50.0 + MAX_AGE_S - 101.0, loaded_local_s=50.0)
     assert not policy.valid_at(local_s=50.0 + MAX_AGE_S, loaded_local_s=50.0)
+
+
+BOUND: dict[str, Any] = {**LAND_ON_FROZEN, "mission_id": "m1", "vehicles": ["uav1", "uav2"]}
+
+
+def load_for(mission_id: str, vehicle_id: str, record: dict[str, Any]) -> Policy:
+    return load_policy(
+        record, now_s=1100.0, max_age_s=MAX_AGE_S, mission_id=mission_id, vehicle_id=vehicle_id
+    )
+
+
+def test_a_bound_policy_loads_for_its_mission_and_a_listed_vehicle() -> None:
+    policy = load_for("m1", "uav2", approval(BOUND))
+    assert policy.mission_id == "m1"
+
+
+def test_a_policy_for_another_mission_is_refused() -> None:
+    with pytest.raises(PolicyRejected, match="mission"):
+        load_for("m2", "uav1", approval(BOUND))
+
+
+def test_a_policy_that_does_not_list_the_vehicle_is_refused() -> None:
+    with pytest.raises(PolicyRejected, match="vehicle"):
+        load_for("m1", "uav3", approval(BOUND))
+
+
+def test_a_policy_with_no_binding_is_refused_when_a_mission_is_expected() -> None:
+    with pytest.raises(PolicyRejected, match="mission"):
+        load_for("m1", "uav1", approval())
