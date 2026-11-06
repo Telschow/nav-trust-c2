@@ -174,7 +174,7 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
   the policy's `vehicles`, 422 `unknown_policy` if the mission has no approved policy. A 200 is an
   audit row `policy_delivered` (`vehicle_id`, `mission_id`, `policy_audit_id`, `sha256`); a refusal
   is a `rejected_policy_delivery` row (`vehicle_id`, `mission_id`, `rejected_because`).
-- `POST /onboard-actions` `{vehicle_id, t_s, mission_id, action, reason, link_down_s,
+- `POST /onboard-actions` `{vehicle_id, t_s, mission_id, report_id, action, reason, link_down_s,
   policy_audit_id, policy_sha256}` is a vehicle saying, once its link is back, what it did on its own. `t_s` is
   the vehicle's clock. It is accepted only if that policy approval is in the audit log with the
   same hash (else 422 `unknown_policy` and a `rejected_onboard_action` row), the vehicle is in
@@ -183,7 +183,13 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
   vehicle is not touched) and the policy authorises it: an entry with that `reason` and the link condition `NO_LINK`, the same `action`,
   and `link_down_s` above the policy's `wait_s` (else 422 `outside_policy`, a
   `rejected_onboard_action` row with `rejected_because: outside_policy`, and the link state of the
-  vehicle is not touched). It is audited as
+  vehicle is not touched). `report_id` is a string of 1 to 64 characters chosen by the vehicle,
+  unique per vehicle and mission (else 422 `malformed_report_id`, a `rejected_onboard_action` row,
+  and the link state of the vehicle is not touched). A report whose `report_id` was already
+  accepted for that vehicle and mission is answered 204 again and audited as
+  `duplicate_onboard_action` (`mission_id`, `report_id`); it adds no `onboard_action` row and no
+  WebSocket event and does not count as hearing from the vehicle. This is protection against a
+  resend, not authentication of the sender (ADR 0004, item 5). It is audited as
   `onboard_action`, published as an `onboard_action` WebSocket event with the same fields, and
   listed in the `outage_summary` of the outage it falls in (`onboard_actions`) if it is reported
   before that summary is published, which happens at the first trust report after the link returns.
@@ -202,7 +208,8 @@ Append-only. One row per event: `t_s`, `kind` (`navtrust_change`, `recommendatio
 `decision`, `rejected_decision`, `link_change`, `outage_summary`, `command_sent`,
 `command_acknowledged`, `command_not_acknowledged`, `command_executed`, `command_failed`,
 `command_blocked`, `command_moves_blocked`, `policy_approved`, `policy_delivered`,
-`rejected_policy_delivery`, `onboard_action`, `rejected_onboard_action`,
+`rejected_policy_delivery`, `onboard_action`, `duplicate_onboard_action`,
+`rejected_onboard_action`,
 `session_started`), `vehicle_id`, JSON `payload`. Trust is logged on
 state or reason changes, not on every message. A `link_change` row has the `state`,
 `previous_state`, `last_report_age_s` (as in the `link` event) and `link_timeout_s`; one row per

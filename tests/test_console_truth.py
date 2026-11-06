@@ -129,7 +129,8 @@ def test_a_number_that_is_not_finite_in_a_free_form_report_cannot_disconnect_a_c
     approval = hub.approve_policy(policy, "daniel", max_wait_s=10.0)
     report = (
         '{"vehicle_id": "uav1", "t_s": 1.0, "action": "LAND", "reason": "INCONSISTENT_INNOVATION", '
-        f'"link_down_s": 6.0, "mission_id": "m1", "policy_audit_id": {approval["audit_id"]}, '
+        f'"link_down_s": 6.0, "mission_id": "m1", "report_id": "r1", '
+        f'"policy_audit_id": {approval["audit_id"]}, '
         f'"policy_sha256": "{approval["sha256"]}", "extra": NaN}}'
     )
     with client.websocket_connect("/ws") as ws:

@@ -97,6 +97,10 @@ class InvalidOutcome(HubError):
     code = "invalid_outcome"
 
 
+class MalformedReportId(HubError):
+    code = "malformed_report_id"
+
+
 class InvalidOperator(HubError):
     code = "invalid_operator"
 
@@ -369,6 +373,10 @@ class Hub:
         if that policy approval is in the audit log with the same hash and the policy authorises
         the reported action; audited either way."""
         vehicle_id = str(report["vehicle_id"])
+        report_id = report.get("report_id")
+        if not isinstance(report_id, str) or not report_id.strip() or len(report_id) > 64:
+            self._reject_onboard_action(vehicle_id, report, MalformedReportId.code)
+            raise MalformedReportId(repr(report_id))
         approved = [
             e
             for e in self._audit.events("policy_approved")
@@ -389,10 +397,30 @@ class Hub:
         if outcome is not None and outcome not in ONBOARD_OUTCOMES:
             self._reject_onboard_action(vehicle_id, report, InvalidOutcome.code)
             raise InvalidOutcome(str(outcome))
+        if self._already_accepted(vehicle_id, report):
+            # a resend of a report already taken: acknowledged, but not a second action and not
+            # a second sign of life
+            self._audit.append(
+                self._clock(),
+                "duplicate_onboard_action",
+                vehicle_id,
+                {"mission_id": report["mission_id"], "report_id": report_id},
+            )
+            return
         self._note_report(vehicle_id)  # hearing from the vehicle at all
         self._audit.append(self._clock(), "onboard_action", vehicle_id, report)
         self._onboard_actions.append((self._clock(), report))
         self._publish({"type": "onboard_action", "data": report})
+
+    def _already_accepted(self, vehicle_id: str, report: dict[str, Any]) -> bool:
+        """Whether this vehicle's report id was accepted before for this mission, in this run or
+        an earlier one: the audit log is the record."""
+        return any(
+            e.vehicle_id == vehicle_id
+            and e.payload.get("mission_id") == report.get("mission_id")
+            and e.payload.get("report_id") == report.get("report_id")
+            for e in self._audit.events("onboard_action")
+        )
 
     @staticmethod
     def _within_policy(policy: dict[str, Any], report: dict[str, Any]) -> bool:

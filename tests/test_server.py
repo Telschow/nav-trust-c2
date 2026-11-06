@@ -246,14 +246,17 @@ def test_the_operator_approves_a_policy_and_a_vehicle_reports_under_it(
     report = {
         "vehicle_id": "uav1", "t_s": 51.0, "action": "LAND", "reason": "INCONSISTENT_INNOVATION",
         "link_down_s": 5.2, "policy_audit_id": approval["audit_id"],
-        "policy_sha256": approval["sha256"], "mission_id": "m1",
+        "policy_sha256": approval["sha256"], "mission_id": "m1", "report_id": "r1",
     }  # fmt: skip
     assert c.post("/onboard-actions", json=report).status_code == 204
+    assert c.post("/onboard-actions", json=report).status_code == 204  # a resend: acknowledged
+    assert c.post("/onboard-actions", json={**report, "report_id": ""}).status_code == 422
     assert c.post("/onboard-actions", json={**report, "policy_sha256": "0" * 64}).status_code == 422
     for outside in ({"vehicle_id": "uav2"}, {"mission_id": "m2"}):
         assert c.post("/onboard-actions", json={**report, **outside}).status_code == 422
     kinds = [e["kind"] for e in c.get("/audit").json()]
     assert {"policy_approved", "onboard_action", "rejected_onboard_action"} <= set(kinds)
+    assert kinds.count("onboard_action") == 1 and "duplicate_onboard_action" in kinds
 
 
 @pytest.mark.parametrize(

@@ -40,6 +40,7 @@ from c2.hub import (
     InvalidOperator,
     InvalidOutcome,
     InvalidPolicy,
+    MalformedReportId,
     NoLink,
     OutsideBinding,
     OutsidePolicy,
@@ -74,6 +75,7 @@ _STATUS = {
     OutsideBinding: 422,
     OutsidePolicy: 422,
     InvalidOutcome: 422,
+    MalformedReportId: 422,
     InvalidOperator: 422,
 }
 

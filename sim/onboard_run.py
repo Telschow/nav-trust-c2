@@ -72,8 +72,9 @@ async def fetch_policy(
 def action_report(action: OnboardAction) -> dict[str, Any]:
     """The body of POST /onboard-actions (docs/ICD.md)."""
     body = asdict(action)
-    if body["mission_id"] is None:  # an experiment's own policy has no mission
-        del body["mission_id"]
+    for key in ("mission_id", "report_id"):
+        if body[key] is None:  # an experiment's own policy has no mission and sends no report
+            del body[key]
     return body
 
 
@@ -194,8 +195,9 @@ async def run_monitor(
         # that name would overwrite it (recordings need t_s non-decreasing)
         fields = asdict(action)
         fields.pop("outcome")  # not known yet
-        if fields["mission_id"] is None:  # keeps an experiment's recording as it was
-            del fields["mission_id"]
+        for key in ("mission_id", "report_id"):
+            if fields[key] is None:  # keeps an experiment's recording as it was
+                del fields[key]
         if attempts["n"] == 1:
             write("onboard_action", vehicle_clock_s=fields.pop("t_s"), **fields)
         else:  # the action is told to the backend once; a retry is only a line in the recording

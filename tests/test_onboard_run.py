@@ -492,6 +492,34 @@ def test_a_bound_policys_action_is_reported_with_its_mission() -> None:
     assert action_report(action)["mission_id"] == "m1"
 
 
+def test_each_action_has_a_report_id_that_survives_a_resend() -> None:
+    from navtrust.types import NavTrust, ReasonCode, TrustState
+    from sim.onboard_monitor import OnboardMonitor
+
+    def acted() -> OnboardMonitor:
+        policy = load_policy(_delivery(), 1060.0, 14400.0, "m1", "uav1")
+        monitor = OnboardMonitor("uav1", policy, started_s=0.0)
+        monitor.c2_heard(0.0)
+        report = NavTrust(
+            "uav1", 10.0, TrustState.RED, ReasonCode.INCONSISTENT_INNOVATION, 0.0, 1.0
+        )
+        monitor.trust(10.0, report)
+        action = monitor.poll(10.0)
+        assert action is not None
+        monitor.land_result(action, ok=True, t_s=10.0)
+        return monitor
+
+    first, second = acted(), acted()
+    [a] = first.take_unreported()
+    [b] = second.take_unreported()
+    assert (
+        a.report_id and len(a.report_id) <= 64 and a.report_id != b.report_id
+    )  # a new run, a new id
+    first.requeue([a])  # a report that could not be sent goes out again as it was
+    assert first.take_unreported() == [a]
+    assert action_report(a)["report_id"] == a.report_id
+
+
 def _run_bound(handler: Any, link: dict[str, bool], seconds: float) -> tuple[Any, list[Any]]:
     httpx = pytest.importorskip("httpx")
     from sim.onboard_run import run_bound_monitor
