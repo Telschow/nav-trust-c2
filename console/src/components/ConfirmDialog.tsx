@@ -69,16 +69,13 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
   const hold = useHold(HOLD_TO_CONFIRM_MS, onConfirm, canConfirm);
   // The two-step route for operators whose assistive technology cannot press and hold (issue 119):
   // one click arms a separate button, a second click on it approves.
-  const [armed, setArmed] = useState(false);
-  const [expired, setExpired] = useState(false);
+  const [twoStep, setTwoStep] = useState<"idle" | "armed" | "expired">("idle");
+  const armed = twoStep === "armed";
   const armedConfirmRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!armed) return;
     armedConfirmRef.current?.focus();
-    const t = window.setTimeout(() => {
-      setArmed(false);
-      setExpired(true);
-    }, ARMED_MS);
+    const t = window.setTimeout(() => setTwoStep("expired"), ARMED_MS);
     return () => window.clearTimeout(t);
   }, [armed]);
   const cancelRef = useRef(onCancel);
@@ -157,7 +154,7 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
                 ? "Released. Nothing was approved."
                 : armed
                   ? `Armed. Press Confirm landing within ${ARMED_MS / 1000} seconds to approve the landing.`
-                  : expired
+                  : twoStep === "expired"
                     ? "Disarmed. Nothing was approved."
                     : ""}
           </span>
@@ -168,10 +165,7 @@ export function ConfirmDialog({ rec, operator, demo, busy, noLink = false, backe
             {/* stays in place once armed, so a double click re-arms instead of landing on Confirm landing */}
             <button
               type="button"
-              onClick={() => {
-                setExpired(false);
-                setArmed(true);
-              }}
+              onClick={() => setTwoStep("armed")}
               className="text-accent underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
             >
               Use two steps instead
