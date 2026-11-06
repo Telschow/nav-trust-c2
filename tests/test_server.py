@@ -275,6 +275,23 @@ def test_a_policy_a_vehicle_would_refuse_is_not_approved(
     assert [e for e in c.get("/audit").json() if e["kind"] == "policy_approved"] == []
 
 
+def test_a_vehicle_pulls_its_missions_policy_and_the_pull_is_audited(
+    client: tuple[Console, Clock],
+) -> None:
+    c, clock = client
+    approval = c.post("/policy", json=POLICY_BODY).json()
+    clock.t += 30.0
+    r = c.get("/policy/m1/uav1")
+    assert r.status_code == 200
+    assert r.json() == {**approval, "server_s": clock.t}
+    assert c.get("/policy/m1/uav2").status_code == 422  # the policy covers uav1 only
+    assert c.get("/policy/m2/uav1").status_code == 422  # no policy for that mission
+    delivered = [e for e in c.get("/audit").json() if e["kind"] == "policy_delivered"]
+    assert [e["vehicle_id"] for e in delivered] == ["uav1"]
+    refused = [e for e in c.get("/audit").json() if e["kind"] == "rejected_policy_delivery"]
+    assert len(refused) == 2
+
+
 def test_a_policy_without_a_mission_or_vehicles_is_refused(client: tuple[Console, Clock]) -> None:
     c, _ = client
     for missing in ("mission_id", "vehicles"):
