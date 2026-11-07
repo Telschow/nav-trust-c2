@@ -50,8 +50,9 @@ A recommendation with neither a command nor sector moves is rejected.
 | note | string, optional | |
 | vehicle_heard | boolean, EXPIRED only | whether the backend could hear the vehicle at the moment the recommendation expired; absent for every other outcome. A client of an older backend finds no field and treats it as heard |
 
-SUPERSEDED: closed by the backend when a link returns and the vehicle's trust state or reason
-is no longer what it was when the recommendation was raised (see Link health). A decision on a
+SUPERSEDED: closed by the backend when the vehicle's trust state or reason is no longer what it
+was when the recommendation was raised: on the next trust report that differs, or, after an
+outage, on the first one (see Link health). A decision on a
 superseded recommendation is refused with 410 `superseded`, like an expired one.
 
 ## Position and origin (for the map; added with the console)
@@ -217,7 +218,7 @@ change.
 
 A `recommendation` row's payload carries `source`: `recommender` for one the rule-based
 recommender made, `external` for one a client posted. `POST /recommendations` exists only when the
-app is built with `allow_external_recommendations` (tests and demos); the production app answers
+app is built with `allow_external_recommendations` (tests and demos only, never an operator-facing build); the production app answers
 404. A posted recommendation is re-stamped by the hub (created now, 60 s to live, a proposal) and refused with
 422 `unknown_vehicle` (never heard from) or `no_link` (a command for a vehicle without a link; a
 re-task is allowed). Issue 157.
@@ -228,4 +229,6 @@ recommender puts the session id in its ids (`rec-<session>-<vehicle>-<n>`). Ever
 row carries `decision_audit_id`, the audit id of the `decision` row that authorised it (absent on
 `command_blocked` when there was no decision). `python -m c2.audit_verify <db>` checks that every
 `command_sent` row cites an approval of the same recommendation, taken in the same session, and
-that no recommendation id repeats. A database from before issue 159 does not pass. Issue 159.
+that no recommendation id repeats. It also checks that the sent vehicle and action are the ones in
+the run's `recommendation` row. This shows the command matches what the operator was shown, not
+that the database is unedited. A database from before issue 159 does not pass. Issues 159 and 225.

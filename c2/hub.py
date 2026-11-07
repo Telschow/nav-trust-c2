@@ -221,6 +221,8 @@ class Hub:
         self._publish({"type": "navtrust", "data": navtrust_to_dict(msg)})
         if outage is not None and outage.ended_s is not None:
             self._reconcile(msg.vehicle_id, outage, msg)
+        elif outage is None and previous is not None and _situation(previous) != _situation(msg):
+            self._supersede_open(msg.vehicle_id, "the vehicle's trust state or reason changed")
 
     def ingest_position(
         self, vehicle_id: str, lat_deg: float, lon_deg: float, alt_m: float
@@ -557,23 +559,9 @@ class Hub:
         changed = outage.trust_at_loss is not None and outage.trust_at_loss != _situation(latest)
         superseded: list[str] = []
         if changed:
-            for rec in list(self._recs.values()):
-                if (
-                    rec.vehicle_id == vehicle_id
-                    and rec.id not in self._decisions
-                    and rec.created_s <= outage.detected_s
-                ):
-                    self._record(
-                        Decision(
-                            rec.id,
-                            Outcome.SUPERSEDED,
-                            self._clock(),
-                            "system",
-                            note="the situation changed while the link was down",
-                        ),
-                        vehicle_id,
-                    )
-                    superseded.append(rec.id)
+            superseded = self._supersede_open(
+                vehicle_id, "the situation changed while the link was down", outage.detected_s
+            )
         summary = {
             "vehicle_id": vehicle_id,
             "duration_s": outage.duration_s,
@@ -588,6 +576,25 @@ class Hub:
         }
         self._audit.append(self._clock(), "outage_summary", vehicle_id, summary)
         self._publish({"type": "outage_summary", "data": summary})
+
+    def _supersede_open(
+        self, vehicle_id: str, note: str, raised_by_s: float | None = None
+    ) -> list[str]:
+        """End the vehicle's undecided recommendations, optionally only those raised by
+        `raised_by_s`; the recommender raises a new one if the vehicle still needs it."""
+        ended: list[str] = []
+        for rec in list(self._recs.values()):
+            if (
+                rec.vehicle_id == vehicle_id
+                and rec.id not in self._decisions
+                and (raised_by_s is None or rec.created_s <= raised_by_s)
+            ):
+                self._record(
+                    Decision(rec.id, Outcome.SUPERSEDED, self._clock(), "system", note=note),
+                    vehicle_id,
+                )
+                ended.append(rec.id)
+        return ended
 
     def _record(self, decision: Decision, vehicle_id: str) -> None:
         self._decisions[decision.recommendation_id] = decision

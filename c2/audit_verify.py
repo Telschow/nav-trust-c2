@@ -6,7 +6,9 @@ For each `command_sent` row it checks that the row cites a `decision` row (`deci
 that this row is an approval of the same recommendation, that it was taken in the same backend
 run (between the same `session_started` rows, because every run restarts the clock and the
 recommendation counter), and that the run approved the recommendation once. It also checks that no
-recommendation id was used twice. A database from before issue 159 has no such citations and
+recommendation id was used twice. It compares what was sent (vehicle and action) with the
+audited `recommendation` row of the same run, so a command to another vehicle or of another kind
+than the one the operator saw fails. A database from before issue 159 has no such citations and
 fails: that is the point, it cannot prove the link.
 
 This is a linkage check, not tamper evidence: the log is append-only in the application, but
@@ -18,6 +20,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 from c2.audit import AuditEvent, AuditLog
 
@@ -80,7 +83,35 @@ def _check_command(
     ]
     if len(approvals) != 1:
         return [f"{where}: {len(approvals)} approvals of {rid} in this session, expected one"]
-    return []
+    rec_rows = [
+        e
+        for e in events
+        if e.kind == "recommendation"
+        and e.payload.get("id") == rid
+        and session_of[e.id] == session_of[sent.id]
+    ]
+    if not rec_rows:
+        return [f"{where}: no recommendation row {rid} in this session"]
+    return [f"{where}: {why}" for why in _differs(sent, rec_rows[0].payload)]
+
+
+def _differs(sent: AuditEvent, rec: dict[str, Any]) -> list[str]:
+    """How the sent command departs from the recommendation the operator was shown."""
+    action = str(sent.payload.get("action"))
+    verb, _, rest = action.partition(" ")
+    if verb in ("HOLD", "RTL", "LAND"):
+        if rec.get("command") != verb:
+            return [f"the recommendation proposed {rec.get('command')}, not {verb}"]
+        if sent.vehicle_id != rec["vehicle_id"] or rest != rec["vehicle_id"]:
+            return [f"the recommendation was for {rec['vehicle_id']}, not {rest}"]
+        return []
+    if verb == "RETASK":
+        moves = ", ".join(f"{m['sector_id']}->{m['to_vehicle']}" for m in rec["sector_moves"])
+        planned = {rec["vehicle_id"], *(m["to_vehicle"] for m in rec["sector_moves"])}
+        if not rest.startswith(f"{moves} (") or sent.vehicle_id not in planned:
+            return [f"the recommendation proposed moves {moves or 'none'}, not {rest}"]
+        return []
+    return [f"unknown action {action}"]
 
 
 def main(argv: list[str]) -> int:

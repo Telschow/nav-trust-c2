@@ -151,3 +151,45 @@ def test_an_app_gives_its_recommender_the_session_so_no_caller_can_forget_it(
         ids.append(hub.state()["open_recommendations"][0]["id"])
     assert ids[0] != ids[1]
     assert len(AuditLog(db).events("session_started")) == 2
+
+
+def forged(db: Path, **changes: str) -> None:
+    """A command_sent row that cites the real approval but differs from the recommendation."""
+    log = AuditLog(db)
+    [decision] = log.events("decision")
+    [rec] = log.events("recommendation")
+    sent = {
+        "recommendation_id": rec.payload["id"],
+        "action": "LAND uav2",
+        "decision_audit_id": decision.id,
+    }
+    log.append(9.0, "command_sent", changes.pop("vehicle", "uav2"), {**sent, **changes})
+
+
+def test_the_verifier_fails_a_command_to_another_vehicle_than_the_one_recommended(
+    tmp_path: Path,
+) -> None:
+    db = tmp_path / "audit.sqlite"
+    session(db)
+    forged(db, vehicle="uav1", action="LAND uav1")
+    assert any("uav2" in p and "uav1" in p for p in problems(db))
+
+
+def test_the_verifier_fails_an_action_other_than_the_one_recommended(tmp_path: Path) -> None:
+    db = tmp_path / "audit.sqlite"
+    session(db)
+    forged(db, action="RTL uav2")
+    assert any("LAND" in p and "RTL" in p for p in problems(db))
+
+
+def test_the_verifier_fails_a_command_whose_recommendation_row_is_missing(tmp_path: Path) -> None:
+    db = tmp_path / "audit.sqlite"
+    log = AuditLog(db)
+    log.append(0.0, "session_started", None, {"session_id": "s1", "wall_clock_utc": "x"})
+    approval = log.append(
+        1.0, "decision", "uav2", {"recommendation_id": "r9", "outcome": "APPROVED", "operator": "d"}
+    )
+    sent = {"recommendation_id": "r9", "action": "LAND uav2", "decision_audit_id": approval.id}
+    log.append(2.0, "command_sent", "uav2", sent)
+    [problem] = problems(db)
+    assert "no recommendation row r9" in problem

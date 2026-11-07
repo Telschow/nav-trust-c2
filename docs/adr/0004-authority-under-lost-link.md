@@ -112,6 +112,8 @@ unbounded for fast faults, and no source in the research note uses it.
    as `load_policy` does now. No clock synchronisation is assumed.
 4. **Duplicate reports and reporter authentication are outside this binding.** Issue 204 gives
    each report an id and accepts it once. This ADR still claims integrity, not authentication.
+   The vehicle keeps unsent reports in memory: a retry survives a network failure, a killed
+   onboard process loses what it had not yet delivered (`.out-of-scope/durable-onboard-outbox.md`).
 
 ## Consequences
 
