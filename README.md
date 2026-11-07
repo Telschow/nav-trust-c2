@@ -84,6 +84,20 @@ flowchart TB
 *Replay demo at double speed; map tiles left out of this recording.*
 <!-- summary-end -->
 
+## Product and programme documents
+
+The product and delivery side of the project, written before and during the build:
+
+| Document | What it answers |
+|---|---|
+| [Concept of operations](docs/product/CONOPS.md) | Who supervises the drones, in which mission, under which assumptions |
+| [PR/FAQ](docs/product/PRFAQ.md) | The product pitch and the hard questions, written against the planned end date |
+| [Personas](docs/product/personas.md) | Who the console is for (hypotheses, tested in the usability sessions) |
+| [Requirements](docs/product/requirements.md) and [trace](docs/product/trace.csv) | What the system must do, each requirement traced to its evidence, checked by a test |
+| [Programme plan](docs/programme/plan.md) | Milestones, actuals and the honest re-plan |
+| [RAID log](docs/programme/risks.md) | Risks, assumptions, issues and dependencies, each with what reduces it |
+| [Usability findings](docs/usability/findings-2026-10.md) | What failed in the first operator test and what changed |
+
 ## Scope and ethics guardrails
 
 - Simulation only. Unclassified, public sources only.
