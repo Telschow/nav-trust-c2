@@ -184,7 +184,7 @@ policy; a vehicle's onboard monitor may LAND on it when the C2 cannot be reached
   vehicle is not touched) and the policy authorises it: an entry with that `reason` and the link condition `NO_LINK`, the same `action`,
   and `link_down_s` above the policy's `wait_s` (else 422 `outside_policy`, a
   `rejected_onboard_action` row with `rejected_because: outside_policy`, and the link state of the
-  vehicle is not touched). `report_id` is a string of 1 to 64 characters chosen by the vehicle,
+  vehicle is not touched). Only these fields (and `outcome`) are kept in the audit row and the event; any other is dropped. `link_down_s` must be a finite number (else 422 `outside_policy`). `report_id` is a string of 1 to 64 characters chosen by the vehicle,
   unique per vehicle and mission (else 422 `malformed_report_id`, a `rejected_onboard_action` row,
   and the link state of the vehicle is not touched). A report whose `report_id` was already
   accepted for that vehicle and mission is answered 204 again and audited as

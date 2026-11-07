@@ -51,6 +51,12 @@ _COMMAND_ENDINGS = (
     "command_failed",
     "command_blocked",
 )
+# What a vehicle's report may carry (docs/ICD.md, POST /onboard-actions); anything else is dropped
+# before it is audited or published, so a client cannot put its own fields in the record.
+_REPORT_FIELDS = (
+    "vehicle_id", "t_s", "mission_id", "report_id", "action", "reason", "link_down_s",
+    "policy_audit_id", "policy_sha256", "outcome",
+)  # fmt: skip
 # A posted recommendation lives as long as one the recommender makes (RecommenderConfig.ttl_s).
 EXTERNAL_TTL_S = 60.0  # proposal
 
@@ -375,6 +381,7 @@ class Hub:
         if that policy approval is in the audit log with the same hash and the policy authorises
         the reported action; audited either way."""
         vehicle_id = str(report["vehicle_id"])
+        report = {k: v for k, v in report.items() if k in _REPORT_FIELDS}
         report_id = report.get("report_id")
         if not isinstance(report_id, str) or not report_id.strip() or len(report_id) > 64:
             self._reject_onboard_action(vehicle_id, report, MalformedReportId.code)
@@ -430,10 +437,13 @@ class Hub:
         names, and for nothing else. A vehicle acts only once the link has been down longer than
         the policy's wait."""
         entry = matching_entry(policy_entries(policy), report.get("reason"), "NO_LINK")
+        down = report.get("link_down_s", 0.0)
+        if isinstance(down, bool) or not isinstance(down, int | float) or not math.isfinite(down):
+            return False
         return (
             entry is not None
             and entry.action == report.get("action")
-            and float(report.get("link_down_s", 0.0)) > float(policy["wait_s"])
+            and down > float(policy["wait_s"])
         )
 
     def _reject_onboard_action(self, vehicle_id: str, report: dict[str, Any], why: str) -> None:
