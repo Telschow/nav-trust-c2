@@ -34,7 +34,7 @@ for speed in ${SPEEDS}; do
             is_complete "${out}" && { echo "=== ${name} already recorded"; continue; }
             echo "=== ${name}"
             docker restart "${IMAGE}" >/dev/null
-            sleep 90
+            wait_for_sim 1
             record_one "${name}" "${out}" "${MAX_DURATION}" \
                 docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
                 python -m sim.record_run --scenario "${name}" --out "${out}.partial" \

@@ -38,7 +38,7 @@ while read -r name runs; do
         rm -rf "${PARTIAL}"
         mkdir -p "${PARTIAL}"
         docker restart "${IMAGE}" >/dev/null
-        sleep 90
+        wait_for_sim 1
         if docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
             python -m sim.run_scenario "${name}" --run "${run}" \
             --scenarios "${SCENARIO_DIR}" --out "${PARTIAL}"; then

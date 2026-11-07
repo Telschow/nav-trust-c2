@@ -36,7 +36,7 @@ for action in ${ACTIONS}; do
                 operator=()
                 [ "${action}" != "none" ] && operator=(--operator-action "${action}" --operator-delay "${delay}")
                 docker restart "${IMAGE}" >/dev/null
-                sleep 90
+                wait_for_sim 1
                 record_one "${name}" "${out}" "${MAX_DURATION}" \
                     docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
                     python -m sim.record_run --scenario "${name}" --out "${out}.partial" \

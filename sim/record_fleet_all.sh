@@ -28,7 +28,7 @@ while read -r name operator runs; do
         [ -n "${ONLY_RUN}" ] && [ "${ONLY_RUN}" != "${run}" ] && continue
         echo "=== ${name} run ${run}/${runs}"
         docker restart "${IMAGE}" >/dev/null
-        sleep 100
+        wait_for_sim 3
         if ! docker exec -w /workspaces/nav-trust-c2 "${IMAGE}" \
             python -m sim.record_fleet --name "${name}" --run "${run}" \
             --operator "${operator}" --operator-delay "${OPERATOR_DELAY}" --out-dir "${OUT_DIR}"; then
