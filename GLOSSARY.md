@@ -67,7 +67,7 @@ A proposed action, raised by the recommender, awaiting an operator decision. Nev
 _Avoid_: suggestion, alert, command
 
 **Superseded**:
-A recommendation the backend closed because the vehicle's trust state or reason changed during an outage, so the operator is not asked to approve something about a situation that no longer holds. A new one is raised if the vehicle still needs it.
+A recommendation the backend closed because the vehicle's trust state or reason changed (during an outage, or between two trust reports), so the operator is not asked to approve something about a situation that no longer holds. A new one is raised if the vehicle still needs it.
 _Avoid_: cancelled, withdrawn
 
 **Acknowledged**:

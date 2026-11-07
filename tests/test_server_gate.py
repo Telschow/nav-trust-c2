@@ -109,6 +109,19 @@ def test_an_expired_recommendation_cannot_be_approved_or_executed(system) -> Non
     assert hub.audit.events("command_executed") == []
 
 
+def test_a_recommendation_cannot_be_approved_after_the_vehicle_is_green_again(system) -> None:  # type: ignore[no-untyped-def]
+    c, executor, hub, _, _ = system
+    c.post("/navtrust", json=trust("uav2", "RED", "INCONSISTENT_INNOVATION"))
+    [rid] = open_ids(c)
+    c.post("/navtrust", json=trust("uav2", "GREEN"))  # no outage: the link never dropped
+    assert open_ids(c) == []
+    r = c.post(
+        "/decisions", json={"recommendation_id": rid, "outcome": "APPROVED", "operator": "daniel"}
+    )
+    assert r.status_code == 410 and r.json()["detail"] == "superseded"
+    assert executor.log == [] and hub.audit.events("command_sent") == []
+
+
 def test_fleet_endpoint_shows_the_assignment(system) -> None:  # type: ignore[no-untyped-def]
     c, _, _, _, _ = system
     fleet = c.get("/fleet").json()["assignment"]
