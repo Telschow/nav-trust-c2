@@ -2,7 +2,7 @@
 
 For the interactive explainer ([explainer.html](explainer.html)) and the video opener (#189). A
 draft for the maintainer to edit. The picture is a metaphor; the project's vocabulary is in
-[GLOSSARY.md](../../GLOSSARY.md), and the metaphor terms stay out of it.
+`GLOSSARY.md`, and the metaphor terms stay out of it.
 
 ## The explainer's steps
 
