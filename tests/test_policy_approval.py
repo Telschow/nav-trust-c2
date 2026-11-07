@@ -274,3 +274,24 @@ def test_a_report_with_no_id_field_at_all_is_refused() -> None:
     }  # fmt: skip
     with pytest.raises(MalformedReportId):
         hub.report_onboard_action(body)
+
+
+def test_only_the_fields_of_the_interface_are_kept_from_a_report() -> None:
+    hub, audit, _, events = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    report(hub, approval, outcome="acknowledged", note="x" * 10_000, mission_state="landed")
+    [row] = audit.events("onboard_action")
+    assert "note" not in row.payload and "mission_state" not in row.payload
+    assert row.payload["outcome"] == "acknowledged"
+    [published] = [e["data"] for e in events if e["type"] == "onboard_action"]
+    assert published == row.payload
+
+
+@pytest.mark.parametrize("down", [float("inf"), float("nan"), "soon"])
+def test_a_link_down_time_that_is_not_a_finite_number_is_refused_and_audited(down: Any) -> None:
+    hub, audit, _, _ = make()
+    approval = hub.approve_policy(POLICY, "daniel", max_wait_s=10.0)
+    with pytest.raises(OutsidePolicy):
+        report(hub, approval, link_down_s=down)
+    assert audit.events("onboard_action") == []
+    assert len(audit.events("rejected_onboard_action")) == 1
