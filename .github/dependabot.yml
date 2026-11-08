@@ -1,21 +1,32 @@
 version: 2
+# One grouped pull request per ecosystem per month: the portfolio is frozen, so updates should
+# arrive as a few reviewable batches, not one pull request per package.
 updates:
   - package-ecosystem: pip
     directory: "/"
-    schedule: { interval: weekly }
+    schedule: { interval: monthly }
+    groups:
+      python:
+        patterns: ["*"]
   - package-ecosystem: npm
     directory: "/console"
-    schedule: { interval: weekly }
+    schedule: { interval: monthly }
     # components.test.tsx requires the exact same version of both, so they must arrive together
     groups:
       react:
         patterns: ["react", "react-dom"]
+      console:
+        patterns: ["*"]
   - package-ecosystem: github-actions
     directory: "/"
-    schedule: { interval: weekly }
+    schedule: { interval: monthly }
+    # codeql-action init and analyze must run the same version, so they must arrive together
+    groups:
+      actions:
+        patterns: ["*"]
   - package-ecosystem: docker
     directory: "/sim/docker"
-    schedule: { interval: weekly }
+    schedule: { interval: monthly }
     # the PX4 toolchain and every recording were built on Ubuntu 24.04; moving needs a rebuild
     # of the simulator image and a re-check by hand, which CI cannot do (it has no Gazebo)
     ignore:
