@@ -114,6 +114,28 @@ The product and delivery side of the project, written before and during the buil
   measured touchdown; the recordings are in
   `eval/lost_link/onboard-approved`. Reports are not authenticated (ADR 0004).
 
+## Limits of the approval path
+
+A research prototype for one backend process on a trusted machine, not a deployment or a safety
+case.
+
+- **The operator name is a label.** There is no login: the backend records whatever name the
+  client sends. The server binds to `127.0.0.1` by default; do not expose it to a network you
+  do not trust.
+- **A recommendation can be approved during an outage.** A changed trust state or reason
+  closes the open recommendation, and so do trust reports that stop while positions keep the
+  link up (after the 2 s link timeout, a proposal). But while nothing is heard from the vehicle
+  at all, a recommendation raised before the outage stays open and can be approved and sent
+  (ADR 0004); with the modelled link it is not acknowledged and not resent.
+- **Sent, acknowledged and done are different.** An acknowledgement means the vehicle accepted
+  the command, not that it landed. A command that times out is not resent, and whether it
+  arrived is unknown.
+- **The audit check is linkage, not tamper evidence.** The verifier checks that every sent
+  command follows an approval of the same recommendation, vehicle and action. Edits made
+  directly to the SQLite file are not detected.
+- **Onboard reports are self-reports.** They are checked against the approved policy, not
+  authenticated, and the vehicle's retry queue is lost if its process restarts.
+
 ## Non-goals
 
 Real hardware flight, swarming algorithms, computer vision, learned components, datalink
