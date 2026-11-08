@@ -142,3 +142,25 @@ def test_an_expired_recommendation_is_replaced_by_a_new_one_while_still_red(syst
         "/decisions", json={"recommendation_id": second, "outcome": "APPROVED", "operator": "d"}
     )
     assert r.json()["execution"]["actions"][0] == "LAND uav2"
+
+
+def test_a_recommendation_on_trust_hidden_by_positions_is_closed_then_raised_again(system) -> None:  # type: ignore[no-untyped-def]
+    c, executor, _, clock, _ = system
+    c.post("/navtrust", json=trust("uav2", "RED", "INCONSISTENT_INNOVATION"))
+    [first] = open_ids(c)
+    for _ in range(6):  # uav2 sends positions only; the others keep reporting trust
+        clock.t += 0.5
+        c.post(
+            "/positions",
+            json={"vehicle_id": "uav2", "lat_deg": 47.0, "lon_deg": 8.0, "alt_m": 50.0},
+        )
+        for v in ("uav1", "uav3"):
+            c.post("/navtrust", json=trust(v, "GREEN"))
+    r = c.post(
+        "/decisions", json={"recommendation_id": first, "outcome": "APPROVED", "operator": "d"}
+    )
+    assert r.status_code == 410 and r.json()["detail"] == "superseded"
+    assert executor.log == []
+    c.post("/navtrust", json=trust("uav2", "RED", "INCONSISTENT_INNOVATION"))  # trust resumes
+    [second] = open_ids(c)
+    assert second != first

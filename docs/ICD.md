@@ -52,7 +52,10 @@ A recommendation with neither a command nor sector moves is rejected.
 
 SUPERSEDED: closed by the backend when the vehicle's trust state or reason is no longer what it
 was when the recommendation was raised: on the next trust report that differs, or, after an
-outage, on the first one (see Link health). A decision on a
+outage, on the first one (see Link health). Also when the vehicle is still heard but its latest
+trust report is older than the link timeout (position reports keep the link up and do not refresh
+trust), with the note `trust reports stopped while the link stayed up`; during an outage the
+recommendation stays open. A decision on a
 superseded recommendation is refused with 410 `superseded`, like an expired one.
 
 ## Position and origin (for the map; added with the console)
@@ -142,7 +145,8 @@ no other figure is proposed until re-task times have been measured with this gat
 
 Stale sector moves (issue 203). The gate checks each move against the fleet as it is when the
 operator approves, and again just before the moves are applied, because the command can take up
-to the ack timeout. A move is stale if its recipient is not GREEN or has no link, or if the
+to the ack timeout. A move is stale if its recipient is not GREEN, has no link or has a trust
+report older than the link timeout, or if the
 sector is no longer the lost vehicle's or is already done. A recipient with no trust report yet
 is not stale. All the moves are dropped together, never some of them. With a command, the command
 still goes out and a `command_moves_blocked` row (`recommendation_id`, `reason`

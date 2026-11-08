@@ -188,6 +188,8 @@ class CommandGate:
                 return f"{m.sector_id} is no longer {rec.vehicle_id}'s"
             if not self._hub.is_reachable(m.to_vehicle):
                 return f"{m.to_vehicle} has no link"
+            if self._hub.stale_trust_age_s(m.to_vehicle) is not None:
+                return f"{m.to_vehicle}'s trust report is stale"
             latest = self._hub.latest_trust(m.to_vehicle)
             if latest is not None and latest.state is not TrustState.GREEN:
                 return f"{m.to_vehicle} is {latest.state.value}"

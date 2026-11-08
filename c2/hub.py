@@ -149,6 +149,7 @@ class Hub:
         self._outage: dict[str, _Outage] = {}
         self._onboard_actions: list[tuple[float, dict[str, Any]]] = []  # (server_s, report)
         self._trust: dict[str, NavTrust] = {}
+        self._last_trust_s: dict[str, float] = {}  # server time; positions do not refresh it
         self._recs: dict[str, Recommendation] = {}
         self._decisions: dict[str, Decision] = {}
         self._decision_rows: dict[str, int] = {}  # recommendation id -> audit id of its decision
@@ -205,6 +206,7 @@ class Hub:
         self._note_report(msg.vehicle_id)
         previous = self._trust.get(msg.vehicle_id)
         self._trust[msg.vehicle_id] = msg
+        self._last_trust_s[msg.vehicle_id] = self._clock()
         outage = self._outage.get(msg.vehicle_id)
         if outage is not None and (previous is None or _situation(previous) != _situation(msg)):
             outage.changes.append(
@@ -251,6 +253,16 @@ class Hub:
 
     def latest_trust(self, vehicle_id: str) -> NavTrust | None:
         return self._trust.get(vehicle_id)
+
+    def stale_trust_age_s(self, vehicle_id: str) -> float | None:
+        """How old a vehicle's latest trust report is, if older than the link timeout, else None.
+        Position reports keep the link up but say nothing about trust, so a vehicle can be
+        reachable with stale trust. A vehicle never heard from is not known to be stale."""
+        last_s = self._last_trust_s.get(vehicle_id)
+        if last_s is None:
+            return None
+        age_s = self._clock() - last_s
+        return age_s if self._is_silent(age_s) else None
 
     def set_origin(self, lat_deg: float, lon_deg: float) -> None:
         """Geographic position of the area origin (south-west corner of the sector grid)."""
@@ -492,11 +504,17 @@ class Hub:
 
     def sweep(self) -> list[Decision]:
         """Mark vehicles silent past the timeout NO_LINK, and recommendations past their expiry
-        EXPIRED (each once). Returns the newly expired decisions."""
+        EXPIRED (each once). Returns the newly expired decisions. A vehicle still heard (positions)
+        whose trust reports have stopped has its open recommendations superseded: they answer a
+        trust state no longer known to hold. During an outage they stay open (ADR 0004 item 7)."""
         now = self._clock()
         for vehicle_id, last_s in self._last_report_s.items():
             if self._link[vehicle_id] is LinkState.LINK_OK and self._is_silent(now - last_s):
                 self._set_link(vehicle_id, LinkState.NO_LINK, now - last_s)
+        for vehicle_id in self._last_trust_s:
+            stale = self.stale_trust_age_s(vehicle_id) is not None
+            if stale and self._link[vehicle_id] is LinkState.LINK_OK:
+                self._supersede_open(vehicle_id, "trust reports stopped while the link stayed up")
         expired = []
         for rec in self._recs.values():
             if rec.id not in self._decisions and now > rec.expires_s:
